@@ -12,11 +12,20 @@ How does it work?
 Reference the JavaScript files from your HTML page, with the Promises JavaScript library:
 
 ```html
-    <script src="Promises.js"></script>
+    <script src="promises.js"></script>
     <script src="KurveIdentity.js"></script>
     <script src="KurveGraph.js"></script>
 ```
 
+Alternatively you can just reference the scripts from our CDN:
+
+```html
+    <script src="https://kurvejs.blob.core.windows.net/dist/promises-0.1.0.js"></script>
+    <script src="https://kurvejs.blob.core.windows.net/dist/KurveIdentity-0.1.0.js"></script>
+    <script src="https://kurvejs.blob.core.windows.net/dist/KurveGraph-0.1.0.js"></script>
+```
+
+	
 The identity and graph library can work independently or together. For example, you may have authenticated and retrieved an access token from somewhere else and only give it to the graph library, or you can use the identity library for authentication.
 
 ```javascript
