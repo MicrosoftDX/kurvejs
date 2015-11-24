@@ -147,7 +147,7 @@ module Sample {
 
 //*********************************************************   
 //   
-//Kurve js, https://github.com/matvelloso/kurve-js
+//Kurve js, https://github.com/microsoftdx/kurvejs
 //  
 //Copyright (c) Microsoft Corporation  
 //All rights reserved.   
