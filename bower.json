@@ -1,0 +1,23 @@
+{
+  "name": "kurveJS",
+  "version": "0.1.0",
+  "description": "Kurve JS library",
+  "main": "",
+  "authors": [
+    "Mat V <mateusv@microsoft.com>"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/matvelloso/kurveJS",
+  "moduleType": [
+    "es6"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+  }
+}
