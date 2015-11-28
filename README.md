@@ -1,7 +1,5 @@
 # KurveJS
 
-## What is KurveJS?
-
 Kurve<nolink>.JS is an unofficial, open source JavaScript / TypeScript library that aims to simplify two tasks:
 
 1. Easy authentication and authorization against Azure Active Directory - without navigating away from you web app for login or token requests.
@@ -109,19 +107,19 @@ The sample index.html and app.<nolink>js files show how to wire and use it.
 
 ## FAQ
 
-# Is this a supported library from Microsoft?
+### Is this a supported library from Microsoft?
  
 No it is not. This is an open source project built unofficially. If you are looking for a supported APIs we encourage you to directly call Microsoft's Graph REST APIs. 
  
-# Can I use/change this library?
+### Can I use/change this library?
 
 You are free to take the code, change and use it any way you want it. But please be advised this code isn't supported.
 
-# What if I find issues or want to contribute/help?
+### What if I find issues or want to contribute/help?
 
 You are free to send us your feedback at this Github repo, send pull requests, etc. But please don't expect this to work as an official support channel
 
-# Which files do I need to run this? 
+### Which files do I need to run this? 
 
 At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optionally KurveIdentity.<nolink>js + login.html. You may use the TypeScript libraries and reuse some of the sample app code (index.html and app.<nolink>js) for reference.
 
