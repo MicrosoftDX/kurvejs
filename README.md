@@ -5,6 +5,7 @@
 Kurve<nolink>.JS is an unofficial, open source JavaScript / TypeScript library that aims to simplify two tasks:
 
 1-Authentication and authorization against Azure Active Directory
+
 2-Access to the Microsoft Graph REST API.
 
 How does it work?
