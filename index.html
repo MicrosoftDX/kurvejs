@@ -9,15 +9,9 @@
 
 </head>
 <body>
-    <script type="text/javascript">
-        var app;
-        function init() {
-            app = new Sample.App();
-        }
-    </script>
     <div id="initDiv">
-        Class ID: <input type="text" id="classID" value="[Enter your app class id here]" /><br />
-        Redirect URL: <input type="text" id="redirectUrl" value="[enter your app redirect URI here]" /><br />
+        Your App Class ID:<br/> <input type="text" id="classID" value="" /><br />
+        Redirect URL: <br/> <input type="text" id="redirectUrl" value="" /><br /><br />
 
         <button id="btnInit" onclick="init();">Initialize</button>
     </div>
@@ -43,5 +37,12 @@
 
   </div>
     
+    <script type="text/javascript">
+        var app;
+        function init() {
+            app = new Sample.App();
+        }
+        document.getElementById("redirectUrl").value = window.location.protocol + "//" + window.location.host + "/login.html";
+    </script>
 </body>
 </html>
