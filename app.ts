@@ -2,20 +2,19 @@
 
 module Sample {
     export class App {
-        private tenant;
         private clientId;
         private redirectUri;
         private identity: Kurve.Identity;
         private graph: Kurve.Graph;
         constructor() {
 
+
             //Setup
-            this.tenant = (<HTMLInputElement>document.getElementById("tenant")).value;
             this.clientId = (<HTMLInputElement>document.getElementById("classID")).value;
             this.redirectUri = (<HTMLInputElement>document.getElementById("redirectUrl")).value;
 
             //Create identity object
-            this.identity = new Kurve.Identity(this.tenant, this.clientId, this.redirectUri);
+            this.identity = new Kurve.Identity(this.clientId, this.redirectUri);
 
 
             //or  this.identity.loginAsync().then(() => {
@@ -24,11 +23,12 @@ module Sample {
                 //////Option 1: Manualy passing the access token
                 ////// or... this.identity.getAccessToken("https://graph.microsoft.com", ((token) => {
                 ////this.identity.getAccessTokenAsync("https://graph.microsoft.com").then(((token) => {
-                ////    this.graph = new Kurve.Graph(this.tenant, { defaultAccessToken: token });
+                ////    this.graph = new Kurve.Graph({ defaultAccessToken: token });
                 ////}));
 
+
                 //Option 2: Automatically linking to the Identity object
-                this.graph = new Kurve.Graph(this.tenant, { identity: this.identity });
+                this.graph = new Kurve.Graph({ identity: this.identity });
 
                 //Update UI
 
@@ -38,9 +38,15 @@ module Sample {
                 document.getElementById("usersWithPaging").addEventListener("click", (() => { this.loadUsersWithPaging(); }));
                 document.getElementById("usersWithCustomODATA").addEventListener("click", (() => { this.loadUsersWithOdataQuery((<HTMLInputElement>document.getElementById('odataquery')).value); }));
                 document.getElementById("meUser").addEventListener("click", (() => { this.loadUserMe(); }));
-                document.getElementById("userMessages").addEventListener("click", (() => {
-                    this.loadUserMessages();
-                }));
+                document.getElementById("userById").addEventListener("click", (() => { this.userById(); }));
+
+                document.getElementById("userMessages").addEventListener("click", (() => {this.loadUserMessages();}));
+                document.getElementById("userGroups").addEventListener("click", (() => {this.loadUserGroups();}));
+                document.getElementById("userManager").addEventListener("click", (() => { this.loadUserManager(); }));
+                document.getElementById("groupsWithPaging").addEventListener("click", (() => { this.loadGroupsWithPaging(); }));
+                document.getElementById("groupById").addEventListener("click", (() => { this.groupById(); }));
+                document.getElementById("userPhoto").addEventListener("click", (() => { this.loadUserPhoto(); }));
+               
                 document.getElementById("loggedIn").addEventListener("click", (() => { this.isLoggedIn(); }));
                 document.getElementById("whoAmI").addEventListener("click", (() => { this.whoAmI(); }));
 
@@ -78,16 +84,21 @@ module Sample {
         //Scenario 4: Load user "me"
         private loadUserMe(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then((user, error) => {
-                if (error) {
-                    document.getElementById("results").innerText = error;
-                    return;
-                }
+            this.graph.meAsync().then((user) => {
                 document.getElementById("results").innerHTML += user.displayName + "</br>";
             });
         }
 
-        //Scenario 5: Load user "me" and then its messages
+        //Scenario 5: Load user by ID
+        private userById(): void {
+            document.getElementById("results").innerHTML = "";
+
+            this.graph.userAsync((<HTMLInputElement>document.getElementById("userId")).value).then((user) => {
+                document.getElementById("results").innerHTML += user.displayName + "</br>";
+            });
+        }
+
+        //Scenario 6: Load user "me" and then its messages
         private loadUserMessages(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then(((user: any) => {
@@ -95,16 +106,86 @@ module Sample {
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
                 user.messages(((messages: any, error: string) => {
                     this.messagesCallback(messages, error);
-                }), "$top=1");
+                }), "$top=2");
+
+                //or...
+                //user.messagesAsync("$top=2").then((messages: any) => {
+                //    this.messagesCallback(messages, null);
+                //});
             }));
         }
 
-        //Scenario 6: Is logged in?
+        //Scenario 7: Load user "me" and then its groups
+        private loadUserGroups(): void {
+            document.getElementById("results").innerHTML = "";
+            this.graph.meAsync().then(((user: any) => {
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Groups:" + "</br>";
+                user.memberOf(((groups: any, error: string) => {
+                    this.groupsCallback(groups, error);
+                }), "$top=5");
+            }));
+        }
+
+        //Scenario 8: Load user "me" and then its manager
+        private loadUserManager(): void {
+            document.getElementById("results").innerHTML = "";
+            this.graph.meAsync().then(((user: any) => {
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Manager:" + "</br>";
+                user.managerAsync().then((manager: any) => {
+                    document.getElementById("results").innerHTML += manager.displayName + "</br>";
+                });
+            }));
+        }
+
+        //Scenario 9: Load groups with paging
+        private loadGroupsWithPaging(): void {
+            document.getElementById("results").innerHTML = "";
+
+            this.graph.groups(((groups, error) => {
+                this.getGroupsCallback(groups, null);
+            }), "$top=5");
+        }
+
+        //Scenario 10: Load group by ID
+        private groupById(): void {
+            document.getElementById("results").innerHTML = "";
+
+            this.graph.groupAsync((<HTMLInputElement>document.getElementById("groupId")).value).then((group) => {
+                document.getElementById("results").innerHTML += group.displayName + "</br>";
+            });
+        }
+
+        //Scenario 11: Load user "me" and then its messages
+        private loadUserPhoto(): void {
+            document.getElementById("results").innerHTML = "";
+            this.graph.meAsync().then((user: any) => {
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Photo:" + "</br>";
+                user.photoValue(((photoValue: any, error: string) => {
+                    if (error)
+                        window.alert(error);
+                    else {
+                        var img = document.createElement("img");
+                        var reader = new FileReader();
+                        reader.onloadend = () => {
+                            img.src = reader.result;
+                        }
+                        reader.readAsDataURL(photoValue);
+
+                        document.getElementById("results").appendChild(img);
+                    }
+                }));
+            });
+        }
+
+        //Scenario 12: Is logged in?
         private isLoggedIn(): void {
             document.getElementById("results").innerText = this.identity.isLoggedIn()?"True":"False";
         }
 
-        //Scenario 7: Who am I?
+        //Scenario 13: Who am I?
         private whoAmI(): void {
             document.getElementById("results").innerText = JSON.stringify(this.identity.getIdToken());
         }
@@ -112,7 +193,6 @@ module Sample {
 
         //--------------------------------Callbacks---------------------------------------------
 
-        //Callback used for scenario 1 to 3
         private getUsersCallback(users: any, error: string): void {
             if (error) {
                 document.getElementById("results").innerText = error;
@@ -130,6 +210,23 @@ module Sample {
             }
         }
 
+        private getGroupsCallback(groups: any, error: string): void {
+            if (error) {
+                document.getElementById("results").innerText = error;
+                return;
+            }
+
+            groups.resultsPage.forEach((item) => {
+                document.getElementById("results").innerHTML += item.displayName + "</br>";
+            });
+
+            if (groups.nextLink) {
+                groups.nextLink().then(((result) => {
+                    this.getGroupsCallback(result, null);
+                }));
+            }
+        }
+
         private messagesCallback(messages: any, error: string): void {
             messages.resultsPage.forEach((item) => {
                 document.getElementById("results").innerHTML += item.subject + "</br>";
@@ -138,6 +235,19 @@ module Sample {
             if (messages.nextLink) {
                 messages.nextLink(((messages, error) => {
                     this.messagesCallback(messages, error);
+                }));
+            }
+
+        }
+
+        private groupsCallback(groups: any, error: string): void {
+            groups.resultsPage.forEach((item) => {
+                document.getElementById("results").innerHTML += item.displayName + "</br>";
+            });
+
+            if (groups.nextLink) {
+                groups.nextLink(((groups, error) => {
+                    this.groupsCallback(groups, error);
                 }));
             }
 

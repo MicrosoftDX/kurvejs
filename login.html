@@ -75,8 +75,7 @@
                 }
                 else {
                     //we don't have the id token, so let's go do the login
-                    window.location.href = "https://login.windows.net/" + params["tenantId"][0] +
-                    "/oauth2/authorize?response_type=id_token&client_id=" + params["clientId"][0] +
+                    window.location.href = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token&client_id=" + params["clientId"][0] +
                     "&redirect_uri=" + params["redirectUri"][0] +
                     "&state=" + params["state"][0] +
                     "&nonce=" + params["nonce"][0];
@@ -96,8 +95,7 @@
                     }, window.parent.location.href);
                 } else {
                     //Don't have the token yet
-                    window.location.href = "https://login.windows.net/" + params["tenantId"][0] +
-                    "/oauth2/authorize?response_type=token&client_id=" + params["clientId"][0] +
+                    window.location.href = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=token&client_id=" + params["clientId"][0] +
                     "&resource=" + params["resource"][0] +
                     "&redirect_uri=" + params["redirectUri"][0] +
                     "&prompt=none" +

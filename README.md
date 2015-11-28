@@ -9,40 +9,34 @@ Kurve<nolink>.JS is an unofficial, open source JavaScript / TypeScript library t
 
 How does it work?
 
-Reference the JavaScript files from your HTML page, with the Promises JavaScript library:
+Reference the JavaScript file from your HTML page:
 
 ```html
-    <script src="promises.js"></script>
-    <script src="KurveIdentity.js"></script>
-    <script src="KurveGraph.js"></script>
+    <script src="Kurve.min.js"></script>
 ```
 
-Alternatively you can just reference the scripts from our CDN:
+Alternatively you can just reference the script from our CDN:
 
 ```html
-    <script src="https://kurvejs.blob.core.windows.net/dist/promises-0.1.0.js"></script>
-    <script src="https://kurvejs.blob.core.windows.net/dist/KurveIdentity-0.1.0.js"></script>
-    <script src="https://kurvejs.blob.core.windows.net/dist/KurveGraph-0.1.0.js"></script>
+    <script src="https://kurvejs.blob.core.windows.net/dist/Kurve.min-0.2.0.js"></script>
 ```
 
 	
-The identity and graph library can work independently or together. For example, you may have authenticated and retrieved an access token from somewhere else and only give it to the graph library, or you can use the identity library for authentication.
+The identity and graph classes can work independently or together. For example, you may have authenticated and retrieved an access token from somewhere else and only give it to the graph library, or you can use the identity library for authentication.
 
 ```javascript
 
 //Option 1: We already have an access token obtained from another library: 
-var graph = new Kurve.Graph("your_tenant_id", { defaultAccessToken: token });
+var graph = new Kurve.Graph({ defaultAccessToken: token });
 
 
 //Option 2: Automatically linking to the Identity object
 var identity = new Kurve.Identity(
-		"your_tenant_id", 
         "your_client_id", 
         "your_redirect_url");
 
 var identity.login(function (error) {
-	var graph = new Kurve.Graph("your_tenant_id",
-    				{ identity: identity });
+	var graph = new Kurve.Graph({ identity: identity });
                 
 } 
 ```
@@ -80,7 +74,6 @@ Just like in the graph example, with identity it is also possible to choose call
 
 ```javascript
 var identity = new Kurve.Identity(
-        "your_tenant", 
         "your_clientid", 
         "your_redirect_url");
 
@@ -100,7 +93,6 @@ If you prefer the Promises syntax, you can also do it that way:
 
 ```javascript
 var identity = new Kurve.Identity(
-        "your_tenant", 
         "your_clientid", 
         "your_redirect_url");
 
@@ -131,3 +123,11 @@ You are free to send us your feedback at this Github repo, send pull requests, e
  * Which files do I need to run this? 
 
 At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optionally KurveIdentity.<nolink>js + login.html. You may use the TypeScript libraries and reuse some of the sample app code (index.html and app.<nolink>js) for reference.
+
+## Release notes:
+
+#0.2.0:
+ * Minification and unification of the library into a single file
+ * No need for tenant ID anymore
+ * Improved error handling, all error returns are now coming into the Kurve.Error class format
+ * Additional graph methods, like reading groups, user profile's photos, user manager and direct reports

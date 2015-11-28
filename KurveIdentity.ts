@@ -1,24 +1,29 @@
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 module Kurve {
+    export class Error {
+        public status: number;
+        public statusText: string;
+        public text: string;
+        public other: any;
+    }
+
      export class Identity {
         public authContext: any = null;
         public config: any = null;
         public isCallback: boolean = false;
         public clientId: string;
-        public tenantId: string;
         private req: XMLHttpRequest;
         private state: string;
         private nonce: string;
         private idToken: any;
-        private loginCallback: (error: string) => void;
-        private getTokenCallback: (token: string, error: string) => void;
+        private loginCallback: (error: Error) => void;
+        private getTokenCallback: (token: string, error: Error) => void;
         private redirectUri: string;
         private tokenCache: any;
         private logonUser: any;
         private refreshTimer: any;
     
-        constructor(tenantId = "", clientId = "", redirectUri = "") {
-            this.tenantId = tenantId;
+        constructor(clientId = "", redirectUri = "") {
             this.clientId = clientId;
             this.redirectUri = redirectUri;
             this.req = new XMLHttpRequest();
@@ -34,7 +39,9 @@ module Kurve {
                     else {
                         //check for state
                         if (this.state !== event.data.state) {
-                            throw "Invalid state";
+                            var error = new Error();
+                            error.statusText = "Invalid state";
+                            this.loginCallback(error);
                         } else {
                             this.decodeIdToken(event.data.token);
                             this.loginCallback(null);
@@ -50,7 +57,9 @@ module Kurve {
                         iframe.parentNode.removeChild(iframe);
 
                         if (event.data.state !== this.state) {
-                            throw "Invalid state";
+                            var error = new Error();
+                            error.statusText = "Invalid state";
+                            this.getTokenCallback(null, error);
                         }
                         else {
                             this.getTokenCallback(token, null);
@@ -118,7 +127,7 @@ module Kurve {
             return d.promise;
         }
 
-        public getAccessToken(resource: string, callback: (token: string, error: string) => void): void {
+        public getAccessToken(resource: string, callback: (token: string, error: Error) => void): void {
             //Check for cache and see if we have a valid token
             var cachedToken = this.tokenCache[resource];
             if (cachedToken) {
@@ -131,7 +140,7 @@ module Kurve {
             //If we got this far, we need to go get this token
 
             //Need to create the iFrame to invoke the acquire token
-            this.getTokenCallback = ((token: string, error: string) => {
+            this.getTokenCallback = ((token: string, error: Error) => {
                 if (error) {
                     callback(null, error);
                 }
@@ -148,8 +157,7 @@ module Kurve {
             var iframe = document.createElement('iframe');
             iframe.style.display = "none";
             iframe.id = "tokenIFrame";
-            iframe.src = "./login.html?tenantId=" + encodeURIComponent(this.tenantId) +
-            "&clientId=" + encodeURIComponent(this.clientId) +
+            iframe.src = "./login.html?clientId=" + encodeURIComponent(this.clientId) +
             "&resource=" + encodeURIComponent(resource) +
             "&redirectUri=" + encodeURIComponent(this.redirectUri) +
             "&state=" + encodeURIComponent(this.state) +
@@ -170,19 +178,18 @@ module Kurve {
             return d.promise;
         }
 
-        public login(callback: (error: string) => void): void {
+        public login(callback: (error: Error) => void): void {
             this.loginCallback = callback;
             this.state = this.generateNonce();
             this.nonce = this.generateNonce();
-            window.open("./login.html?tenantId=" + encodeURIComponent(this.tenantId) +
-                "&clientId=" + encodeURIComponent(this.clientId) +
+            window.open("./login.html?clientId=" + encodeURIComponent(this.clientId) +
                 "&redirectUri=" + encodeURIComponent(this.redirectUri) +
                 "&state=" + encodeURIComponent(this.state) +
                 "&nonce=" + encodeURIComponent(this.nonce), "_blank");
         }
 
         public logOut(): void {
-            var url = "https://login.windows.net/" + this.tenantId + "/oauth2/logout?post_logout_redirect_uri=" + encodeURI(window.location.href);
+            var url = "https://login.microsoftonline.com/common/oauth2/logout?post_logout_redirect_uri=" + encodeURI(window.location.href);
             window.location.href = url;
         }
 

@@ -5,20 +5,19 @@ var Sample;
         function App() {
             var _this = this;
             //Setup
-            this.tenant = document.getElementById("tenant").value;
             this.clientId = document.getElementById("classID").value;
             this.redirectUri = document.getElementById("redirectUrl").value;
             //Create identity object
-            this.identity = new Kurve.Identity(this.tenant, this.clientId, this.redirectUri);
+            this.identity = new Kurve.Identity(this.clientId, this.redirectUri);
             //or  this.identity.loginAsync().then(() => {
             this.identity.login(function () {
                 //////Option 1: Manualy passing the access token
                 ////// or... this.identity.getAccessToken("https://graph.microsoft.com", ((token) => {
                 ////this.identity.getAccessTokenAsync("https://graph.microsoft.com").then(((token) => {
-                ////    this.graph = new Kurve.Graph(this.tenant, { defaultAccessToken: token });
+                ////    this.graph = new Kurve.Graph({ defaultAccessToken: token });
                 ////}));
                 //Option 2: Automatically linking to the Identity object
-                _this.graph = new Kurve.Graph(_this.tenant, { identity: _this.identity });
+                _this.graph = new Kurve.Graph({ identity: _this.identity });
                 //Update UI
                 document.getElementById("initDiv").style.display = "none";
                 document.getElementById("scenarios").style.display = "";
@@ -26,9 +25,13 @@ var Sample;
                 document.getElementById("usersWithPaging").addEventListener("click", (function () { _this.loadUsersWithPaging(); }));
                 document.getElementById("usersWithCustomODATA").addEventListener("click", (function () { _this.loadUsersWithOdataQuery(document.getElementById('odataquery').value); }));
                 document.getElementById("meUser").addEventListener("click", (function () { _this.loadUserMe(); }));
-                document.getElementById("userMessages").addEventListener("click", (function () {
-                    _this.loadUserMessages();
-                }));
+                document.getElementById("userById").addEventListener("click", (function () { _this.userById(); }));
+                document.getElementById("userMessages").addEventListener("click", (function () { _this.loadUserMessages(); }));
+                document.getElementById("userGroups").addEventListener("click", (function () { _this.loadUserGroups(); }));
+                document.getElementById("userManager").addEventListener("click", (function () { _this.loadUserManager(); }));
+                document.getElementById("groupsWithPaging").addEventListener("click", (function () { _this.loadGroupsWithPaging(); }));
+                document.getElementById("groupById").addEventListener("click", (function () { _this.groupById(); }));
+                document.getElementById("userPhoto").addEventListener("click", (function () { _this.loadUserPhoto(); }));
                 document.getElementById("loggedIn").addEventListener("click", (function () { _this.isLoggedIn(); }));
                 document.getElementById("whoAmI").addEventListener("click", (function () { _this.whoAmI(); }));
             });
@@ -58,15 +61,18 @@ var Sample;
         //Scenario 4: Load user "me"
         App.prototype.loadUserMe = function () {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then(function (user, error) {
-                if (error) {
-                    document.getElementById("results").innerText = error;
-                    return;
-                }
+            this.graph.meAsync().then(function (user) {
                 document.getElementById("results").innerHTML += user.displayName + "</br>";
             });
         };
-        //Scenario 5: Load user "me" and then its messages
+        //Scenario 5: Load user by ID
+        App.prototype.userById = function () {
+            document.getElementById("results").innerHTML = "";
+            this.graph.userAsync(document.getElementById("userId").value).then(function (user) {
+                document.getElementById("results").innerHTML += user.displayName + "</br>";
+            });
+        };
+        //Scenario 6: Load user "me" and then its messages
         App.prototype.loadUserMessages = function () {
             var _this = this;
             document.getElementById("results").innerHTML = "";
@@ -75,19 +81,81 @@ var Sample;
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
                 user.messages((function (messages, error) {
                     _this.messagesCallback(messages, error);
-                }), "$top=1");
+                }), "$top=2");
+                //or...
+                //user.messagesAsync("$top=2").then((messages: any) => {
+                //    this.messagesCallback(messages, null);
+                //});
             }));
         };
-        //Scenario 6: Is logged in?
+        //Scenario 7: Load user "me" and then its groups
+        App.prototype.loadUserGroups = function () {
+            var _this = this;
+            document.getElementById("results").innerHTML = "";
+            this.graph.meAsync().then((function (user) {
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Groups:" + "</br>";
+                user.memberOf((function (groups, error) {
+                    _this.groupsCallback(groups, error);
+                }), "$top=5");
+            }));
+        };
+        //Scenario 8: Load user "me" and then its manager
+        App.prototype.loadUserManager = function () {
+            document.getElementById("results").innerHTML = "";
+            this.graph.meAsync().then((function (user) {
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Manager:" + "</br>";
+                user.managerAsync().then(function (manager) {
+                    document.getElementById("results").innerHTML += manager.displayName + "</br>";
+                });
+            }));
+        };
+        //Scenario 9: Load groups with paging
+        App.prototype.loadGroupsWithPaging = function () {
+            var _this = this;
+            document.getElementById("results").innerHTML = "";
+            this.graph.groups((function (groups, error) {
+                _this.getGroupsCallback(groups, null);
+            }), "$top=5");
+        };
+        //Scenario 10: Load group by ID
+        App.prototype.groupById = function () {
+            document.getElementById("results").innerHTML = "";
+            this.graph.groupAsync(document.getElementById("groupId").value).then(function (group) {
+                document.getElementById("results").innerHTML += group.displayName + "</br>";
+            });
+        };
+        //Scenario 11: Load user "me" and then its messages
+        App.prototype.loadUserPhoto = function () {
+            document.getElementById("results").innerHTML = "";
+            this.graph.meAsync().then(function (user) {
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Photo:" + "</br>";
+                user.photoValue((function (photoValue, error) {
+                    if (error)
+                        window.alert(error);
+                    else {
+                        var img = document.createElement("img");
+                        var reader = new FileReader();
+                        reader.onloadend = function () {
+                            img.src = reader.result;
+                        };
+                        reader.readAsDataURL(photoValue);
+                        document.getElementById("results").appendChild(img);
+                    }
+                }));
+            });
+        };
+        //Scenario 12: Is logged in?
         App.prototype.isLoggedIn = function () {
             document.getElementById("results").innerText = this.identity.isLoggedIn() ? "True" : "False";
         };
-        //Scenario 7: Who am I?
+        //Scenario 13: Who am I?
         App.prototype.whoAmI = function () {
             document.getElementById("results").innerText = JSON.stringify(this.identity.getIdToken());
         };
         //--------------------------------Callbacks---------------------------------------------
-        //Callback used for scenario 1 to 3
         App.prototype.getUsersCallback = function (users, error) {
             var _this = this;
             if (error) {
@@ -103,6 +171,21 @@ var Sample;
                 }));
             }
         };
+        App.prototype.getGroupsCallback = function (groups, error) {
+            var _this = this;
+            if (error) {
+                document.getElementById("results").innerText = error;
+                return;
+            }
+            groups.resultsPage.forEach(function (item) {
+                document.getElementById("results").innerHTML += item.displayName + "</br>";
+            });
+            if (groups.nextLink) {
+                groups.nextLink().then((function (result) {
+                    _this.getGroupsCallback(result, null);
+                }));
+            }
+        };
         App.prototype.messagesCallback = function (messages, error) {
             var _this = this;
             messages.resultsPage.forEach(function (item) {
@@ -111,6 +194,17 @@ var Sample;
             if (messages.nextLink) {
                 messages.nextLink((function (messages, error) {
                     _this.messagesCallback(messages, error);
+                }));
+            }
+        };
+        App.prototype.groupsCallback = function (groups, error) {
+            var _this = this;
+            groups.resultsPage.forEach(function (item) {
+                document.getElementById("results").innerHTML += item.displayName + "</br>";
+            });
+            if (groups.nextLink) {
+                groups.nextLink((function (groups, error) {
+                    _this.groupsCallback(groups, error);
                 }));
             }
         };

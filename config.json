@@ -1,0 +1,24 @@
+{
+  "build": {
+    "filename": "kurve.js",
+    "minFilename": "kurve.min.js",
+    "declarationFilename": "kurve.min.d.ts",
+    "outputDirectory": "./dist/",
+    "srcOutputDirectory": "./dist/"
+  },
+  "core": {
+    "typescript": [
+      "./promises.ts",
+      "./KurveIdentity.ts",
+      "./KurveGraph.ts",
+	  "./promises.d.ts",
+      "./KurveIdentity.d.ts",
+      "./KurveGraph.d.ts"
+    ],
+    "files": [
+      "./dist/promises.js",
+      "./dist/KurveIdentity.js",
+      "./dist/KurveGraph.js"
+    ]
+  }
+}

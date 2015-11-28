@@ -6,23 +6,19 @@ module Kurve {
         private state: string = null;
         private nonce: string = null;
         private accessToken: string = null;
-        private tenantId: string = null;
         private KurveIdentity: Identity = null;
         private defaultResourceID: string = "https://graph.microsoft.com";
-        private baseUrl: string = "https://graph.microsoft.com/beta/";
+        private baseUrl: string = "https://graph.microsoft.com/v1.0/";
 
-        constructor(tenantId: string, identityInfo: { identity: Identity });
-        constructor(tenantId: string, identityInfo: { defaultAccessToken: string });
-        constructor(tenantId: string, identityInfo: any) {
-            this.tenantId = tenantId;
+        constructor(identityInfo: { identity: Identity });
+        constructor(identityInfo: { defaultAccessToken: string });
+        constructor(identityInfo: any) {
             if (identityInfo.defaultAccessToken) {
                 this.accessToken = identityInfo.defaultAccessToken;
             } else {
                 this.KurveIdentity = identityInfo.identity;
             }
         }
-
-        //Messages
       
         //Users
     
@@ -38,11 +34,28 @@ module Kurve {
             return d.promise;
         }
 
-        public me(callback: (user: any, error: string) => void, odataQuery?: string): void {
+        public me(callback: (user: any, error: Error) => void, odataQuery?: string): void {
             var urlString: string = this.buildMeUrl() + "/";
             if (odataQuery) {
                 urlString += "?" + odataQuery;
             }
+            this.getUser(urlString, callback);
+        }
+
+        public userAsync(userId: string): Promise {
+            var d = new Deferred();
+            this.user(userId, (users, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(users);
+                }
+            });
+            return d.promise;
+        }
+
+        public user(userId: string, callback: (users: any, error: Error) => void): void {
+            var urlString: string = this.buildUsersUrl() + "/" + userId;
             this.getUser(urlString, callback);
         }
 
@@ -58,7 +71,7 @@ module Kurve {
             return d.promise;
         }
 
-        public users(callback: (users: any, error: string) => void, odataQuery?: string): void {
+        public users(callback: (users: any, error: Error) => void, odataQuery?: string): void {
             var urlString: string = this.buildUsersUrl() + "/";
             if (odataQuery) {
                 urlString += "?" + odataQuery;
@@ -66,38 +79,107 @@ module Kurve {
             this.getUsers(urlString, callback);
         }
 
-        //http verbs
+        //Groups
 
-        public getAsync(url: string): Promise {
+        public groupAsync(groupId: string): Promise {
             var d = new Deferred();
-            this.get(url, (response) => {
-                d.resolve(response);
+            this.group(groupId, (group, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(group);
+                }
             });
             return d.promise;
         }
 
-        public get(url: string, callback: (response:string)=>void): void {
-            var xhr = new XMLHttpRequest();
+        public group(groupId: string, callback: (group: any, error: Error) => void): void {
+            var urlString: string = this.buildGroupsUrl() + "/" + groupId;
+            this.getGroup(urlString, callback);
+        }
 
+        public groups(callback: (groups: any, error: Error) => void, odataQuery?: string): void {
+            var urlString: string = this.buildGroupsUrl() + "/";
+            if (odataQuery) {
+                urlString += "?" + odataQuery;
+            }
+            this.getGroups(urlString, callback);
+        }
+
+        public groupsAsync(odataQuery?: string): Promise {
+            var d = new Deferred();
+            this.groups((groups, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(groups);
+                }
+            }, odataQuery);
+            return d.promise;
+        }
+        //http verbs
+
+        public getAsync(url: string): Promise {
+            var d = new Deferred();
+            this.get(url, (response, error) => {
+                if (!error)
+                    d.resolve(response);
+                else
+                    d.reject(error);
+            });
+            return d.promise;
+        }
+
+        public get(url: string, callback: (response: string, error: Error) => void, responseType?: string): void {
+            var xhr = new XMLHttpRequest();
+            if (responseType)
+                xhr.responseType = responseType;
             xhr.onreadystatechange = (() => {
-                if (xhr.readyState === 4) {
-                    callback(xhr.responseText);
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    if (!responseType)
+                        callback(xhr.responseText, null);
+                    else
+                        callback(xhr.response, null);
+                } else if (xhr.readyState === 4 && xhr.status !== 200) {
+                    callback(null, this.generateError(xhr));
                 }
             });
 
             xhr.open("GET", url);
-            this.addAccessTokenAndSend(xhr);
+            this.addAccessTokenAndSend(xhr, (addTokenError: Error) => {
+                if (addTokenError) {
+                    callback(null, addTokenError);
+                }
+            });
         }
 
+        private generateError(xhr: XMLHttpRequest): Error {
+            var response = new Error();
+            response.status = xhr.status;
+            response.statusText = xhr.statusText;
+            if (xhr.responseType === '' || xhr.responseType === 'text')
+                response.text = xhr.responseText;
+            else
+                response.other = xhr.response;
+            return response;
+
+        }
 
         //Private methods
 
-        private getUsers(urlString, callback: (users: any, error: string) => void): void {
-            this.get(urlString, ((result: string) => {
+        private getUsers(urlString, callback: (users: any, error: Error) => void): void {
+            this.get(urlString, ((result: string, errorGet: Error) => {
+
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
 
                 var usersODATA = JSON.parse(result);
                 if (usersODATA.error) {
-                    callback(null, JSON.stringify(usersODATA.error));
+                    var errorODATA = new Error();
+                    errorODATA.other = usersODATA.error;
+                    callback(null, errorODATA);
                     return;
                 }
 
@@ -115,7 +197,7 @@ module Kurve {
                 var nextLink = usersODATA['@odata.nextLink'];
 
                 if (nextLink) {
-                    (<any>users).nextLink = ((callback?: (result: string, error: string) => void) => {
+                    (<any>users).nextLink = ((callback?: (result: string, error: Error) => void) => {
                         var d = new Deferred();
                         this.getUsers(nextLink, ((result, error) => {
                             if (callback)
@@ -133,12 +215,17 @@ module Kurve {
             }));
         }
 
-        private getUser(urlString, callback: (user: any, error: string) => void): void {
-            this.get(urlString, (result: string) => {
-
+        private getUser(urlString, callback: (user: any, error: Error) => void): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
                 var userODATA = JSON.parse(result);
                 if (userODATA.error) {
-                    callback(null, JSON.stringify(userODATA.error));
+                    var errorODATA = new Error();
+                    errorODATA.other = userODATA.error;
+                    callback(null, errorODATA);
                     return;
                 }
 
@@ -149,43 +236,160 @@ module Kurve {
 
         }
 
-        private addAccessTokenAndSend(xhr: XMLHttpRequest): void {
+        private addAccessTokenAndSend(xhr: XMLHttpRequest,callback:(error:Error)=>void):void {
             if (this.accessToken) {
                 //Using default access token
                 xhr.setRequestHeader('Authorization', 'Bearer ' + this.accessToken);
                 xhr.send();
             } else {
                 //Using the integrated Identity object
-                this.KurveIdentity.getAccessToken(this.defaultResourceID, ((token: string, error: string) => {
+                this.KurveIdentity.getAccessToken(this.defaultResourceID, ((token: string, error: Error) => {
                     //cache the token
+                    
                     if (error)
-                        throw error;
-                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                    xhr.send();
+                        callback(error);
+                    else {
+                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                        xhr.send();
+                        callback(null);
+                    }
                 }));
             }
         }
 
         private decorateUserObject(user: any): void {
-            user.messages = ((callback: (messages: any, error: string) => void, odataQuery?: string) => {
+
+            user.messages = ((callback: (messages: any, error: Error) => void, odataQuery?: string) => {
                 var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/messages";
                 if (odataQuery) urlString += "?" + odataQuery;
-                this.getMessages(urlString, callback, odataQuery);
+
+                this.getMessages(urlString, (result, error) => {
+                    callback(result, error);
+                }, odataQuery);
             });
+
+
+            user.messagesAsync = ((odataQuery?: string) => {
+                var d = new Deferred();
+                user.messages((result, error) => {
+                    if (error) {
+                        d.reject(error);
+                    } else {
+                        d.resolve(result);
+                    }
+                }, odataQuery);
+                return d.promise;
+            });
+
+            user.memberOf = ((callback: (groups: any, error: Error) => void, odataQuery?: string) => {
+                var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/memberOf";
+                if (odataQuery) urlString += "?" + odataQuery;
+                this.getGroups(urlString, callback, odataQuery);
+            });
+
+            user.memberOfAsync = ((odataQuery?: string) => {
+                var d = new Deferred();
+                user.memberOf((result, error) => {
+                    if (error) {
+                        d.reject(error);
+                    } else {
+                        d.resolve(result);
+                    }
+                }, odataQuery);
+                return d.promise;
+            });
+
+            user.manager = ((callback: (manager: any, error: Error) => void) => {
+                var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/manager";
+                this.getUser(urlString, callback);
+            });
+
+            user.managerAsync = ((odataQuery?: string) => {
+                var d = new Deferred();
+                user.manager((result, error) => {
+                    if (error) {
+                        d.reject(error);
+                    } else {
+                        d.resolve(result);
+                    }
+                }, odataQuery);
+                return d.promise;
+            });
+
+            user.directReports = ((callback: (users: any, error: Error) => void) => {
+                var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/directReports";
+                this.getUsers(urlString, callback);
+            });
+
+            user.directReportsAsync = ((odataQuery?: string) => {
+                var d = new Deferred();
+                user.directReports((result, error) => {
+                    if (error) {
+                        d.reject(error);
+                    } else {
+                        d.resolve(result);
+                    }
+                }, odataQuery);
+                return d.promise;
+            });
+
+            user.photo = ((callback: (photo: any, error: Error) => void) => {
+                var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/photo";
+                this.getPhoto(urlString, callback);
+            });
+            user.photoAsync = (() => {
+                var d = new Deferred();
+                user.photo((result, error) => {
+                    if (error) {
+                        d.reject(error);
+                    } else {
+                        d.resolve(result);
+                    }
+                });
+                return d.promise;
+            });
+            user.photoValue = ((callback: (photo: any, error: Error) => void) => {
+                var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/photo/$value";
+                this.getPhotoValue(urlString, callback);
+            });
+            user.photoValueAsync = (() => {
+                var d = new Deferred();
+                user.photoValue((result, error) => {
+                    if (error) {
+                        d.reject(error);
+                    } else {
+                        d.resolve(result);
+                    }
+                });
+                return d.promise;
+            });
+
         }
 
         private decorateMessageObject(message: any): void {
         }
 
-        private getMessages(urlString: string, callback: (messages: any, error: string) => void, odataQuery?: string): void {
+        private decorateGroupObject(message: any): void {
+        }
+
+        private decoratePhotoObject(message: any): void {
+        }
+
+        private getMessages(urlString: string, callback: (messages: any, error: Error) => void, odataQuery?: string): void {
 
             var url = urlString;
             if (odataQuery) urlString += "?" + odataQuery;
-            this.get(url, ((result: string) => {
+            this.get(url, ((result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
 
                 var messagesODATA = JSON.parse(result);
                 if (messagesODATA.error) {
-                    callback(null, JSON.stringify(messagesODATA.error));
+                    var errorODATA = new Error();
+                    errorODATA.other = messagesODATA.error;
+                    callback(null, errorODATA);
                     return;
                 }
 
@@ -201,7 +405,7 @@ module Kurve {
                 var nextLink = messagesODATA['@odata.nextLink'];
                 //implement nextLink
                 if (nextLink) {
-                    (<any>messages).nextLink = ((callback?: (result: string, error: string) => void) => {
+                    (<any>messages).nextLink = ((callback?: (result: string, error: Error) => void) => {
                         var d = new Deferred();
                         this.getMessages(nextLink, ((result, error) => {
                             if (callback)
@@ -217,13 +421,114 @@ module Kurve {
 
                 callback(messages, null);
             }));
-        }       
+        }
 
+        private getGroups(urlString: string, callback: (groups: any, error: Error) => void, odataQuery?: string): void {
+
+            var url = urlString;
+            if (odataQuery) urlString += "?" + odataQuery;
+            this.get(url, ((result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+                var groupsODATA = JSON.parse(result);
+                if (groupsODATA.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = groupsODATA.error;
+                    callback(null, errorODATA);
+                    return;
+                }
+
+                var resultsArray = !groupsODATA.value ? [groupsODATA] : groupsODATA.value;
+
+                for (var i: number = 0; i < resultsArray.length; i++) {
+                    this.decorateGroupObject(resultsArray[i]);
+                }
+
+                var groups = {
+                    resultsPage: resultsArray
+                };
+                var nextLink = groupsODATA['@odata.nextLink'];
+
+                //implement nextLink
+                if (nextLink) {
+                    (<any>groups).nextLink = ((callback?: (result: string, error: Error) => void) => {
+                        var d = new Deferred();
+                        this.getGroups(nextLink, ((result, error) => {
+                            if (callback)
+                                callback(result, error);
+                            else if (error)
+                                d.reject(error);
+                            else
+                                d.resolve(result);
+                        }));
+                        return d.promise;
+                    });
+                }
+
+                callback(groups, null);
+            }));
+        }
+
+        private getGroup(urlString, callback: (group: any, error: Error) => void): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+                var ODATA = JSON.parse(result);
+                if (ODATA.error) {
+                    var ODATAError = new Error();
+                    ODATAError.other = ODATA.error;
+                    callback(null, ODATAError);
+                    return;
+                }
+
+                this.decorateGroupObject(ODATA);
+
+                callback(ODATA, null);
+            });
+
+        }
+
+        private getPhoto(urlString, callback: (photo: any, error: Error) => void): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+                var ODATA = JSON.parse(result);
+                if (ODATA.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = ODATA.error;
+                    callback(null, errorODATA);
+                    return;
+                }
+
+                this.decoratePhotoObject(ODATA);
+
+                callback(ODATA, null);
+            });
+        }
+
+        private getPhotoValue(urlString, callback: (photo: any, error: Error) => void): void {
+            this.get(urlString, (result: any, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+                callback(result, null);
+            },"blob");
+        }
         private buildMeUrl(): string {
             return this.baseUrl + "me";
         }
         private buildUsersUrl(): string {
-            return this.baseUrl + this.tenantId + "/users";
+            return this.baseUrl + "/users";
+        }
+        private buildGroupsUrl(): string {
+            return this.baseUrl + "/groups";
         }
     }
 }
