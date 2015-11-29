@@ -17,7 +17,7 @@ Reference the JavaScript file from your HTML page:
 Alternatively you can just reference the script from our CDN:
 
 ```html
-    <script src="https://kurvejs.blob.core.windows.net/dist/Kurve.min-0.2.0.js"></script>
+    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.2.0.js"></script>
 ```
 
 	
