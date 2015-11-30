@@ -10,7 +10,7 @@
 </head>
 <body>
     <div id="initDiv">
-        Your App Class ID:<br/> <input type="text" id="classID" value="" /><br />
+        Your App Class ID:<br/> <input type="text" id="classID" value="" /><button id="buttonTestClass" onclick="setClassID();"> Use a Test Class ID </button><br />
         Redirect URL: <br/> <input type="text" id="redirectUrl" value="" /><br /><br />
 
         <button id="btnInit" onclick="init();">Initialize</button>
@@ -42,7 +42,12 @@
         function init() {
             app = new Sample.App();
         }
-        document.getElementById("redirectUrl").value = window.location.protocol + "//" + window.location.host + "/login.html";
+        function setClassID() {
+            document.getElementById("classID").value = "b8dd3290-662a-4f91-92b9-3e70fbabe04e";
+        }
+        document.getElementById("redirectUrl").value = window.location.protocol + "//" + window.location.host
+            + window.location.pathname.substr(0, window.location.pathname.lastIndexOf("/") + 1) 
+            + "login.html";
     </script>
 </body>
 </html>

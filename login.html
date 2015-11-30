@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title></title>
+    <title>Active Directory Helper</title>
 	<meta charset="utf-8" />
     <meta http-equiv="cache-control" content="max-age=0" />
     <meta http-equiv="cache-control" content="no-cache" />
@@ -10,6 +10,8 @@
     <meta http-equiv="pragma" content="no-cache" /> 
 </head>
 <body>
+    <div id="message"></div>
+
     <script type="text/javascript">
 
         function addEvent(element, eventName, fn) {
@@ -105,12 +107,10 @@
                 }
             }
             else {
-                //this is not the login popup neither the iframe,
-                //so we're in the main SPA page and don't want to mess with it
+                document.getElementById("message").innerText ="Contact the application developer. Error: login page should only be used within a iframe or popup.";
             }
         });
     </script>
-
 
 </body>
 </html>
