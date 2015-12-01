@@ -1,7 +1,7 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title></title>
+    <title>Test Kurve</title>
     <meta charset="utf-8" />
 
     <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.2.0.js"></script>
@@ -16,23 +16,34 @@
         <button id="btnInit" onclick="init();">Initialize</button>
     </div>
   <div id="scenarios" style="display:none">
-      Tests:<br />
+      Login Status and Tokens<br />
       <button id="logoutBtn">logout</button><br />
-      <button id="usersWithPaging">Load users with paging</button><br />
-      <button id="usersWithCustomODATA">Load users with custom odata query</button> query:<input type="text" id="odataquery" /><br />
-      <button id="meUser">Load user "me"</button> <br />
-      <button id="userById">Load user by Id</button> ID:<input type="text" id="userId" /> <br />
-      <button id="userMessages">Load a user and then messages</button> <br />
-      <button id="userGroups">Load a user and then groups</button> <br />
-      <button id="userManager">Load a user and then the user's manager</button> <br />
-      <button id="groupsWithPaging">Load groups with paging</button><br />
-      <button id="groupById">Load group by Id</button> ID:<input type="text" id="groupId" /> <br />
-      <button id="userPhoto">Load a user and then its photo</button> <br />
       <button id="loggedIn">Is user logged in?</button> <br />
-      <button id="whoAmI">WhoAmI?</button> <br />
+      <button id="whoAmI">Show identity token</button> <br />
+      
+      <br/>
+      "Me" Information <br/>
+      <button id="meUser">Load user "me"</button> <br />
+      <button id="userPhoto">Load a user and then its photo</button> <br />
+      <button id="userCalendar">Load a user and then calendar</button> <br />
+      <button id="userContacts">Load a user and then contacts</button> <br />
+      <button id="userGroups">Load a user and then groups</button> <br />
+      <button id="userMessages">Load a user and then messages</button> <br />
+      <button id="userManager">Load a user and then the user's manager</button> <br />
+      <br/>
+      
+      <br/>
+      General Directory Information <br/>
+      <button id="userById">Load user by Id</button> ID:<input type="text" id="userId" /> <br />
+      <button id="groupById">Load group by Id</button> ID:<input type="text" id="groupId" /> <br />
+      <button id="usersWithCustomODATA">Load users selected with custom odata query</button> query:<input type="text" id="odataquery" /><br />
+      <button id="usersWithPaging">Load all users with paging</button><br />
+      <button id="groupsWithPaging">Load all groups with paging</button><br />
 
-      <div id="results">
-
+      <br/>
+      Results <br/> 
+      <div id="results" style="padding:1em; border-style:solid; border-width:thin">
+          
       </div>
 
   </div>

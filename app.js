@@ -22,41 +22,34 @@ var Sample;
                 document.getElementById("initDiv").style.display = "none";
                 document.getElementById("scenarios").style.display = "";
                 document.getElementById("logoutBtn").addEventListener("click", (function () { _this.logout(); }));
-                document.getElementById("usersWithPaging").addEventListener("click", (function () { _this.loadUsersWithPaging(); }));
-                document.getElementById("usersWithCustomODATA").addEventListener("click", (function () { _this.loadUsersWithOdataQuery(document.getElementById('odataquery').value); }));
-                document.getElementById("meUser").addEventListener("click", (function () { _this.loadUserMe(); }));
-                document.getElementById("userById").addEventListener("click", (function () { _this.userById(); }));
-                document.getElementById("userMessages").addEventListener("click", (function () { _this.loadUserMessages(); }));
-                document.getElementById("userGroups").addEventListener("click", (function () { _this.loadUserGroups(); }));
-                document.getElementById("userManager").addEventListener("click", (function () { _this.loadUserManager(); }));
-                document.getElementById("groupsWithPaging").addEventListener("click", (function () { _this.loadGroupsWithPaging(); }));
-                document.getElementById("groupById").addEventListener("click", (function () { _this.groupById(); }));
-                document.getElementById("userPhoto").addEventListener("click", (function () { _this.loadUserPhoto(); }));
+                // Login status
                 document.getElementById("loggedIn").addEventListener("click", (function () { _this.isLoggedIn(); }));
                 document.getElementById("whoAmI").addEventListener("click", (function () { _this.whoAmI(); }));
+                // Me information
+                document.getElementById("meUser").addEventListener("click", (function () { _this.loadUserMe(); }));
+                document.getElementById("userPhoto").addEventListener("click", (function () { _this.loadUserPhoto(); }));
+                document.getElementById("userMessages").addEventListener("click", (function () { _this.loadUserMessages(); }));
+                document.getElementById("userCalendar").addEventListener("click", (function () { _this.loadUserCalendar(); }));
+                document.getElementById("userContacts").addEventListener("click", (function () { _this.loadUserContacts(); }));
+                document.getElementById("userGroups").addEventListener("click", (function () { _this.loadUserGroups(); }));
+                document.getElementById("userManager").addEventListener("click", (function () { _this.loadUserManager(); }));
+                // Global information
+                document.getElementById("userById").addEventListener("click", (function () { _this.userById(); }));
+                document.getElementById("usersWithPaging").addEventListener("click", (function () { _this.loadUsersWithPaging(); }));
+                document.getElementById("usersWithCustomODATA").addEventListener("click", (function () { _this.loadUsersWithOdataQuery(document.getElementById('odataquery').value); }));
+                document.getElementById("groupsWithPaging").addEventListener("click", (function () { _this.loadGroupsWithPaging(); }));
+                document.getElementById("groupById").addEventListener("click", (function () { _this.groupById(); }));
             });
         }
         //-----------------------------------------------Scenarios---------------------------------------------
-        //Scenario 1: Logout
         App.prototype.logout = function () {
             this.identity.logOut();
         };
-        //Scenario 2: Load users with paging
-        App.prototype.loadUsersWithPaging = function () {
-            var _this = this;
-            document.getElementById("results").innerHTML = "";
-            this.graph.users((function (users, error) {
-                _this.getUsersCallback(users, null);
-            }), "$top=5");
-            //this.graph.usersAsync("$top=5").then(((users) => {
-            //    this.getUsersCallback(users, null);
-            //}));
+        App.prototype.isLoggedIn = function () {
+            document.getElementById("results").innerText = this.identity.isLoggedIn() ? "True" : "False";
         };
-        //Scenario 3: Load users with custom odata query
-        App.prototype.loadUsersWithOdataQuery = function (query) {
-            var _this = this;
-            document.getElementById("results").innerHTML = "";
-            this.graph.usersAsync(query).then(function (users) { _this.getUsersCallback(users, null); });
+        App.prototype.whoAmI = function () {
+            document.getElementById("results").innerText = JSON.stringify(this.identity.getIdToken());
         };
         //Scenario 4: Load user "me"
         App.prototype.loadUserMe = function () {
@@ -72,7 +65,32 @@ var Sample;
                 document.getElementById("results").innerHTML += user.displayName + "</br>";
             });
         };
-        //Scenario 6: Load user "me" and then its messages
+        App.prototype.loadUserCalendar = function () {
+            var _this = this;
+            document.getElementById("results").innerHTML = "";
+            this.graph.meAsync().then((function (user) {
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Calender:" + "</br>";
+                user.CalendarAsync("$top=2").then(function (calendarEntries) {
+                    _this.calendarCallback(calendarEntries, null);
+                }).fail(function (error) { _this.calendarCallback(null, error); });
+                //or...
+                //user.messagesAsync("$top=2").then((messages: any) => {
+                //    this.messagesCallback(messages, null);
+                //});
+            }));
+        };
+        App.prototype.loadUserContacts = function () {
+            var _this = this;
+            document.getElementById("results").innerHTML = "";
+            this.graph.meAsync().then((function (user) {
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Contacts:" + "</br>";
+                user.ContactsAsync("$top=2").then(function (contacts) {
+                    _this.contactsCallback(contacts, null);
+                }).fail(function (error) { _this.calendarCallback(null, error); });
+            }));
+        };
         App.prototype.loadUserMessages = function () {
             var _this = this;
             document.getElementById("results").innerHTML = "";
@@ -80,15 +98,14 @@ var Sample;
                 document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
                 user.messages((function (messages, error) {
+                    if (error) {
+                        messages = null;
+                    }
                     _this.messagesCallback(messages, error);
                 }), "$top=2");
-                //or...
-                //user.messagesAsync("$top=2").then((messages: any) => {
-                //    this.messagesCallback(messages, null);
-                //});
             }));
         };
-        //Scenario 7: Load user "me" and then its groups
+        // Global directory information
         App.prototype.loadUserGroups = function () {
             var _this = this;
             document.getElementById("results").innerHTML = "";
@@ -111,22 +128,6 @@ var Sample;
                 });
             }));
         };
-        //Scenario 9: Load groups with paging
-        App.prototype.loadGroupsWithPaging = function () {
-            var _this = this;
-            document.getElementById("results").innerHTML = "";
-            this.graph.groups((function (groups, error) {
-                _this.getGroupsCallback(groups, null);
-            }), "$top=5");
-        };
-        //Scenario 10: Load group by ID
-        App.prototype.groupById = function () {
-            document.getElementById("results").innerHTML = "";
-            this.graph.groupAsync(document.getElementById("groupId").value).then(function (group) {
-                document.getElementById("results").innerHTML += group.displayName + "</br>";
-            });
-        };
-        //Scenario 11: Load user "me" and then its messages
         App.prototype.loadUserPhoto = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then(function (user) {
@@ -147,13 +148,35 @@ var Sample;
                 }));
             });
         };
-        //Scenario 12: Is logged in?
-        App.prototype.isLoggedIn = function () {
-            document.getElementById("results").innerText = this.identity.isLoggedIn() ? "True" : "False";
+        //Scenario 9: Load groups with paging
+        App.prototype.loadGroupsWithPaging = function () {
+            var _this = this;
+            document.getElementById("results").innerHTML = "";
+            this.graph.groups((function (groups, error) {
+                _this.getGroupsCallback(groups, null);
+            }), "$top=5");
         };
-        //Scenario 13: Who am I?
-        App.prototype.whoAmI = function () {
-            document.getElementById("results").innerText = JSON.stringify(this.identity.getIdToken());
+        //Scenario 10: Load group by ID
+        App.prototype.groupById = function () {
+            document.getElementById("results").innerHTML = "";
+            this.graph.groupAsync(document.getElementById("groupId").value).then(function (group) {
+                document.getElementById("results").innerHTML += group.displayName + "</br>";
+            });
+        };
+        App.prototype.loadUsersWithPaging = function () {
+            var _this = this;
+            document.getElementById("results").innerHTML = "";
+            this.graph.users((function (users, error) {
+                _this.getUsersCallback(users, null);
+            }), "$top=5");
+            //this.graph.usersAsync("$top=5").then(((users) => {
+            //    this.getUsersCallback(users, null);
+            //}));
+        };
+        App.prototype.loadUsersWithOdataQuery = function (query) {
+            var _this = this;
+            document.getElementById("results").innerHTML = "";
+            this.graph.usersAsync(query).then(function (users) { _this.getUsersCallback(users, null); });
         };
         //--------------------------------Callbacks---------------------------------------------
         App.prototype.getUsersCallback = function (users, error) {
@@ -184,6 +207,28 @@ var Sample;
                 groups.nextLink().then((function (result) {
                     _this.getGroupsCallback(result, null);
                 }));
+            }
+        };
+        App.prototype.calendarCallback = function (calendarEntries, error) {
+            var _this = this;
+            calendarEntries.resultsPage.forEach(function (item) {
+                document.getElementById("results").innerHTML += item.subject + "</br>";
+            });
+            if (calendarEntries.nextLink) {
+                calendarEntries.nextLink((function (messages, error) {
+                    _this.messagesCallback(messages, error);
+                }));
+            }
+        };
+        App.prototype.contactsCallback = function (contacts, error) {
+            var _this = this;
+            contacts.resultsPage.forEach(function (item) {
+                document.getElementById("results").innerHTML += item.subject + "</br>";
+            });
+            if (contacts.nextLink) {
+                contacts.nextLink(function (c, e) {
+                    _this.messagesCallback(c, e);
+                });
             }
         };
         App.prototype.messagesCallback = function (messages, error) {
@@ -238,3 +283,4 @@ var Sample;
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
 //   
 //*********************************************************   
+//# sourceMappingURL=app.js.map
