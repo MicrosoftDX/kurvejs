@@ -54,9 +54,11 @@ var Sample;
         //Scenario 4: Load user "me"
         App.prototype.loadUserMe = function () {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then(function (user) {
-                document.getElementById("results").innerHTML += user.displayName + "</br>";
-            });
+            this.graph.meAsync()
+                .then(function (user) {
+                document.getElementById("results").innerHTML += JSON.stringify(user) + "</br>";
+            })
+                .fail(function (error) { alert(JSON.stringify(error)); });
         };
         //Scenario 5: Load user by ID
         App.prototype.userById = function () {
@@ -133,9 +135,9 @@ var Sample;
             this.graph.meAsync().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Photo:" + "</br>";
-                user.photoValue((function (photoValue, error) {
+                user.photoValue(function (photoValue, error) {
                     if (error)
-                        window.alert(error);
+                        window.alert(JSON.stringify(error));
                     else {
                         var img = document.createElement("img");
                         var reader = new FileReader();
@@ -145,7 +147,7 @@ var Sample;
                         reader.readAsDataURL(photoValue);
                         document.getElementById("results").appendChild(img);
                     }
-                }));
+                });
             });
         };
         //Scenario 9: Load groups with paging

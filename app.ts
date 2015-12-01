@@ -75,9 +75,11 @@ module Sample {
         //Scenario 4: Load user "me"
         private loadUserMe(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then((user) => {
-                document.getElementById("results").innerHTML += user.displayName + "</br>";
-            });
+            this.graph.meAsync()
+                .then((user: Kurve.User) => {
+                    document.getElementById("results").innerHTML += JSON.stringify(user) + "</br>";
+                })
+                .fail(error => { alert(JSON.stringify(error)); });
         }
 
         //Scenario 5: Load user by ID
@@ -145,7 +147,7 @@ module Sample {
         //Scenario 8: Load user "me" and then its manager
         private loadUserManager(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then(((user: any) => {
+            this.graph.meAsync().then(((user: Kurve.User) => {
                 document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Manager:" + "</br>";
                 user.managerAsync().then((manager: any) => {
@@ -157,12 +159,12 @@ module Sample {
 
         private loadUserPhoto(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then((user: any) => {
+            this.graph.meAsync().then((user: Kurve.User) => {
                 document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Photo:" + "</br>";
-                user.photoValue(((photoValue: any, error: string) => {
+                user.photoValue((photoValue: any, error: Kurve.Error) => {
                     if (error)
-                        window.alert(error);
+                        window.alert(JSON.stringify(error));
                     else {
                         var img = document.createElement("img");
                         var reader = new FileReader();
@@ -173,7 +175,7 @@ module Sample {
 
                         document.getElementById("results").appendChild(img);
                     }
-                }));
+                });
             });
         }
 

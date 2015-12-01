@@ -1,6 +1,75 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 module Kurve {
 
+    export class User {
+        public graph: Kurve.Graph;
+        public businessPhones = "";
+        public displayName: string = "";
+        public givenName: string;
+        public jobTitle: string;
+        public mail: string;
+        public mobilePhone: string;
+        public officeLocation: string;
+        public preferredLanguage: string;
+        public surname: string;
+        public userPrincipalName: string = "";
+        public id: string;
+
+        constructor(graph: Kurve.Graph, o: { userPrincipalName: string, displayName : string }) {
+            this.graph = graph;
+            this.userPrincipalName = o.userPrincipalName;
+            this.displayName = o.displayName;
+        }
+
+        // These are all passthroughs to the graph
+
+        public memberOf(callback: (groups: Group[], Error) => void, Error, odataQuery?: string) {
+            this.graph.memberOfForUser(this.userPrincipalName, callback, odataQuery);
+        }
+
+        public memberOfAsync(odataQuery?: string): Promise {
+            return this.graph.memberOfForUserAsync(this.userPrincipalName, odataQuery);
+        }
+
+        public messages(callback: (messages: Message[], error: Error) => void, odataQuery?: string) {
+            this.graph.messagesForUser(this.userPrincipalName, callback, odataQuery);
+        }
+
+        public messagesAsync(odataQuery?: string): Promise {
+            return this.graph.messagesForUserAsync(this.userPrincipalName, odataQuery);
+        }
+
+        public manager(callback: (user: any, error: Error) => void, odataQuery?: string) {
+            this.graph.managerForUser(this.userPrincipalName, callback, odataQuery);
+        }
+
+        public managerAsync(odataQuery?: string): Promise {
+            return this.graph.managerForUserAsync(this.userPrincipalName, odataQuery);
+        }      
+
+        public photoValue(callback: (val: any, error: Error) => void) {
+            this.graph.photoValueForUser(this.userPrincipalName, callback);
+        }
+
+        public photoValueAsync(): Promise {
+            return this.graph.photoValueForUserAsync(this.userPrincipalName);
+        }      
+
+    }
+
+
+    export interface Message {
+    }
+
+    export class CalendarItem {
+    }
+
+    export class Contact {
+    }
+
+    export interface Group {
+    }
+
     export class Graph {
         private req: XMLHttpRequest = null;
         private state: string = null;
@@ -34,7 +103,7 @@ module Kurve {
             return d.promise;
         }
 
-        public me(callback: (user: any, error: Error) => void, odataQuery?: string): void {
+        public me(callback: (user: User, error: Error) => void, odataQuery?: string): void {
             var urlString: string = this.buildMeUrl() + "/";
             if (odataQuery) {
                 urlString += "?" + odataQuery;
@@ -44,11 +113,11 @@ module Kurve {
 
         public userAsync(userId: string): Promise {
             var d = new Deferred();
-            this.user(userId, (users, error) => {
+            this.user(userId, (user, error) => {
                 if (error) {
                     d.reject(error);
                 } else {
-                    d.resolve(users);
+                    d.resolve(user);
                 }
             });
             return d.promise;
@@ -117,8 +186,121 @@ module Kurve {
             }, odataQuery);
             return d.promise;
         }
-        //http verbs
+        
 
+        // Messages
+            
+        public messagesForUser(userPrincipalName: string, callback: (messages: Message, error: Error) => void, odataQuery?: string): void {
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
+            if (odataQuery) urlString += "?" + odataQuery;
+
+            this.getMessages(urlString, (result, error) => {
+                callback(result, error);
+            }, odataQuery);
+        }
+
+        public messagesForUserAsync(userPrincipalName: string, odataQuery?: string): Promise {
+            var d = new Deferred();
+            this.messagesForUser(userPrincipalName, (messages, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(messages);
+                }
+            }, odataQuery);
+            return d.promise;
+        }
+
+        public memberOfForUser(userPrincipalName: string, callback: (groups: any, error: Error) => void, odataQuery?: string) {
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/memberOf";
+            if (odataQuery) urlString += "?" + odataQuery;
+            this.getGroups(urlString, callback, odataQuery);
+        }
+
+        public memberOfForUserAsync(userPrincipalName: string, odataQuery?: string) {
+            var d = new Deferred();
+            this.memberOfForUser(userPrincipalName, (result, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(result);
+                }
+            }, odataQuery);
+            return d.promise;
+        }
+
+        //         
+        public managerForUser(userPrincipalName: string, callback: (manager: any, error: Error) => void, odataQuery?: string) {
+            // need odataQuery;
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/manager";
+            this.getUser(urlString, callback);
+        }
+
+        public managerForUserAsync(userPrincipalName: string, odataQuery?: string) {
+            var d = new Deferred();
+            this.managerForUser(userPrincipalName, (result, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(result);
+                }
+            }, odataQuery);
+            return d.promise;
+        }
+
+        public directReportsForUser(userPrincipalName: string, callback: (users: any, error: Error) => void, odataQuery?: string) {
+            // Need odata query
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/directReports";
+            this.getUsers(urlString, callback);
+        }
+
+        public directReportsForUserAsync(userPrincipalName: string, odataQuery?: string) {
+            var d = new Deferred();
+            this.directReportsForUser(userPrincipalName, (result, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(result);
+                }
+            }, odataQuery);
+            return d.promise;
+        }
+
+        public photoForUser(userPrincipalName: string, callback: (photo: any, error: Error) => void) {
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo";
+            this.getPhoto(urlString, callback);
+        }
+
+        public photoForUserAsync(userPrincipalName: string) {
+            var d = new Deferred();
+            this.photoForUser(userPrincipalName, (result, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(result);
+                }
+            });
+            return d.promise;
+        }
+
+        public photoValueForUser(userPrincipalName: string, callback: (photo: any, error: Error) => void) {
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo/$value";
+            this.getPhotoValue(urlString, callback);
+        }
+
+        public photoValueForUserAsync(userPrincipalName: string) {
+            var d = new Deferred();
+            this.photoValueForUser(userPrincipalName, (result, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(result);
+                }
+            });
+            return d.promise;
+        }
+    
+        //http verbs
         public getAsync(url: string): Promise {
             var d = new Deferred();
             this.get(url, (response, error) => {
@@ -215,13 +397,13 @@ module Kurve {
             }));
         }
 
-        private getUser(urlString, callback: (user: any, error: Error) => void): void {
+        private getUser(urlString, callback: (user: User, error: Error) => void): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
                     return;
                 }
-                var userODATA = JSON.parse(result);
+                var userODATA = JSON.parse(result) ;
                 if (userODATA.error) {
                     var errorODATA = new Error();
                     errorODATA.other = userODATA.error;
@@ -229,14 +411,13 @@ module Kurve {
                     return;
                 }
 
-                this.decorateUserObject(userODATA);
-
-                callback(userODATA, null);
+                var user = new User(this, userODATA);
+                callback(user, null);
             });
 
         }
 
-        private addAccessTokenAndSend(xhr: XMLHttpRequest,callback:(error:Error)=>void):void {
+        private addAccessTokenAndSend(xhr: XMLHttpRequest, callback: (error: Error) => void): void {
             if (this.accessToken) {
                 //Using default access token
                 xhr.setRequestHeader('Authorization', 'Bearer ' + this.accessToken);
@@ -257,6 +438,7 @@ module Kurve {
             }
         }
 
+        // no longer used
         private decorateUserObject(user: any): void {
 
             user.messages = ((callback: (messages: any, error: Error) => void, odataQuery?: string) => {
@@ -519,7 +701,7 @@ module Kurve {
                     return;
                 }
                 callback(result, null);
-            },"blob");
+            }, "blob");
         }
         private buildMeUrl(): string {
             return this.baseUrl + "me";
@@ -532,7 +714,6 @@ module Kurve {
         }
     }
 }
-
 
 //*********************************************************   
 //   
