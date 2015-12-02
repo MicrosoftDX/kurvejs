@@ -53,7 +53,15 @@ module Kurve {
 
         public photoValueAsync(): Promise {
             return this.graph.photoValueForUserAsync(this.userPrincipalName);
-        }      
+        }
+
+        public calendar(callback: (calendarItems: CalendarEvent[], error: Error) => void, odataQuery?: string) {
+            this.graph.calendarForUser(this.userPrincipalName, callback, odataQuery);
+        }
+
+        public calendarAsync(odataQuery?: string) {
+            return this.graph.calendarForUserAsync(this.userPrincipalName, odataQuery);
+        }
 
     }
 
@@ -61,7 +69,7 @@ module Kurve {
     export interface Message {
     }
 
-    export class CalendarItem {
+    export class CalendarEvent {
     }
 
     export class Contact {
@@ -188,7 +196,7 @@ module Kurve {
         }
         
 
-        // Messages
+        // Messages For User
             
         public messagesForUser(userPrincipalName: string, callback: (messages: Message, error: Error) => void, odataQuery?: string): void {
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
@@ -211,6 +219,30 @@ module Kurve {
             return d.promise;
         }
 
+        // Calendar For User
+            
+        public calendarForUser(userPrincipalName: string, callback: (events: CalendarEvent, error: Error) => void, odataQuery?: string): void {
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/calendar/events";
+            if (odataQuery) urlString += "?" + odataQuery;
+
+            this.getMessages(urlString, (result, error) => {
+                callback(result, error);
+            }, odataQuery);
+        }
+
+        public calendarForUserAsync(userPrincipalName: string, odataQuery?: string): Promise {
+            var d = new Deferred();
+            this.calendarForUser(userPrincipalName, (events, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(events);
+                }
+            }, odataQuery);
+            return d.promise;
+        }
+
+        // Groups/Relationships For User
         public memberOfForUser(userPrincipalName: string, callback: (groups: any, error: Error) => void, odataQuery?: string) {
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/memberOf";
             if (odataQuery) urlString += "?" + odataQuery;
@@ -229,7 +261,6 @@ module Kurve {
             return d.promise;
         }
 
-        //         
         public managerForUser(userPrincipalName: string, callback: (manager: any, error: Error) => void, odataQuery?: string) {
             // need odataQuery;
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/manager";

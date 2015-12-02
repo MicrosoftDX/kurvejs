@@ -73,13 +73,9 @@ var Sample;
             this.graph.meAsync().then((function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Calender:" + "</br>";
-                user.CalendarAsync("$top=2").then(function (calendarEntries) {
+                user.calendarAsync("$top=2").then(function (calendarEntries) {
                     _this.calendarCallback(calendarEntries, null);
                 }).fail(function (error) { _this.calendarCallback(null, error); });
-                //or...
-                //user.messagesAsync("$top=2").then((messages: any) => {
-                //    this.messagesCallback(messages, null);
-                //});
             }));
         };
         App.prototype.loadUserContacts = function () {
@@ -88,7 +84,7 @@ var Sample;
             this.graph.meAsync().then((function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Contacts:" + "</br>";
-                user.ContactsAsync("$top=2").then(function (contacts) {
+                user.calendarAsync("$top=2").then(function (contacts) {
                     _this.contactsCallback(contacts, null);
                 }).fail(function (error) { _this.calendarCallback(null, error); });
             }));
@@ -96,16 +92,20 @@ var Sample;
         App.prototype.loadUserMessages = function () {
             var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then((function (user) {
+            this.graph.meAsync()
+                .then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                user.messages((function (messages, error) {
+                user.messages(function (messages, error) {
                     if (error) {
                         messages = null;
                     }
-                    _this.messagesCallback(messages, error);
-                }), "$top=2");
-            }));
+                    _this.messagesCallback(messages, error.text);
+                }, "$top=2");
+            })
+                .fail(function (error) {
+                alert(JSON.stringify(error));
+            });
         };
         // Global directory information
         App.prototype.loadUserGroups = function () {

@@ -91,29 +91,23 @@ module Sample {
             });
         }
 
-
         private loadUserCalendar(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then(((user: any) => {
+            this.graph.meAsync().then(((user: Kurve.User) => {
                 document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Calender:" + "</br>";
-                user.CalendarAsync("$top=2").then((calendarEntries: any) => {
+                user.calendarAsync("$top=2").then((calendarEntries: any) => {
                     this.calendarCallback(calendarEntries, null);
                 }).fail((error) => { this.calendarCallback(null, error); });
-
-                //or...
-                //user.messagesAsync("$top=2").then((messages: any) => {
-                //    this.messagesCallback(messages, null);
-                //});
             }));
         }
 
         private loadUserContacts(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then(((user: any) => {
+            this.graph.meAsync().then(((user: Kurve.User) => {
                 document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Contacts:" + "</br>";
-                user.ContactsAsync("$top=2").then((contacts: any) => {
+                user.calendarAsync("$top=2").then((contacts: any) => {
                     this.contactsCallback(contacts, null);
                 }).fail((error) => { this.calendarCallback(null, error); });
             }));
@@ -121,16 +115,20 @@ module Sample {
         
         private loadUserMessages(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then(((user: any) => {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
-                document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                user.messages(((messages: any, error: string) => {
-                    if (error) { messages = null; }                   
-                    this.messagesCallback(messages, error);
-                }), "$top=2");
-            }));
-        }
+            this.graph.meAsync()
+                .then((user: Kurve.User) => {
+                    document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                    document.getElementById("results").innerHTML += "Messages:" + "</br>";
+                    user.messages((messages: any, error: Kurve.Error) => {
+                        if (error) { messages = null; }
+                        this.messagesCallback(messages, error.text);
 
+                    }, "$top=2");
+                })
+                .fail((error) => {
+                    alert(JSON.stringify(error));
+                });
+        }
 
         // Global directory information
         private loadUserGroups(): void {
