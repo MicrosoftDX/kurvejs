@@ -76,8 +76,8 @@ module Sample {
         private loadUserMe(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync()
-                .then((user: Kurve.User) => {
-                    document.getElementById("results").innerHTML += JSON.stringify(user) + "</br>";
+                .then((user : Kurve.User) => {
+                    document.getElementById("results").innerHTML += JSON.stringify(user.data) + "</br>";
                 })
                 .fail(error => { alert(JSON.stringify(error)); });
         }
@@ -94,7 +94,7 @@ module Sample {
         private loadUserCalendar(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then(((user: Kurve.User) => {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Calender:" + "</br>";
                 user.calendarAsync("$top=2").then((calendarEntries: any) => {
                     this.calendarCallback(calendarEntries, null);
@@ -105,7 +105,7 @@ module Sample {
         private loadUserContacts(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then(((user: Kurve.User) => {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Contacts:" + "</br>";
                 user.calendarAsync("$top=2").then((contacts: any) => {
                     this.contactsCallback(contacts, null);
@@ -117,13 +117,12 @@ module Sample {
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync()
                 .then((user: Kurve.User) => {
-                    document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                    document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                     document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                    user.messages((messages: any, error: Kurve.Error) => {
+                    user.messages((messages, nextUrl, error) => {
                         if (error) { messages = null; }
-                        this.messagesCallback(messages, error.text);
-
-                    }, "$top=2");
+                        this.messagesCallback(messages, nextUrl, error);
+                    }, "$top=25");
                 })
                 .fail((error) => {
                     alert(JSON.stringify(error));
@@ -133,8 +132,8 @@ module Sample {
         // Global directory information
         private loadUserGroups(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then(((user: any) => {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+            this.graph.meAsync().then(((user: Kurve.User) => {
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Groups:" + "</br>";
                 user.memberOf(((groups: any, error: string) => {
                     this.groupsCallback(groups, error);
@@ -146,7 +145,7 @@ module Sample {
         private loadUserManager(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then(((user: Kurve.User) => {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Manager:" + "</br>";
                 user.managerAsync().then((manager: any) => {
                     document.getElementById("results").innerHTML += manager.displayName + "</br>";
@@ -158,7 +157,7 @@ module Sample {
         private loadUserPhoto(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then((user: Kurve.User) => {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Photo:" + "</br>";
                 user.photoValue((photoValue: any, error: Kurve.Error) => {
                     if (error)
@@ -257,7 +256,7 @@ module Sample {
 
             if (calendarEntries.nextLink) {
                 calendarEntries.nextLink(((messages, error) => {
-                    this.messagesCallback(messages, error);
+                    // this.calendarCallback(messages, error);
                 }));
             }
 
@@ -270,23 +269,17 @@ module Sample {
 
             if (contacts.nextLink) {
                 contacts.nextLink((c, e) => {
-                    this.messagesCallback(c, e);
+                    // this.contactsCallback(c, e);
                 });
             }
 
         }
 
-        private messagesCallback(messages: any, error: string): void {
-            messages.resultsPage.forEach((item) => {
+        private messagesCallback(messages: Kurve.Message[], nextLink : string, error: Kurve.Error): void {
+            messages.forEach((x) => {
+                var item = x.data;
                 document.getElementById("results").innerHTML += item.subject + "</br>";
-            });
-
-            if (messages.nextLink) {
-                messages.nextLink(((messages, error) => {
-                    this.messagesCallback(messages, error);
-                }));
-            }
-
+            });                            
         }
 
         private groupsCallback(groups: any, error: string): void {

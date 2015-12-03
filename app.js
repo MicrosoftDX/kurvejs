@@ -56,7 +56,7 @@ var Sample;
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync()
                 .then(function (user) {
-                document.getElementById("results").innerHTML += JSON.stringify(user) + "</br>";
+                document.getElementById("results").innerHTML += JSON.stringify(user.data) + "</br>";
             })
                 .fail(function (error) { alert(JSON.stringify(error)); });
         };
@@ -71,7 +71,7 @@ var Sample;
             var _this = this;
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then((function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Calender:" + "</br>";
                 user.calendarAsync("$top=2").then(function (calendarEntries) {
                     _this.calendarCallback(calendarEntries, null);
@@ -82,7 +82,7 @@ var Sample;
             var _this = this;
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then((function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Contacts:" + "</br>";
                 user.calendarAsync("$top=2").then(function (contacts) {
                     _this.contactsCallback(contacts, null);
@@ -94,14 +94,14 @@ var Sample;
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync()
                 .then(function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                user.messages(function (messages, error) {
+                user.messages(function (messages, nextUrl, error) {
                     if (error) {
                         messages = null;
                     }
-                    _this.messagesCallback(messages, error.text);
-                }, "$top=2");
+                    _this.messagesCallback(messages, nextUrl, error);
+                }, "$top=25");
             })
                 .fail(function (error) {
                 alert(JSON.stringify(error));
@@ -112,7 +112,7 @@ var Sample;
             var _this = this;
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then((function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Groups:" + "</br>";
                 user.memberOf((function (groups, error) {
                     _this.groupsCallback(groups, error);
@@ -123,7 +123,7 @@ var Sample;
         App.prototype.loadUserManager = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then((function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Manager:" + "</br>";
                 user.managerAsync().then(function (manager) {
                     document.getElementById("results").innerHTML += manager.displayName + "</br>";
@@ -133,7 +133,7 @@ var Sample;
         App.prototype.loadUserPhoto = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then(function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Photo:" + "</br>";
                 user.photoValue(function (photoValue, error) {
                     if (error)
@@ -212,37 +212,30 @@ var Sample;
             }
         };
         App.prototype.calendarCallback = function (calendarEntries, error) {
-            var _this = this;
             calendarEntries.resultsPage.forEach(function (item) {
                 document.getElementById("results").innerHTML += item.subject + "</br>";
             });
             if (calendarEntries.nextLink) {
                 calendarEntries.nextLink((function (messages, error) {
-                    _this.messagesCallback(messages, error);
+                    // this.calendarCallback(messages, error);
                 }));
             }
         };
         App.prototype.contactsCallback = function (contacts, error) {
-            var _this = this;
             contacts.resultsPage.forEach(function (item) {
                 document.getElementById("results").innerHTML += item.subject + "</br>";
             });
             if (contacts.nextLink) {
                 contacts.nextLink(function (c, e) {
-                    _this.messagesCallback(c, e);
+                    // this.contactsCallback(c, e);
                 });
             }
         };
-        App.prototype.messagesCallback = function (messages, error) {
-            var _this = this;
-            messages.resultsPage.forEach(function (item) {
+        App.prototype.messagesCallback = function (messages, nextLink, error) {
+            messages.forEach(function (x) {
+                var item = x.data;
                 document.getElementById("results").innerHTML += item.subject + "</br>";
             });
-            if (messages.nextLink) {
-                messages.nextLink((function (messages, error) {
-                    _this.messagesCallback(messages, error);
-                }));
-            }
         };
         App.prototype.groupsCallback = function (groups, error) {
             var _this = this;

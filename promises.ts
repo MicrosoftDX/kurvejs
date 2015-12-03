@@ -165,7 +165,7 @@ module Kurve {
 
     export class Promise {
 
-        constructor(private deferred: Deferred) {
+        constructor(protected deferred: Deferred) {
         }
 
         then(doneFilter: Function, failFilter?: Function, progressFilter?: Function): Promise {
@@ -182,6 +182,37 @@ module Kurve {
 
         always(...callbacks: Function[]): Promise {
             return (<Deferred>this.deferred.always.apply(this.deferred, callbacks)).promise;
+        }
+
+        get resolved(): boolean {
+            return this.deferred.resolved;
+        }
+
+        get rejected(): boolean {
+            return this.deferred.rejected;
+        }
+
+    }
+
+    export class TypedPromise<T> extends Promise {
+        constructor (deferred: Deferred) {
+            super(deferred);
+        }
+
+        then(doneFilter: (T) => void, failFilter?: Function, progressFilter?: Function): TypedPromise<T> {
+            return this.deferred.then(doneFilter, failFilter, progressFilter).promise as TypedPromise<T>;
+        }
+
+        done(...callbacks: ((T) => void)[]): TypedPromise<T> {
+            return (<Deferred>this.deferred.done.apply(this.deferred, callbacks)).promise as TypedPromise<T>;
+        }
+
+        fail(...callbacks: Function[]): TypedPromise<T> {
+            return (<Deferred>this.deferred.fail.apply(this.deferred, callbacks)).promise as TypedPromise<T>
+        }
+
+        always(...callbacks: Function[]): TypedPromise<T> {
+            return (<Deferred>this.deferred.always.apply(this.deferred, callbacks)).promise as TypedPromise<T>
         }
 
         get resolved(): boolean {

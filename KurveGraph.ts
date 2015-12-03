@@ -1,72 +1,106 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 module Kurve {
 
-    export class User {
-        public graph: Kurve.Graph;
-        public businessPhones = "";
-        public displayName: string = "";
-        public givenName: string;
-        public jobTitle: string;
-        public mail: string;
-        public mobilePhone: string;
-        public officeLocation: string;
-        public preferredLanguage: string;
-        public surname: string;
-        public userPrincipalName: string = "";
-        public id: string;
+    export class UserDataModel {
+         public businessPhones;
+         public displayName: string;
+         public givenName: string;
+         public jobTitle: string;
+         public mail: string;
+         public mobilePhone: string;
+         public officeLocation: string;
+         public preferredLanguage: string;
+         public surname: string;
+         public userPrincipalName: string;
+         public id: string;
+    }
 
-        constructor(graph: Kurve.Graph, o: { userPrincipalName: string, displayName : string }) {
-            this.graph = graph;
-            this.userPrincipalName = o.userPrincipalName;
-            this.displayName = o.displayName;
+    export class User  {        
+        constructor(protected graph: Kurve.Graph, protected _data: UserDataModel) {
         }
+
+        get data() { return this._data; }
 
         // These are all passthroughs to the graph
 
         public memberOf(callback: (groups: Group[], Error) => void, Error, odataQuery?: string) {
-            this.graph.memberOfForUser(this.userPrincipalName, callback, odataQuery);
+            this.graph.memberOfForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
         public memberOfAsync(odataQuery?: string): Promise {
-            return this.graph.memberOfForUserAsync(this.userPrincipalName, odataQuery);
+            return this.graph.memberOfForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
-        public messages(callback: (messages: Message[], error: Error) => void, odataQuery?: string) {
-            this.graph.messagesForUser(this.userPrincipalName, callback, odataQuery);
+        public messages(callback: (messages: Message[], nextUrl: string, error: Error) => void, odataQuery?: string) {
+            this.graph.messagesForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
         public messagesAsync(odataQuery?: string): Promise {
-            return this.graph.messagesForUserAsync(this.userPrincipalName, odataQuery);
+            return this.graph.messagesForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
         public manager(callback: (user: any, error: Error) => void, odataQuery?: string) {
-            this.graph.managerForUser(this.userPrincipalName, callback, odataQuery);
+            this.graph.managerForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
         public managerAsync(odataQuery?: string): Promise {
-            return this.graph.managerForUserAsync(this.userPrincipalName, odataQuery);
+            return this.graph.managerForUserAsync(this._data.userPrincipalName, odataQuery);
         }      
 
         public photoValue(callback: (val: any, error: Error) => void) {
-            this.graph.photoValueForUser(this.userPrincipalName, callback);
+            this.graph.photoValueForUser(this._data.userPrincipalName, callback);
         }
 
         public photoValueAsync(): Promise {
-            return this.graph.photoValueForUserAsync(this.userPrincipalName);
+            return this.graph.photoValueForUserAsync(this._data.userPrincipalName);
         }
 
         public calendar(callback: (calendarItems: CalendarEvent[], error: Error) => void, odataQuery?: string) {
-            this.graph.calendarForUser(this.userPrincipalName, callback, odataQuery);
+            this.graph.calendarForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
         public calendarAsync(odataQuery?: string) {
-            return this.graph.calendarForUserAsync(this.userPrincipalName, odataQuery);
+            return this.graph.calendarForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
     }
 
 
-    export interface Message {
+    export class MessageDataModel {
+        bccRecipients: string[]
+        body: Object
+        bodyPreview: string;
+        categories: string[]
+        ccRecipients: string[]
+        changeKey: string;
+        conversationId: string;
+        createdDateTime: string;
+        from: any;
+        graph: any;
+        hasAttachments: boolean;
+        id: string;
+        importance: string;
+        isDeliveryReceiptRequested: boolean;
+        isDraft: boolean;
+        isRead: boolean;
+        isReadReceiptRequested: boolean;
+        lastModifiedDateTime: string;
+        parentFolderId: string;
+        receivedDateTime: string;
+        replyTo: any[]
+        sender: any;
+        sentDateTime: string;
+        subject: string;
+        toRecipients: string[]
+        webLink: string;
+    }
+
+    export class Message {
+        constructor(protected graph: Kurve.Graph, protected _data: MessageDataModel) {
+        }
+        get data() : MessageDataModel {
+            return this._data;
+        }
     }
 
     export class CalendarEvent {
@@ -198,12 +232,12 @@ module Kurve {
 
         // Messages For User
             
-        public messagesForUser(userPrincipalName: string, callback: (messages: Message, error: Error) => void, odataQuery?: string): void {
+        public messagesForUser(userPrincipalName: string, callback: (messages: Message[], nextUrl: string, error: Error) => void, odataQuery?: string): void {
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
             if (odataQuery) urlString += "?" + odataQuery;
 
-            this.getMessages(urlString, (result, error) => {
-                callback(result, error);
+            this.getMessages(urlString, (result, nextUrl, error) => {
+                callback(result, nextUrl, error);
             }, odataQuery);
         }
 
@@ -220,25 +254,27 @@ module Kurve {
         }
 
         // Calendar For User
-            
-        public calendarForUser(userPrincipalName: string, callback: (events: CalendarEvent, error: Error) => void, odataQuery?: string): void {
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/calendar/events";
-            if (odataQuery) urlString += "?" + odataQuery;
 
-            this.getMessages(urlString, (result, error) => {
-                callback(result, error);
-            }, odataQuery);
+        public calendarForUser(userPrincipalName: string, callback: (events: CalendarEvent, error: Error) => void, odataQuery?: string): void {
+        // // To BE IMPLEMENTED
+        //    var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/calendar/events";
+        //    if (odataQuery) urlString += "?" + odataQuery;
+
+        //    this.getMessages(urlString, (result, error) => {
+        //        callback(result, error);
+        //    }, odataQuery);
         }
 
         public calendarForUserAsync(userPrincipalName: string, odataQuery?: string): Promise {
             var d = new Deferred();
-            this.calendarForUser(userPrincipalName, (events, error) => {
-                if (error) {
-                    d.reject(error);
-                } else {
-                    d.resolve(events);
-                }
-            }, odataQuery);
+            // // To BE IMPLEMENTED
+            //    this.calendarForUser(userPrincipalName, (events, error) => {
+            //        if (error) {
+            //            d.reject(error);
+            //        } else {
+            //            d.resolve(events);
+            //        }
+            //    }, odataQuery);
             return d.promise;
         }
 
@@ -398,10 +434,6 @@ module Kurve {
 
                 var resultsArray = !usersODATA.value ? [usersODATA] : usersODATA.value;
 
-                for (var i: number = 0; i < resultsArray.length; i++) {
-                    this.decorateUserObject(resultsArray[i]);
-                }
-
                 var users = {
                     resultsPage: resultsArray
                 };
@@ -469,116 +501,7 @@ module Kurve {
             }
         }
 
-        // no longer used
-        private decorateUserObject(user: any): void {
-
-            user.messages = ((callback: (messages: any, error: Error) => void, odataQuery?: string) => {
-                var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/messages";
-                if (odataQuery) urlString += "?" + odataQuery;
-
-                this.getMessages(urlString, (result, error) => {
-                    callback(result, error);
-                }, odataQuery);
-            });
-
-
-            user.messagesAsync = ((odataQuery?: string) => {
-                var d = new Deferred();
-                user.messages((result, error) => {
-                    if (error) {
-                        d.reject(error);
-                    } else {
-                        d.resolve(result);
-                    }
-                }, odataQuery);
-                return d.promise;
-            });
-
-            user.memberOf = ((callback: (groups: any, error: Error) => void, odataQuery?: string) => {
-                var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/memberOf";
-                if (odataQuery) urlString += "?" + odataQuery;
-                this.getGroups(urlString, callback, odataQuery);
-            });
-
-            user.memberOfAsync = ((odataQuery?: string) => {
-                var d = new Deferred();
-                user.memberOf((result, error) => {
-                    if (error) {
-                        d.reject(error);
-                    } else {
-                        d.resolve(result);
-                    }
-                }, odataQuery);
-                return d.promise;
-            });
-
-            user.manager = ((callback: (manager: any, error: Error) => void) => {
-                var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/manager";
-                this.getUser(urlString, callback);
-            });
-
-            user.managerAsync = ((odataQuery?: string) => {
-                var d = new Deferred();
-                user.manager((result, error) => {
-                    if (error) {
-                        d.reject(error);
-                    } else {
-                        d.resolve(result);
-                    }
-                }, odataQuery);
-                return d.promise;
-            });
-
-            user.directReports = ((callback: (users: any, error: Error) => void) => {
-                var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/directReports";
-                this.getUsers(urlString, callback);
-            });
-
-            user.directReportsAsync = ((odataQuery?: string) => {
-                var d = new Deferred();
-                user.directReports((result, error) => {
-                    if (error) {
-                        d.reject(error);
-                    } else {
-                        d.resolve(result);
-                    }
-                }, odataQuery);
-                return d.promise;
-            });
-
-            user.photo = ((callback: (photo: any, error: Error) => void) => {
-                var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/photo";
-                this.getPhoto(urlString, callback);
-            });
-            user.photoAsync = (() => {
-                var d = new Deferred();
-                user.photo((result, error) => {
-                    if (error) {
-                        d.reject(error);
-                    } else {
-                        d.resolve(result);
-                    }
-                });
-                return d.promise;
-            });
-            user.photoValue = ((callback: (photo: any, error: Error) => void) => {
-                var urlString = this.buildUsersUrl() + "/" + user.userPrincipalName + "/photo/$value";
-                this.getPhotoValue(urlString, callback);
-            });
-            user.photoValueAsync = (() => {
-                var d = new Deferred();
-                user.photoValue((result, error) => {
-                    if (error) {
-                        d.reject(error);
-                    } else {
-                        d.resolve(result);
-                    }
-                });
-                return d.promise;
-            });
-
-        }
-
+       
         private decorateMessageObject(message: any): void {
         }
 
@@ -588,13 +511,13 @@ module Kurve {
         private decoratePhotoObject(message: any): void {
         }
 
-        private getMessages(urlString: string, callback: (messages: any, error: Error) => void, odataQuery?: string): void {
+        private getMessages(urlString: string, callback: (messages: any, nextLink : string, error: Error) => void, odataQuery?: string): void {
 
             var url = urlString;
             if (odataQuery) urlString += "?" + odataQuery;
             this.get(url, ((result: string, errorGet: Error) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(null, null, errorGet);
                     return;
                 }
 
@@ -602,37 +525,17 @@ module Kurve {
                 if (messagesODATA.error) {
                     var errorODATA = new Error();
                     errorODATA.other = messagesODATA.error;
-                    callback(null, errorODATA);
+                    callback(null, null, errorODATA);
                     return;
                 }
 
-                var resultsArray = !messagesODATA.value ? [messagesODATA] : messagesODATA.value;
+                var resultsArray = (messagesODATA.value ? messagesODATA.value : [messagesODATA]) as any[];
+                var messages = resultsArray.map(o => {
+                    return new Message(this, o);
+                });
 
-                for (var i: number = 0; i < resultsArray.length; i++) {
-                    this.decorateMessageObject(resultsArray[i]);
-                }
-
-                var messages = {
-                    resultsPage: resultsArray
-                };
                 var nextLink = messagesODATA['@odata.nextLink'];
-                //implement nextLink
-                if (nextLink) {
-                    (<any>messages).nextLink = ((callback?: (result: string, error: Error) => void) => {
-                        var d = new Deferred();
-                        this.getMessages(nextLink, ((result, error) => {
-                            if (callback)
-                                callback(result, error);
-                            else if (error)
-                                d.reject(error);
-                            else
-                                d.resolve(result);
-                        }));
-                        return d.promise;
-                    });
-                }
-
-                callback(messages, null);
+                callback(messages, nextLink, null);
             }));
         }
 
