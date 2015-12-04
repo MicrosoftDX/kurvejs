@@ -15,7 +15,7 @@ module Kurve {
     }
 
     export class UserDataModel {
-         public businessPhones;
+         public businessPhones : string;
          public displayName: string;
          public givenName: string;
          public jobTitle: string;
