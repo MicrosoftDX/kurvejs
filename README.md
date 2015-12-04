@@ -17,7 +17,7 @@ Reference the JavaScript file from your HTML page:
 Alternatively you can just reference the script from our CDN:
 
 ```html
-    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.2.0.js"></script>
+    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.3.0.js"></script>
 ```
 
 	
@@ -54,7 +54,7 @@ graph.usersAsync("$top=5").then((function(users) {
     
 //Get user "me" and then the user's e-mails from Exchange Online:
 graph.meAsync().then(function(user)  {
-	var result = "User:" + user.displayName;
+	var result = "User:" + user.data.displayName;
     user.messagesAsync(“$top=5”).then(function(messages) {
 		messagesCallback(messages);
 	});
@@ -124,6 +124,10 @@ You are free to send us your feedback at this Github repo, send pull requests, e
 At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optionally KurveIdentity.<nolink>js + login.html. You may use the TypeScript libraries and reuse some of the sample app code (index.html and app.<nolink>js) for reference.
 
 # Release Notes
+
+## 0.3.0:
+ * Better type support for all returned types in callbacks
+ * Standardized return entities and collections into .data for all related properties returned from the graph so we differentiate the model data from action methods more easily
 
 ## 0.2.0:
  * Minification and unification of the library into a single file

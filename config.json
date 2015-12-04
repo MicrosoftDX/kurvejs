@@ -2,7 +2,7 @@
   "build": {
     "filename": "kurve.js",
     "minFilename": "kurve.min.js",
-    "declarationFilename": "kurve.min.d.ts",
+    "declarationFilename": "kurve.d.ts",
     "outputDirectory": "./dist/",
     "srcOutputDirectory": "./dist/"
   },
