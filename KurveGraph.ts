@@ -1,39 +1,34 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 module Kurve {
 
-
-
-
-    export class UserDataModel {
-        public businessPhones: string = null;
-        public displayName: string = null;
-        public givenName: string = null;
-        public jobTitle: string = null;
-        public mail: string = null;
-        public mobilePhone: string = null;
-        public officeLocation: string = null;
-        public preferredLanguage: string = null;
-        public surname: string = null;
-        public userPrincipalName: string = null;
-        public id: string = null;        
-        public Test() { }
+    export class ProfilePhotoDataModel {
+        public id: string;
+        public height: Number;
+        public width: Number;        
     }
 
-    export class User implements UserDataModel {
+    export class ProfilePhoto {
+        constructor(protected graph: Kurve.Graph, protected _data: ProfilePhotoDataModel) {
+        }
 
-        // For the DataModel Mixin - won't be allocated - just here for type checking the that mixin is implemented
-        public businessPhones;
-        public displayName: string;
-        public givenName: string;
-        public jobTitle: string;
-        public mail: string;
-        public mobilePhone: string;
-        public officeLocation: string;
-        public preferredLanguage: string;
-        public surname: string;
-        public userPrincipalName: string;
-        public id: string;
+        get data() { return this._data; }
+    }
 
+    export class UserDataModel {
+         public businessPhones;
+         public displayName: string;
+         public givenName: string;
+         public jobTitle: string;
+         public mail: string;
+         public mobilePhone: string;
+         public officeLocation: string;
+         public preferredLanguage: string;
+         public surname: string;
+         public userPrincipalName: string;
+         public id: string;
+    }
+
+    export class User  {        
         constructor(protected graph: Kurve.Graph, protected _data: UserDataModel) {
         }
 
@@ -41,7 +36,7 @@ module Kurve {
 
         // These are all passthroughs to the graph
 
-        public memberOf(callback: (groups: Group[], Error) => void, Error, odataQuery?: string) {
+        public memberOf(callback: (groups: Groups, Error) => void, Error, odataQuery?: string) {
             this.graph.memberOfForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
@@ -49,7 +44,7 @@ module Kurve {
             return this.graph.memberOfForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
-        public messages(callback: (messages: Message[], nextUrl: string, error: Error) => void, odataQuery?: string) {
+        public messages(callback: (messages: Messages, error: Error) => void, odataQuery?: string) {
             this.graph.messagesForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
@@ -57,7 +52,7 @@ module Kurve {
             return this.graph.messagesForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
-        public manager(callback: (user: any, error: Error) => void, odataQuery?: string) {
+        public manager(callback: (user: Kurve.User, error: Error) => void, odataQuery?: string) {
             this.graph.managerForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
@@ -65,25 +60,42 @@ module Kurve {
             return this.graph.managerForUserAsync(this._data.userPrincipalName, odataQuery);
         }      
 
-        public photoValue(callback: (val: any, error: Error) => void) {
-            this.graph.photoValueForUser(this._data.userPrincipalName, callback);
+        public profilePhoto(callback: (photo: ProfilePhoto, error: Error) => void) {
+            this.graph.profilePhotoForUser(this._data.userPrincipalName, callback);
         }
 
-        public photoValueAsync(): Promise {
-            return this.graph.photoValueForUserAsync(this._data.userPrincipalName);
+        public profilePhotoAsync(): Promise {
+            return this.graph.profilePhotoForUserAsync(this._data.userPrincipalName);
         }
 
-        public calendar(callback: (calendarItems: CalendarEvent[], error: Error) => void, odataQuery?: string) {
+        public profilePhotoValue(callback: (val: any, error: Error) => void) {
+            this.graph.profilePhotoValueForUser(this._data.userPrincipalName, callback);
+        }
+
+        public profilePhotoValueAsync(): Promise {
+            return this.graph.profilePhotoValueForUserAsync(this._data.userPrincipalName);
+        }
+
+        public calendar(callback: (calendarItems: CalendarEvents, error: Error) => void, odataQuery?: string) {
             this.graph.calendarForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
         public calendarAsync(odataQuery?: string) {
             return this.graph.calendarForUserAsync(this._data.userPrincipalName, odataQuery);
         }
+
     }
 
-    applyDataModel(User, UserDataModel);
+    export class Users {
 
+        public nextLink: (callback?: (users: Kurve.Users, error: Error) => void, odataQuery?: string) => Promise
+        constructor(protected graph: Kurve.Graph, protected _data: User[]) {
+        }
+
+        get data(): User[] {
+            return this._data;
+        }
+    }
     export class MessageDataModel {
         bccRecipients: string[]
         body: Object
@@ -121,13 +133,66 @@ module Kurve {
         }
     }
 
+    export class Messages {
+
+        public nextLink: (callback?: (messages: Kurve.Messages, error: Error) => void, odataQuery?: string) => Promise
+        constructor(protected graph: Kurve.Graph, protected _data: Message[]) {
+        }
+
+        get data(): Message[] {
+            return this._data;
+        }
+    }
+
     export class CalendarEvent {
+    }
+    export class CalendarEvents {
+
+        public nextLink: (callback?: (events: Kurve.CalendarEvents, error: Error) => void, odataQuery?: string) => Promise
+        constructor(protected graph: Kurve.Graph, protected _data: CalendarEvent[]) {
+        }
+
+        get data(): CalendarEvent[] {
+            return this._data;
+        }
     }
 
     export class Contact {
     }
 
-    export interface Group {
+    export class GroupDataModel {
+        public id: string;
+        public description: string;
+        public displayName: string;
+        public groupTypes: string[];
+        public mail: string;
+        public mailEnabled: Boolean;
+        public mailNickname: string;
+        public onPremisesLastSyncDateTime: Date;
+        public onPremisesSecurityIdentifier: string;
+        public onPremisesSyncEnabled: Boolean;
+        public proxyAddresses: string[];
+        public securityEnabled: Boolean;
+        public visibility: string;      
+    }
+
+    export class Group {
+        constructor(protected graph: Kurve.Graph, protected _data: GroupDataModel) {
+        }
+
+        get data() { return this._data; }
+
+    }
+
+    export class Groups {
+
+        public nextLink: (callback?: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string) => Promise
+        constructor(protected graph: Kurve.Graph, protected _data: Group[]) {
+        }
+
+        get data(): Group[] {
+            return this._data;
+        }
     }
 
     export class Graph {
@@ -150,7 +215,6 @@ module Kurve {
         }
       
         //Users
-    
         public meAsync(odataQuery?: string): Promise {
             var d = new Deferred();
             this.me((user, error) => {
@@ -183,7 +247,7 @@ module Kurve {
             return d.promise;
         }
 
-        public user(userId: string, callback: (users: any, error: Error) => void): void {
+        public user(userId: string, callback: (user: Kurve.User, error: Error) => void): void {
             var urlString: string = this.buildUsersUrl() + "/" + userId;
             this.getUser(urlString, callback);
         }
@@ -200,7 +264,7 @@ module Kurve {
             return d.promise;
         }
 
-        public users(callback: (users: any, error: Error) => void, odataQuery?: string): void {
+        public users(callback: (users: Kurve.Users, error: Error) => void, odataQuery?: string): void {
             var urlString: string = this.buildUsersUrl() + "/";
             if (odataQuery) {
                 urlString += "?" + odataQuery;
@@ -250,12 +314,12 @@ module Kurve {
 
         // Messages For User
             
-        public messagesForUser(userPrincipalName: string, callback: (messages: Message[], nextUrl: string, error: Error) => void, odataQuery?: string): void {
+        public messagesForUser(userPrincipalName: string, callback: (messages: Messages, error: Error) => void, odataQuery?: string): void {
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
             if (odataQuery) urlString += "?" + odataQuery;
 
-            this.getMessages(urlString, (result, nextUrl, error) => {
-                callback(result, nextUrl, error);
+            this.getMessages(urlString, (result, error) => {
+                callback(result, error);
             }, odataQuery);
         }
 
@@ -297,7 +361,7 @@ module Kurve {
         }
 
         // Groups/Relationships For User
-        public memberOfForUser(userPrincipalName: string, callback: (groups: any, error: Error) => void, odataQuery?: string) {
+        public memberOfForUser(userPrincipalName: string, callback: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string) {
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/memberOf";
             if (odataQuery) urlString += "?" + odataQuery;
             this.getGroups(urlString, callback, odataQuery);
@@ -315,7 +379,7 @@ module Kurve {
             return d.promise;
         }
 
-        public managerForUser(userPrincipalName: string, callback: (manager: any, error: Error) => void, odataQuery?: string) {
+        public managerForUser(userPrincipalName: string, callback: (manager: Kurve.User, error: Error) => void, odataQuery?: string) {
             // need odataQuery;
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/manager";
             this.getUser(urlString, callback);
@@ -333,7 +397,7 @@ module Kurve {
             return d.promise;
         }
 
-        public directReportsForUser(userPrincipalName: string, callback: (users: any, error: Error) => void, odataQuery?: string) {
+        public directReportsForUser(userPrincipalName: string, callback: (users: Kurve.Users, error: Error) => void, odataQuery?: string) {
             // Need odata query
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/directReports";
             this.getUsers(urlString, callback);
@@ -351,14 +415,14 @@ module Kurve {
             return d.promise;
         }
 
-        public photoForUser(userPrincipalName: string, callback: (photo: any, error: Error) => void) {
+        public profilePhotoForUser(userPrincipalName: string, callback: (photo: ProfilePhoto, error: Error) => void) {
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo";
             this.getPhoto(urlString, callback);
         }
 
-        public photoForUserAsync(userPrincipalName: string) {
+        public profilePhotoForUserAsync(userPrincipalName: string) {
             var d = new Deferred();
-            this.photoForUser(userPrincipalName, (result, error) => {
+            this.profilePhotoForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
                 } else {
@@ -368,14 +432,14 @@ module Kurve {
             return d.promise;
         }
 
-        public photoValueForUser(userPrincipalName: string, callback: (photo: any, error: Error) => void) {
+        public profilePhotoValueForUser(userPrincipalName: string, callback: (photo: any, error: Error) => void) {
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo/$value";
             this.getPhotoValue(urlString, callback);
         }
 
-        public photoValueForUserAsync(userPrincipalName: string) {
+        public profilePhotoValueForUserAsync(userPrincipalName: string) {
             var d = new Deferred();
-            this.photoValueForUser(userPrincipalName, (result, error) => {
+            this.profilePhotoValueForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
                 } else {
@@ -434,9 +498,9 @@ module Kurve {
 
         //Private methods
 
-        private getUsers(urlString, callback: (users: any, error: Error) => void): void {
+        private getUsers(urlString, callback: (users: Kurve.Users, error: Error) => void): void {
             this.get(urlString, ((result: string, errorGet: Error) => {
-
+                
                 if (errorGet) {
                     callback(null, errorGet);
                     return;
@@ -450,17 +514,16 @@ module Kurve {
                     return;
                 }
 
-                var resultsArray = !usersODATA.value ? [usersODATA] : usersODATA.value;
-
-                var users = {
-                    resultsPage: resultsArray
-                };
+                var resultsArray = (usersODATA.value ? usersODATA.value : [usersODATA]) as any[];
+                var users = new Kurve.Users(this, resultsArray.map(o => {
+                    return new User(this, o);
+                }));
 
                 //implement nextLink
                 var nextLink = usersODATA['@odata.nextLink'];
 
                 if (nextLink) {
-                    (<any>users).nextLink = ((callback?: (result: string, error: Error) => void) => {
+                    users.nextLink = ((callback?: (result: Users, error: Error) => void) => {
                         var d = new Deferred();
                         this.getUsers(nextLink, ((result, error) => {
                             if (callback)
@@ -519,23 +582,13 @@ module Kurve {
             }
         }
 
-       
-        private decorateMessageObject(message: any): void {
-        }
-
-        private decorateGroupObject(message: any): void {
-        }
-
-        private decoratePhotoObject(message: any): void {
-        }
-
-        private getMessages(urlString: string, callback: (messages: any, nextLink : string, error: Error) => void, odataQuery?: string): void {
+        private getMessages(urlString: string, callback: (messages: Messages, error: Error) => void, odataQuery?: string): void {
 
             var url = urlString;
             if (odataQuery) urlString += "?" + odataQuery;
             this.get(url, ((result: string, errorGet: Error) => {
                 if (errorGet) {
-                    callback(null, null, errorGet);
+                    callback(null, errorGet);
                     return;
                 }
 
@@ -543,21 +596,34 @@ module Kurve {
                 if (messagesODATA.error) {
                     var errorODATA = new Error();
                     errorODATA.other = messagesODATA.error;
-                    callback(null, null, errorODATA);
+                    callback(null, errorODATA);
                     return;
                 }
 
                 var resultsArray = (messagesODATA.value ? messagesODATA.value : [messagesODATA]) as any[];
-                var messages = resultsArray.map(o => {
+                var messages = new Kurve.Messages(this, resultsArray.map(o => {
                     return new Message(this, o);
-                });
+                }));
+                if (messagesODATA['@odata.nextLink']) {
+                    messages.nextLink = (callback?: (messages: Kurve.Messages, error: Error) => void, odataQuery?: string) => {
+                        var d = new Deferred();
+                        this.getMessages(messagesODATA['@odata.nextLink'], (messages, error) => {
+                            if (callback)
+                                callback(messages, error);
+                            else if (error)
+                                d.reject(error);
+                            else
+                                d.resolve(messages);
+                        }, odataQuery);
+                        return d.promise;
 
-                var nextLink = messagesODATA['@odata.nextLink'];
-                callback(messages, nextLink, null);
+                    };
+                }
+                callback(messages,  null);
             }));
         }
 
-        private getGroups(urlString: string, callback: (groups: any, error: Error) => void, odataQuery?: string): void {
+        private getGroups(urlString: string, callback: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string): void {
 
             var url = urlString;
             if (odataQuery) urlString += "?" + odataQuery;
@@ -574,20 +640,16 @@ module Kurve {
                     return;
                 }
 
-                var resultsArray = !groupsODATA.value ? [groupsODATA] : groupsODATA.value;
+                var resultsArray = (groupsODATA.value ? groupsODATA.value : [groupsODATA]) as any[];
+                var groups = new Kurve.Groups(this, resultsArray.map(o => {
+                    return new Group(this, o);
+                }));
 
-                for (var i: number = 0; i < resultsArray.length; i++) {
-                    this.decorateGroupObject(resultsArray[i]);
-                }
-
-                var groups = {
-                    resultsPage: resultsArray
-                };
                 var nextLink = groupsODATA['@odata.nextLink'];
 
                 //implement nextLink
                 if (nextLink) {
-                    (<any>groups).nextLink = ((callback?: (result: string, error: Error) => void) => {
+                    groups.nextLink = ((callback?: (result: Kurve.Groups, error: Error) => void) => {
                         var d = new Deferred();
                         this.getGroups(nextLink, ((result, error) => {
                             if (callback)
@@ -605,7 +667,7 @@ module Kurve {
             }));
         }
 
-        private getGroup(urlString, callback: (group: any, error: Error) => void): void {
+        private getGroup(urlString, callback: (group: Kurve.Group, error: Error) => void): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -618,15 +680,14 @@ module Kurve {
                     callback(null, ODATAError);
                     return;
                 }
+                var group = new Kurve.Group(this, ODATA);
 
-                this.decorateGroupObject(ODATA);
-
-                callback(ODATA, null);
+                callback(group, null);
             });
 
         }
 
-        private getPhoto(urlString, callback: (photo: any, error: Error) => void): void {
+        private getPhoto(urlString, callback: (photo: ProfilePhoto, error: Error) => void): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -639,10 +700,9 @@ module Kurve {
                     callback(null, errorODATA);
                     return;
                 }
+                var photo = new ProfilePhoto(this, ODATA);
 
-                this.decoratePhotoObject(ODATA);
-
-                callback(ODATA, null);
+                callback(photo, null);
             });
         }
 
@@ -665,24 +725,6 @@ module Kurve {
             return this.baseUrl + "/groups";
         }
     }
-
-    function applyMixins(derivedCtor: any, baseCtors: any[]) {
-        baseCtors.forEach(baseCtor => {
-            Object.getOwnPropertyNames(baseCtor.prototype).forEach(name => {
-                derivedCtor.prototype[name] = baseCtor.prototype[name];
-            })
-        });
-    }
-
-    function applyDataModel(derivedCtor: any, dataModelCtor: any) {
-        Object.getOwnPropertyNames(dataModelCtor.prototype).forEach(name => {
-            derivedCtor.prototype.__defineGetter__(name, () => { return this._data[name]; });
-            derivedCtor.prototype.__defineSetter__(name, (value) => { this._data[name] = value; });
-        });
-
-    }
-    
-
 }
 
 //*********************************************************   
