@@ -1,21 +1,39 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 module Kurve {
 
+
+
+
     export class UserDataModel {
-         public businessPhones;
-         public displayName: string;
-         public givenName: string;
-         public jobTitle: string;
-         public mail: string;
-         public mobilePhone: string;
-         public officeLocation: string;
-         public preferredLanguage: string;
-         public surname: string;
-         public userPrincipalName: string;
-         public id: string;
+        public businessPhones: string = null;
+        public displayName: string = null;
+        public givenName: string = null;
+        public jobTitle: string = null;
+        public mail: string = null;
+        public mobilePhone: string = null;
+        public officeLocation: string = null;
+        public preferredLanguage: string = null;
+        public surname: string = null;
+        public userPrincipalName: string = null;
+        public id: string = null;        
+        public Test() { }
     }
 
-    export class User  {        
+    export class User implements UserDataModel {
+
+        // For the DataModel Mixin - won't be allocated - just here for type checking the that mixin is implemented
+        public businessPhones;
+        public displayName: string;
+        public givenName: string;
+        public jobTitle: string;
+        public mail: string;
+        public mobilePhone: string;
+        public officeLocation: string;
+        public preferredLanguage: string;
+        public surname: string;
+        public userPrincipalName: string;
+        public id: string;
+
         constructor(protected graph: Kurve.Graph, protected _data: UserDataModel) {
         }
 
@@ -62,9 +80,9 @@ module Kurve {
         public calendarAsync(odataQuery?: string) {
             return this.graph.calendarForUserAsync(this._data.userPrincipalName, odataQuery);
         }
-
     }
 
+    applyDataModel(User, UserDataModel);
 
     export class MessageDataModel {
         bccRecipients: string[]
@@ -647,6 +665,24 @@ module Kurve {
             return this.baseUrl + "/groups";
         }
     }
+
+    function applyMixins(derivedCtor: any, baseCtors: any[]) {
+        baseCtors.forEach(baseCtor => {
+            Object.getOwnPropertyNames(baseCtor.prototype).forEach(name => {
+                derivedCtor.prototype[name] = baseCtor.prototype[name];
+            })
+        });
+    }
+
+    function applyDataModel(derivedCtor: any, dataModelCtor: any) {
+        Object.getOwnPropertyNames(dataModelCtor.prototype).forEach(name => {
+            derivedCtor.prototype.__defineGetter__(name, () => { return this._data[name]; });
+            derivedCtor.prototype.__defineSetter__(name, (value) => { this._data[name] = value; });
+        });
+
+    }
+    
+
 }
 
 //*********************************************************   
