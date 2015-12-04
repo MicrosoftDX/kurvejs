@@ -22,92 +22,69 @@ var Sample;
                 document.getElementById("initDiv").style.display = "none";
                 document.getElementById("scenarios").style.display = "";
                 document.getElementById("logoutBtn").addEventListener("click", (function () { _this.logout(); }));
-                // Login status
-                document.getElementById("loggedIn").addEventListener("click", (function () { _this.isLoggedIn(); }));
-                document.getElementById("whoAmI").addEventListener("click", (function () { _this.whoAmI(); }));
-                // Me information
-                document.getElementById("meUser").addEventListener("click", (function () { _this.loadUserMe(); }));
-                document.getElementById("userPhoto").addEventListener("click", (function () { _this.loadUserPhoto(); }));
-                document.getElementById("userMessages").addEventListener("click", (function () { _this.loadUserMessages(); }));
-                document.getElementById("userCalendar").addEventListener("click", (function () { _this.loadUserCalendar(); }));
-                document.getElementById("userContacts").addEventListener("click", (function () { _this.loadUserContacts(); }));
-                document.getElementById("userGroups").addEventListener("click", (function () { _this.loadUserGroups(); }));
-                document.getElementById("userManager").addEventListener("click", (function () { _this.loadUserManager(); }));
-                // Global information
-                document.getElementById("userById").addEventListener("click", (function () { _this.userById(); }));
                 document.getElementById("usersWithPaging").addEventListener("click", (function () { _this.loadUsersWithPaging(); }));
                 document.getElementById("usersWithCustomODATA").addEventListener("click", (function () { _this.loadUsersWithOdataQuery(document.getElementById('odataquery').value); }));
+                document.getElementById("meUser").addEventListener("click", (function () { _this.loadUserMe(); }));
+                document.getElementById("userById").addEventListener("click", (function () { _this.userById(); }));
+                document.getElementById("userMessages").addEventListener("click", (function () { _this.loadUserMessages(); }));
+                document.getElementById("userGroups").addEventListener("click", (function () { _this.loadUserGroups(); }));
+                document.getElementById("userManager").addEventListener("click", (function () { _this.loadUserManager(); }));
                 document.getElementById("groupsWithPaging").addEventListener("click", (function () { _this.loadGroupsWithPaging(); }));
                 document.getElementById("groupById").addEventListener("click", (function () { _this.groupById(); }));
+                document.getElementById("userPhoto").addEventListener("click", (function () { _this.loadUserPhoto(); }));
+                document.getElementById("loggedIn").addEventListener("click", (function () { _this.isLoggedIn(); }));
+                document.getElementById("whoAmI").addEventListener("click", (function () { _this.whoAmI(); }));
             });
         }
         //-----------------------------------------------Scenarios---------------------------------------------
+        //Scenario 1: Logout
         App.prototype.logout = function () {
             this.identity.logOut();
         };
-        App.prototype.isLoggedIn = function () {
-            document.getElementById("results").innerText = this.identity.isLoggedIn() ? "True" : "False";
+        //Scenario 2: Load users with paging
+        App.prototype.loadUsersWithPaging = function () {
+            var _this = this;
+            document.getElementById("results").innerHTML = "";
+            this.graph.users((function (users, error) {
+                _this.getUsersCallback(users, null);
+            }), "$top=5");
+            //this.graph.usersAsync("$top=5").then(((users) => {
+            //    this.getUsersCallback(users, null);
+            //}));
         };
-        App.prototype.whoAmI = function () {
-            document.getElementById("results").innerText = JSON.stringify(this.identity.getIdToken());
+        //Scenario 3: Load users with custom odata query
+        App.prototype.loadUsersWithOdataQuery = function (query) {
+            var _this = this;
+            document.getElementById("results").innerHTML = "";
+            this.graph.usersAsync(query).then(function (users) { _this.getUsersCallback(users, null); });
         };
         //Scenario 4: Load user "me"
         App.prototype.loadUserMe = function () {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync()
-                .then(function (user) {
-                document.getElementById("results").innerHTML += JSON.stringify(user.data) + "</br>";
-            })
-                .fail(function (error) { alert(JSON.stringify(error)); });
+            this.graph.meAsync().then(function (user) {
+                document.getElementById("results").innerHTML += user.data.displayName + "</br>";
+            });
         };
         //Scenario 5: Load user by ID
         App.prototype.userById = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.userAsync(document.getElementById("userId").value).then(function (user) {
-                document.getElementById("results").innerHTML += user.displayName + "</br>";
+                document.getElementById("results").innerHTML += user.data.displayName + "</br>";
             });
         };
-        App.prototype.loadUserCalendar = function () {
-            var _this = this;
-            document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then((function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
-                document.getElementById("results").innerHTML += "Calender:" + "</br>";
-                user.calendarAsync("$top=2").then(function (calendarEntries) {
-                    _this.calendarCallback(calendarEntries, null);
-                }).fail(function (error) { _this.calendarCallback(null, error); });
-            }));
-        };
-        App.prototype.loadUserContacts = function () {
-            var _this = this;
-            document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then((function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
-                document.getElementById("results").innerHTML += "Contacts:" + "</br>";
-                user.calendarAsync("$top=2").then(function (contacts) {
-                    _this.contactsCallback(contacts, null);
-                }).fail(function (error) { _this.calendarCallback(null, error); });
-            }));
-        };
+        //Scenario 6: Load user "me" and then its messages
         App.prototype.loadUserMessages = function () {
             var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync()
-                .then(function (user) {
+            this.graph.me((function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                user.messages(function (messages, nextUrl, error) {
-                    if (error) {
-                        messages = null;
-                    }
-                    _this.messagesCallback(messages, nextUrl, error);
-                }, "$top=25");
-            })
-                .fail(function (error) {
-                alert(JSON.stringify(error));
-            });
+                user.messages(function (messages, error) {
+                    _this.messagesCallback(messages, error);
+                }, "$top=2");
+            }));
         };
-        // Global directory information
+        //Scenario 7: Load user "me" and then its groups
         App.prototype.loadUserGroups = function () {
             var _this = this;
             document.getElementById("results").innerHTML = "";
@@ -122,31 +99,11 @@ var Sample;
         //Scenario 8: Load user "me" and then its manager
         App.prototype.loadUserManager = function () {
             document.getElementById("results").innerHTML = "";
-            this.graph.meAsync().then((function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
-                document.getElementById("results").innerHTML += "Manager:" + "</br>";
-                user.managerAsync().then(function (manager) {
-                    document.getElementById("results").innerHTML += manager.displayName + "</br>";
-                });
-            }));
-        };
-        App.prototype.loadUserPhoto = function () {
-            document.getElementById("results").innerHTML = "";
             this.graph.meAsync().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
-                document.getElementById("results").innerHTML += "Photo:" + "</br>";
-                user.photoValue(function (photoValue, error) {
-                    if (error)
-                        window.alert(JSON.stringify(error));
-                    else {
-                        var img = document.createElement("img");
-                        var reader = new FileReader();
-                        reader.onloadend = function () {
-                            img.src = reader.result;
-                        };
-                        reader.readAsDataURL(photoValue);
-                        document.getElementById("results").appendChild(img);
-                    }
+                document.getElementById("results").innerHTML += "Manager:" + "</br>";
+                user.manager(function (manager) {
+                    document.getElementById("results").innerHTML += manager.data.displayName + "</br>";
                 });
             });
         };
@@ -162,33 +119,55 @@ var Sample;
         App.prototype.groupById = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.groupAsync(document.getElementById("groupId").value).then(function (group) {
-                document.getElementById("results").innerHTML += group.displayName + "</br>";
+                document.getElementById("results").innerHTML += group.data.displayName + "</br>";
             });
         };
-        App.prototype.loadUsersWithPaging = function () {
-            var _this = this;
+        //Scenario 11: Load user "me" and then its messages
+        App.prototype.loadUserPhoto = function () {
             document.getElementById("results").innerHTML = "";
-            this.graph.users((function (users, error) {
-                _this.getUsersCallback(users, null);
-            }), "$top=5");
-            //this.graph.usersAsync("$top=5").then(((users) => {
-            //    this.getUsersCallback(users, null);
-            //}));
+            this.graph.me(function (user) {
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Photo:" + "</br>";
+                user.profilePhoto(function (photo, error) {
+                    if (error)
+                        window.alert(error.statusText);
+                    else {
+                        //Photo metadata
+                        var x = photo;
+                    }
+                });
+                user.profilePhotoValue(function (photoValue, error) {
+                    if (error)
+                        window.alert(error.statusText);
+                    else {
+                        var img = document.createElement("img");
+                        var reader = new FileReader();
+                        reader.onloadend = function () {
+                            img.src = reader.result;
+                        };
+                        reader.readAsDataURL(photoValue);
+                        document.getElementById("results").appendChild(img);
+                    }
+                });
+            });
         };
-        App.prototype.loadUsersWithOdataQuery = function (query) {
-            var _this = this;
-            document.getElementById("results").innerHTML = "";
-            this.graph.usersAsync(query).then(function (users) { _this.getUsersCallback(users, null); });
+        //Scenario 12: Is logged in?
+        App.prototype.isLoggedIn = function () {
+            document.getElementById("results").innerText = this.identity.isLoggedIn() ? "True" : "False";
+        };
+        //Scenario 13: Who am I?
+        App.prototype.whoAmI = function () {
+            document.getElementById("results").innerText = JSON.stringify(this.identity.getIdToken());
         };
         //--------------------------------Callbacks---------------------------------------------
         App.prototype.getUsersCallback = function (users, error) {
             var _this = this;
             if (error) {
-                document.getElementById("results").innerText = error;
+                document.getElementById("results").innerText = error.statusText;
                 return;
             }
-            users.resultsPage.forEach(function (item) {
-                document.getElementById("results").innerHTML += item.displayName + "</br>";
+            users.data.forEach(function (item) {
+                document.getElementById("results").innerHTML += item.data.displayName + "</br>";
             });
             if (users.nextLink) {
                 users.nextLink().then((function (result) {
@@ -199,11 +178,11 @@ var Sample;
         App.prototype.getGroupsCallback = function (groups, error) {
             var _this = this;
             if (error) {
-                document.getElementById("results").innerText = error;
+                document.getElementById("results").innerText = error.statusText;
                 return;
             }
-            groups.resultsPage.forEach(function (item) {
-                document.getElementById("results").innerHTML += item.displayName + "</br>";
+            groups.data.forEach(function (item) {
+                document.getElementById("results").innerHTML += item.data.displayName + "</br>";
             });
             if (groups.nextLink) {
                 groups.nextLink().then((function (result) {
@@ -211,36 +190,23 @@ var Sample;
                 }));
             }
         };
-        App.prototype.calendarCallback = function (calendarEntries, error) {
-            calendarEntries.resultsPage.forEach(function (item) {
-                document.getElementById("results").innerHTML += item.subject + "</br>";
-            });
-            if (calendarEntries.nextLink) {
-                calendarEntries.nextLink((function (messages, error) {
-                    // this.calendarCallback(messages, error);
-                }));
+        App.prototype.messagesCallback = function (messages, error) {
+            var _this = this;
+            if (messages.data) {
+                messages.data.forEach(function (item) {
+                    document.getElementById("results").innerHTML += item.data.subject + "</br>";
+                });
             }
-        };
-        App.prototype.contactsCallback = function (contacts, error) {
-            contacts.resultsPage.forEach(function (item) {
-                document.getElementById("results").innerHTML += item.subject + "</br>";
-            });
-            if (contacts.nextLink) {
-                contacts.nextLink(function (c, e) {
-                    // this.contactsCallback(c, e);
+            if (messages.nextLink) {
+                messages.nextLink().then(function (messages) {
+                    _this.messagesCallback(messages, error);
                 });
             }
         };
-        App.prototype.messagesCallback = function (messages, nextLink, error) {
-            messages.forEach(function (x) {
-                var item = x.data;
-                document.getElementById("results").innerHTML += item.subject + "</br>";
-            });
-        };
         App.prototype.groupsCallback = function (groups, error) {
             var _this = this;
-            groups.resultsPage.forEach(function (item) {
-                document.getElementById("results").innerHTML += item.displayName + "</br>";
+            groups.data.forEach(function (item) {
+                document.getElementById("results").innerHTML += item.data.displayName + "</br>";
             });
             if (groups.nextLink) {
                 groups.nextLink((function (groups, error) {
