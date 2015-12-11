@@ -37,15 +37,6 @@ declare module Kurve {
         resolved: boolean;
         rejected: boolean;
     }
-    class TypedPromise<T> extends Promise {
-        constructor(deferred: Deferred);
-        then(doneFilter: (T) => void, failFilter?: Function, progressFilter?: Function): TypedPromise<T>;
-        done(...callbacks: ((T) => void)[]): TypedPromise<T>;
-        fail(...callbacks: Function[]): TypedPromise<T>;
-        always(...callbacks: Function[]): TypedPromise<T>;
-        resolved: boolean;
-        rejected: boolean;
-    }
     interface IWhen {
         (deferred: Deferred): Promise;
         (promise: Promise): Promise;
@@ -53,6 +44,40 @@ declare module Kurve {
         (...args: Deferred[]): Promise;
     }
     var when: IWhen;
+}
+
+/// <reference path="promises.d.ts" />
+declare module Kurve {
+    class TypedDeferred<T> {
+        private _promise;
+        private _wrappedDeferred;
+        constructor();
+        promise: TypedPromise<T>;
+        state: string;
+        rejected: boolean;
+        resolved: boolean;
+        resolve(...args: any[]): TypedDeferred<T>;
+        resolveWith(context: any, ...args: any[]): TypedDeferred<T>;
+        reject(...args: any[]): TypedDeferred<T>;
+        rejectWith(context: any, ...args: any[]): TypedDeferred<T>;
+        progress(...callbacks: Function[]): TypedDeferred<T>;
+        notify(...args: any[]): TypedDeferred<T>;
+        notifyWith(context: any, ...args: any[]): TypedDeferred<T>;
+        then(doneFilter: Function, failFilter?: Function, progressFilter?: Function): TypedDeferred<T>;
+        done(...callbacks: Function[]): TypedDeferred<T>;
+        fail(...callbacks: Function[]): TypedDeferred<T>;
+        always(...callbacks: Function[]): TypedDeferred<T>;
+    }
+    class TypedPromise<T> {
+        protected deferred: TypedDeferred<T>;
+        constructor(deferred: TypedDeferred<T>);
+        then(doneFilter: (T) => void, failFilter?: Function, progressFilter?: Function): TypedPromise<T>;
+        done(...callbacks: ((T) => void)[]): TypedPromise<T>;
+        fail(...callbacks: Function[]): TypedPromise<T>;
+        always(...callbacks: Function[]): TypedPromise<T>;
+        resolved: boolean;
+        rejected: boolean;
+    }
 }
 
 declare module Kurve {

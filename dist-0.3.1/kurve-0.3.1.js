@@ -4,6 +4,219 @@ function __() { this.constructor = d; }
 __.prototype = b.prototype;
 d.prototype = new __();
 };
+///<reference path="promises.ts" />
+// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
+var Kurve;
+(function (Kurve) {
+    var TypedDeferred = (function () {
+        function TypedDeferred() {
+            this._promise = new TypedPromise(this);
+            this._wrappedDeferred = new Kurve.Deferred();
+        }
+        Object.defineProperty(TypedDeferred.prototype, "promise", {
+            get: function () {
+                return this._promise;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(TypedDeferred.prototype, "state", {
+            get: function () {
+                return this._wrappedDeferred.state;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(TypedDeferred.prototype, "rejected", {
+            get: function () {
+                return this._wrappedDeferred.rejected;
+            },
+            set: function (rejected) {
+                this._wrappedDeferred.rejected = rejected;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(TypedDeferred.prototype, "resolved", {
+            get: function () {
+                return this._wrappedDeferred.resolved;
+            },
+            set: function (resolved) {
+                this._wrappedDeferred.resolved = resolved;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        TypedDeferred.prototype.resolve = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i - 0] = arguments[_i];
+            }
+            args.unshift(this);
+            return this.resolveWith.apply(this, args);
+        };
+        TypedDeferred.prototype.resolveWith = function (context) {
+            var args = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                args[_i - 1] = arguments[_i];
+            }
+            (_a = this._wrappedDeferred).resolveWith.apply(_a, [context].concat(args));
+            return this;
+            var _a;
+        };
+        TypedDeferred.prototype.reject = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i - 0] = arguments[_i];
+            }
+            args.unshift(this);
+            return this.rejectWith.apply(this, args);
+        };
+        TypedDeferred.prototype.rejectWith = function (context) {
+            var args = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                args[_i - 1] = arguments[_i];
+            }
+            (_a = this._wrappedDeferred).rejectWith.apply(_a, [context].concat(args));
+            return this;
+            var _a;
+        };
+        TypedDeferred.prototype.progress = function () {
+            var callbacks = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                callbacks[_i - 0] = arguments[_i];
+            }
+            var d = new TypedDeferred();
+            d._wrappedDeferred = (_a = this._wrappedDeferred).progress.apply(_a, callbacks);
+            return d;
+            var _a;
+        };
+        TypedDeferred.prototype.notify = function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i - 0] = arguments[_i];
+            }
+            args.unshift(this);
+            return this.notifyWith.apply(this, args);
+        };
+        TypedDeferred.prototype.notifyWith = function (context) {
+            var args = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                args[_i - 1] = arguments[_i];
+            }
+            (_a = this._wrappedDeferred).notifyWith.apply(_a, [context].concat(args));
+            return this;
+            var _a;
+        };
+        TypedDeferred.prototype.then = function (doneFilter, failFilter, progressFilter) {
+            this._wrappedDeferred.then(doneFilter, failFilter, progressFilter);
+            return this;
+        };
+        TypedDeferred.prototype.done = function () {
+            var callbacks = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                callbacks[_i - 0] = arguments[_i];
+            }
+            var d = new TypedDeferred();
+            d._wrappedDeferred = (_a = this._wrappedDeferred).done.apply(_a, callbacks);
+            return d;
+            var _a;
+        };
+        TypedDeferred.prototype.fail = function () {
+            var callbacks = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                callbacks[_i - 0] = arguments[_i];
+            }
+            var d = new TypedDeferred();
+            d._wrappedDeferred = (_a = this._wrappedDeferred).fail.apply(_a, callbacks);
+            return d;
+            var _a;
+        };
+        TypedDeferred.prototype.always = function () {
+            var callbacks = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                callbacks[_i - 0] = arguments[_i];
+            }
+            var d = new TypedDeferred();
+            d._wrappedDeferred = (_a = this._wrappedDeferred).always.apply(_a, callbacks);
+            return d;
+            var _a;
+        };
+        return TypedDeferred;
+    })();
+    Kurve.TypedDeferred = TypedDeferred;
+    var TypedPromise = (function () {
+        function TypedPromise(deferred) {
+            this.deferred = deferred;
+        }
+        TypedPromise.prototype.then = function (doneFilter, failFilter, progressFilter) {
+            return this.deferred.then(doneFilter, failFilter, progressFilter).promise;
+        };
+        TypedPromise.prototype.done = function () {
+            var callbacks = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                callbacks[_i - 0] = arguments[_i];
+            }
+            return this.deferred.done.apply(this.deferred, callbacks).promise;
+        };
+        TypedPromise.prototype.fail = function () {
+            var callbacks = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                callbacks[_i - 0] = arguments[_i];
+            }
+            return this.deferred.fail.apply(this.deferred, callbacks).promise;
+        };
+        TypedPromise.prototype.always = function () {
+            var callbacks = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                callbacks[_i - 0] = arguments[_i];
+            }
+            return this.deferred.always.apply(this.deferred, callbacks).promise;
+        };
+        Object.defineProperty(TypedPromise.prototype, "resolved", {
+            get: function () {
+                return this.deferred.resolved;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(TypedPromise.prototype, "rejected", {
+            get: function () {
+                return this.deferred.rejected;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return TypedPromise;
+    })();
+    Kurve.TypedPromise = TypedPromise;
+})(Kurve || (Kurve = {}));
+//*********************************************************   
+//   
+//Kurve js, https://github.com/microsoftdx/kurvejs
+//  
+//Copyright (c) Microsoft Corporation  
+//All rights reserved.   
+//  
+// MIT License:  
+// Permission is hereby granted, free of charge, to any person obtaining  
+// a copy of this software and associated documentation files (the  
+// ""Software""), to deal in the Software without restriction, including  
+// without limitation the rights to use, copy, modify, merge, publish,  
+// distribute, sublicense, and/or sell copies of the Software, and to  
+// permit persons to whom the Software is furnished to do so, subject to  
+// the following conditions:  
+// The above copyright notice and this permission notice shall be  
+// included in all copies or substantial portions of the Software.  
+// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,  
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF  
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND  
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE  
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION  
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION  
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
+//   
+//*********************************************************   
 
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 var Kurve;
@@ -253,52 +466,6 @@ var Kurve;
         return Promise;
     })();
     Kurve.Promise = Promise;
-    var TypedPromise = (function (_super) {
-        __extends(TypedPromise, _super);
-        function TypedPromise(deferred) {
-            _super.call(this, deferred);
-        }
-        TypedPromise.prototype.then = function (doneFilter, failFilter, progressFilter) {
-            return this.deferred.then(doneFilter, failFilter, progressFilter).promise;
-        };
-        TypedPromise.prototype.done = function () {
-            var callbacks = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                callbacks[_i - 0] = arguments[_i];
-            }
-            return this.deferred.done.apply(this.deferred, callbacks).promise;
-        };
-        TypedPromise.prototype.fail = function () {
-            var callbacks = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                callbacks[_i - 0] = arguments[_i];
-            }
-            return this.deferred.fail.apply(this.deferred, callbacks).promise;
-        };
-        TypedPromise.prototype.always = function () {
-            var callbacks = [];
-            for (var _i = 0; _i < arguments.length; _i++) {
-                callbacks[_i - 0] = arguments[_i];
-            }
-            return this.deferred.always.apply(this.deferred, callbacks).promise;
-        };
-        Object.defineProperty(TypedPromise.prototype, "resolved", {
-            get: function () {
-                return this.deferred.resolved;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(TypedPromise.prototype, "rejected", {
-            get: function () {
-                return this.deferred.rejected;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        return TypedPromise;
-    })(Promise);
-    Kurve.TypedPromise = TypedPromise;
     Kurve.when = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
@@ -803,7 +970,7 @@ var Kurve;
         }
         //Users
         Graph.prototype.meAsync = function (odataQuery) {
-            var d = new TypedDeferred();
+            var d = new Kurve.TypedDeferred();
             this.me(function (user, error) {
                 if (error) {
                     d.reject(error);
@@ -822,7 +989,7 @@ var Kurve;
             this.getUser(urlString, callback);
         };
         Graph.prototype.userAsync = function (userId) {
-            var d = new TypedDeferred();
+            var d = new Kurve.TypedDeferred();
             this.user(userId, function (user, error) {
                 if (error) {
                     d.reject(error);
@@ -838,7 +1005,7 @@ var Kurve;
             this.getUser(urlString, callback);
         };
         Graph.prototype.usersAsync = function (odataQuery) {
-            var d = new TypedDeferred();
+            var d = new Kurve.TypedDeferred();
             this.users(function (users, error) {
                 if (error) {
                     d.reject(error);
@@ -902,7 +1069,7 @@ var Kurve;
             }, odataQuery);
         };
         Graph.prototype.messagesForUserAsync = function (userPrincipalName, odataQuery) {
-            var d = new TypedDeferred();
+            var d = new Kurve.TypedDeferred();
             this.messagesForUser(userPrincipalName, function (messages, error) {
                 if (error) {
                     d.reject(error);
@@ -923,7 +1090,7 @@ var Kurve;
             //    }, odataQuery);
         };
         Graph.prototype.calendarForUserAsync = function (userPrincipalName, odataQuery) {
-            var d = new TypedDeferred();
+            var d = new Kurve.TypedDeferred();
             // // To BE IMPLEMENTED
             //    this.calendarForUser(userPrincipalName, (events, error) => {
             //        if (error) {
@@ -942,7 +1109,7 @@ var Kurve;
             this.getGroups(urlString, callback, odataQuery);
         };
         Graph.prototype.memberOfForUserAsync = function (userPrincipalName, odataQuery) {
-            var d = new TypedDeferred();
+            var d = new Kurve.TypedDeferred();
             this.memberOfForUser(userPrincipalName, function (result, error) {
                 if (error) {
                     d.reject(error);
@@ -959,7 +1126,7 @@ var Kurve;
             this.getUser(urlString, callback);
         };
         Graph.prototype.managerForUserAsync = function (userPrincipalName, odataQuery) {
-            var d = new TypedDeferred();
+            var d = new Kurve.TypedDeferred();
             this.managerForUser(userPrincipalName, function (result, error) {
                 if (error) {
                     d.reject(error);
@@ -976,7 +1143,7 @@ var Kurve;
             this.getUsers(urlString, callback);
         };
         Graph.prototype.directReportsForUserAsync = function (userPrincipalName, odataQuery) {
-            var d = new TypedDeferred();
+            var d = new Kurve.TypedDeferred();
             this.directReportsForUser(userPrincipalName, function (result, error) {
                 if (error) {
                     d.reject(error);
@@ -992,7 +1159,7 @@ var Kurve;
             this.getPhoto(urlString, callback);
         };
         Graph.prototype.profilePhotoForUserAsync = function (userPrincipalName) {
-            var d = new TypedDeferred();
+            var d = new Kurve.TypedDeferred();
             this.profilePhotoForUser(userPrincipalName, function (result, error) {
                 if (error) {
                     d.reject(error);
@@ -1008,7 +1175,7 @@ var Kurve;
             this.getPhotoValue(urlString, callback);
         };
         Graph.prototype.profilePhotoValueForUserAsync = function (userPrincipalName) {
-            var d = new TypedDeferred();
+            var d = new Kurve.TypedDeferred();
             this.profilePhotoValueForUser(userPrincipalName, function (result, error) {
                 if (error) {
                     d.reject(error);
@@ -1021,7 +1188,7 @@ var Kurve;
         };
         //http verbs
         Graph.prototype.getAsync = function (url) {
-            var d = new TypedDeferred();
+            var d = new Kurve.TypedDeferred();
             this.get(url, function (response, error) {
                 if (!error)
                     d.resolve(response);
@@ -1202,7 +1369,7 @@ var Kurve;
                 //implement nextLink
                 if (nextLink) {
                     groups.nextLink = (function (callback) {
-                        var d = new TypedDeferred();
+                        var d = new Kurve.TypedDeferred();
                         _this.getGroups(nextLink, (function (result, error) {
                             if (callback)
                                 callback(result, error);
