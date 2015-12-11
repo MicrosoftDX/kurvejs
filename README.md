@@ -17,7 +17,7 @@ Reference the JavaScript file from your HTML page:
 Alternatively you can just reference the script from our CDN:
 
 ```html
-    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.3.0.js"></script>
+    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.3.1.js"></script>
 ```
 
 	
@@ -124,6 +124,9 @@ You are free to send us your feedback at this Github repo, send pull requests, e
 At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optionally KurveIdentity.<nolink>js + login.html. You may use the TypeScript libraries and reuse some of the sample app code (index.html and app.<nolink>js) for reference.
 
 # Release Notes
+
+## 0.3.1:
+ * Hotfix for the token expiration loop issue
 
 ## 0.3.0:
  * Better type support for all returned types in callbacks

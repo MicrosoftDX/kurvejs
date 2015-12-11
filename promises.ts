@@ -163,168 +163,6 @@ module Kurve {
 
     }
 
-    export class TypedDeferred<T> {
-
-        private doneCallbacks: Function[] = [];
-        private failCallbacks: Function[] = [];
-        private progressCallbacks: Function[] = [];
-        private _state: string;
-        private _promise: TypedPromise<T>;
-        private _result: any[];
-        private _notifyContext: any;
-        private _notifyArgs: any[];
-
-        constructor() {
-            this._promise = new TypedPromise<T>(this);
-            this._state = 'pending';
-        }
-
-        get promise(): TypedPromise<T> {
-            return this._promise;
-        }
-
-        get state(): string {
-            return this._state;
-        }
-
-        get rejected(): boolean {
-            return this.state === 'rejected';
-        }
-
-        set rejected(rejected: boolean) {
-            this._state = rejected ? 'rejected' : 'pending';
-        }
-
-        get resolved(): boolean {
-            return this.state === 'resolved';
-        }
-
-        set resolved(resolved: boolean) {
-            this._state = resolved ? 'resolved' : 'pending';
-        }
-
-        resolve(...args: any[]): Deferred {
-            args.unshift(this);
-            return this.resolveWith.apply(this, args);
-        }
-
-        resolveWith(context: any, ...args: any[]): TypedDeferred<T> {
-            this._result = args;
-            this.doneCallbacks.forEach(callback => {
-                callback.apply(context, args);
-            });
-            this.doneCallbacks = [];
-            this.resolved = true;
-            return this;
-        }
-
-        reject(...args: any[]): TypedDeferred<T> {
-            args.unshift(this);
-            return this.rejectWith.apply(this, args);
-        }
-
-        rejectWith(context: any, ...args: any[]): TypedDeferred<T> {
-            this.failCallbacks.forEach(callback => {
-                callback.apply(context, args);
-            });
-            this.failCallbacks = [];
-            this.rejected = true;
-            return this;
-        }
-
-        progress(...callbacks: Function[]): TypedDeferred<T> {
-            var d = new TypedDeferred<T>();
-            if (this.resolved || this.rejected) {
-                callbacks.forEach(callback => {
-                    callback.apply(this._notifyContext, this._notifyArgs);
-                });
-                return d;
-            }
-            callbacks.forEach(callback => {
-                this.progressCallbacks.push(this.wrap(d, callback, d.notify));
-            });
-            this.checkStatus();
-            return d;
-        }
-
-        notify(...args: any[]): TypedDeferred<T> {
-            args.unshift(this);
-            return this.notifyWith.apply(this, args);
-        }
-
-        notifyWith(context: any, ...args: any[]): TypedDeferred<T> {
-            if (this.resolved || this.rejected) {
-                return this;
-            }
-            this._notifyContext = context;
-            this._notifyArgs = args;
-            this.progressCallbacks.forEach(callback => {
-                callback.apply(context, args);
-            });
-            return this;
-        }
-
-        private checkStatus() {
-            if (this.resolved) {
-                this.resolve.apply(this, this._result);
-            } else if (this.rejected) {
-                this.reject.apply(this, this._result);
-            }
-        }
-
-        then(doneFilter: Function, failFilter?: Function, progressFilter?: Function): TypedDeferred<T> {
-            var d = new TypedDeferred<T>();
-            this.progressCallbacks.push(this.wrap(d, progressFilter, d.progress));
-            this.doneCallbacks.push(this.wrap(d, doneFilter, d.resolve));
-            this.failCallbacks.push(this.wrap(d, failFilter, d.reject));
-            this.checkStatus();
-            return this;
-        }
-
-        private wrap(d: TypedDeferred<T>, f: Function, method: Function): Function {
-            return (...args: any[]) => {
-                var result = f.apply(f, args);
-                if (result && result instanceof Promise) {
-                    result.then(
-                        () => { d.resolve(); },
-                        () => { d.reject(); }
-                    );
-                } else {
-                    method.apply(d, [result]);
-                }
-            };
-        }
-
-        done(...callbacks: Function[]): TypedDeferred<T> {
-            var d = new TypedDeferred<T>();
-            callbacks.forEach(callback => {
-                this.doneCallbacks.push(this.wrap(d, callback, d.resolve));
-            });
-            this.checkStatus();
-            return d;
-        }
-
-        fail(...callbacks: Function[]): TypedDeferred<T> {
-            var d = new TypedDeferred<T>();
-            callbacks.forEach(callback => {
-                this.failCallbacks.push(this.wrap(d, callback, d.reject));
-            });
-            this.checkStatus();
-            return d;
-        }
-
-        always(...callbacks: Function[]): TypedDeferred<T> {
-            var d = new TypedDeferred<T>();
-            callbacks.forEach(callback => {
-                this.doneCallbacks.push(this.wrap(d, callback, d.resolve));
-                this.failCallbacks.push(this.wrap(d, callback, d.reject));
-            });
-            this.checkStatus();
-            return d;
-        }
-    }
-
-
     export class Promise {
 
         constructor(protected deferred: Deferred) {
@@ -356,9 +194,9 @@ module Kurve {
 
     }
 
-    export class TypedPromise<T>  {
-        constructor (protected deferred: TypedDeferred<T>) {
-            
+    export class TypedPromise<T> extends Promise {
+        constructor (deferred: Deferred) {
+            super(deferred);
         }
 
         then(doneFilter: (T) => void, failFilter?: Function, progressFilter?: Function): TypedPromise<T> {
@@ -366,15 +204,15 @@ module Kurve {
         }
 
         done(...callbacks: ((T) => void)[]): TypedPromise<T> {
-            return (<TypedDeferred<T>>this.deferred.done.apply(this.deferred, callbacks)).promise as TypedPromise<T>;
+            return (<Deferred>this.deferred.done.apply(this.deferred, callbacks)).promise as TypedPromise<T>;
         }
 
         fail(...callbacks: Function[]): TypedPromise<T> {
-            return (<TypedDeferred<T>>this.deferred.fail.apply(this.deferred, callbacks)).promise as TypedPromise<T>
+            return (<Deferred>this.deferred.fail.apply(this.deferred, callbacks)).promise as TypedPromise<T>
         }
 
         always(...callbacks: Function[]): TypedPromise<T> {
-            return (<TypedDeferred<T>>this.deferred.always.apply(this.deferred, callbacks)).promise as TypedPromise<T>
+            return (<Deferred>this.deferred.always.apply(this.deferred, callbacks)).promise as TypedPromise<T>
         }
 
         get resolved(): boolean {

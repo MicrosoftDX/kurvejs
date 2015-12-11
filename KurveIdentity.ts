@@ -17,6 +17,7 @@ module Kurve {
         private nonce: string;
         private idToken: any;
         private loginCallback: (error: Error) => void;
+        private accessTokenCallback: (token:string, error: Error) => void;
         private getTokenCallback: (token: string, error: Error) => void;
         private redirectUri: string;
         private tokenCache: any;
@@ -83,9 +84,11 @@ module Kurve {
                 given_name: decodedTokenJSON.given_name,
                 name: decodedTokenJSON.name
             }
+            var expiration: Number = expiryDate.getTime() - new Date().getTime() - 300000;
+
             this.refreshTimer = setTimeout((() => {
                 this.renewIdToken();
-            }), parseInt(decodedTokenJSON.exp) * 1000 - 300000); 
+            }), expiration); 
         }
 
         private decodeAccessToken(accessToken: string, resource:string): void {
@@ -126,6 +129,8 @@ module Kurve {
             }));
             return d.promise;
         }
+
+      
 
         public getAccessToken(resource: string, callback: (token: string, error: Error) => void): void {
             //Check for cache and see if we have a valid token
