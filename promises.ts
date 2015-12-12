@@ -1,238 +1,232 @@
-﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
+﻿// Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
+// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
+
 module Kurve {
-    // Based on https://www.npmjs.com/package/typescript-promises
-    export class Deferred {
 
-        private doneCallbacks: Function[] = [];
-        private failCallbacks: Function[] = [];
-        private progressCallbacks: Function[] = [];
-        private _state: string;
-        private _promise: Promise;
-        private _result: any[];
-        private _notifyContext: any;
-        private _notifyArgs: any[];
 
-        constructor() {
-            this._promise = new Promise(this);
-            this._state = 'pending';
+    function DispatchDeferred(closure: () => void) {
+        setTimeout(closure, 0);
+    }
+
+    enum PromiseState { Pending, ResolutionInProgress, Resolved, Rejected }
+
+    class Client {
+        constructor(
+            private _dispatcher: (closure: () => void) => void,
+            private _successCB: any,
+            private _errorCB: any
+        ) {
+            this.result = new Deferred<any, any>(_dispatcher);
         }
 
-        get promise(): Promise {
-            return this._promise;
-        }
-
-        get state(): string {
-            return this._state;
-        }
-
-        get rejected(): boolean {
-            return this.state === 'rejected';
-        }
-
-        set rejected(rejected: boolean) {
-            this._state = rejected ? 'rejected' : 'pending';
-        }
-
-        get resolved(): boolean {
-            return this.state === 'resolved';
-        }
-
-        set resolved(resolved: boolean) {
-            this._state = resolved ? 'resolved' : 'pending';
-        }
-
-        resolve(...args: any[]): Deferred {
-            args.unshift(this);
-            return this.resolveWith.apply(this, args);
-        }
-
-        resolveWith(context: any, ...args: any[]): Deferred {
-            this._result = args;
-            this.doneCallbacks.forEach(callback => {
-                callback.apply(context, args);
-            });
-            this.doneCallbacks = [];
-            this.resolved = true;
-            return this;
-        }
-
-        reject(...args: any[]): Deferred {
-            args.unshift(this);
-            return this.rejectWith.apply(this, args);
-        }
-
-        rejectWith(context: any, ...args: any[]): Deferred {
-            this.failCallbacks.forEach(callback => {
-                callback.apply(context, args);
-            });
-            this.failCallbacks = [];
-            this.rejected = true;
-            return this;
-        }
-
-        progress(...callbacks: Function[]): Deferred {
-            var d = new Deferred();
-            if (this.resolved || this.rejected) {
-                callbacks.forEach(callback => {
-                    callback.apply(this._notifyContext, this._notifyArgs);
-                });
-                return d;
+        resolve(value: any, defer: boolean): void {
+            if (typeof (this._successCB) !== 'function') {
+                this.result.resolve(value);
+                return;
             }
-            callbacks.forEach(callback => {
-                this.progressCallbacks.push(this.wrap(d, callback, d.notify));
-            });
-            this.checkStatus();
-            return d;
+
+            if (defer) {
+                this._dispatcher(() => this._dispatchCallback(this._successCB, value));
+            } else {
+                this._dispatchCallback(this._successCB, value);
+            }
         }
 
-        notify(...args: any[]): Deferred {
-            args.unshift(this);
-            return this.notifyWith.apply(this, args);
+        reject(error: any, defer: boolean): void {
+            if (typeof (this._errorCB) !== 'function') {
+                this.result.reject(error);
+                return;
+            }
+
+            if (defer) {
+                this._dispatcher(() => this._dispatchCallback(this._errorCB, error));
+            } else {
+                this._dispatchCallback(this._errorCB, error);
+            }
         }
 
-        notifyWith(context: any, ...args: any[]): Deferred {
-            if (this.resolved || this.rejected) {
+        private _dispatchCallback(callback: (arg: any) => any, arg: any): void {
+            var result: any,
+                then: any,
+                type: string;
+
+            try {
+                result = callback(arg);
+                this.result.resolve(result);
+            } catch (err) {
+                this.result.reject(err);
+                return;
+            }
+        }
+
+        result: Deferred<any, any>;
+    }
+
+    export class Deferred<T, E>  {
+        private _dispatcher: (closure: () => void)=> void;
+
+        constructor();
+        constructor(dispatcher: (closure: () => void) => void);
+        constructor(dispatcher?: (closure: () => void) => void) {
+            if (dispatcher)
+                this._dispatcher = dispatcher;
+            else
+                this._dispatcher = DispatchDeferred;
+            this.promise = new Promise<T, E>(this);
+        }
+
+        private DispatchDeferred(closure: () => void) {
+            setTimeout(closure, 0);
+        }
+
+        then(successCB: any, errorCB: any): any {
+            if (typeof (successCB) !== 'function' && typeof (errorCB) !== 'function') {
+                return this.promise;
+            }
+
+            var client = new Client(this._dispatcher, successCB, errorCB);
+
+            switch (this._state) {
+                case PromiseState.Pending:
+                case PromiseState.ResolutionInProgress:
+                    this._stack.push(client);
+                    break;
+
+                case PromiseState.Resolved:
+                    client.resolve(this._value, true);
+                    break;
+
+                case PromiseState.Rejected:
+                    client.reject(this._error, true);
+                    break;
+            }
+
+            return client.result.promise;
+        }
+
+        resolve(value?: T): Deferred<T, E>;
+
+        resolve(value?: Promise<T, E>): Deferred<T, E>;
+
+        resolve(value?: any): Deferred<T, E> {
+            if (this._state !== PromiseState.Pending) {
                 return this;
             }
-            this._notifyContext = context;
-            this._notifyArgs = args;
-            this.progressCallbacks.forEach(callback => {
-                callback.apply(context, args);
-            });
-            return this;
+
+            return this._resolve(value);
         }
 
-        private checkStatus() {
-            if (this.resolved) {
-                this.resolve.apply(this, this._result);
-            } else if (this.rejected) {
-                this.reject.apply(this, this._result);
-            }
-        }
+        private _resolve(value: any): Deferred<T, E> {
+            var type = typeof (value),
+                then: any,
+                pending = true;
 
-        then(doneFilter: Function, failFilter?: Function, progressFilter?: Function): Deferred {
-            var d = new Deferred();
-            this.progressCallbacks.push(this.wrap(d, progressFilter, d.progress));
-            this.doneCallbacks.push(this.wrap(d, doneFilter, d.resolve));
-            this.failCallbacks.push(this.wrap(d, failFilter, d.reject));
-            this.checkStatus();
-            return this;
-        }
+            try {
+                if (value !== null &&
+                    (type === 'object' || type === 'function') &&
+                    typeof (then = value.then) === 'function') {
+                    if (value === this.promise) {
+                        throw new TypeError('recursive resolution');
+                    }
 
-        private wrap(d: Deferred, f: Function, method: Function): Function {
-            return (...args: any[]) => {
-                var result = f.apply(f, args);
-                if (result && result instanceof Promise) {
-                    result.then(
-                        () => { d.resolve(); },
-                        () => { d.reject(); }
+                    this._state = PromiseState.ResolutionInProgress;
+                    then.call(value,
+                        (result: any): void => {
+                            if (pending) {
+                                pending = false;
+                                this._resolve(result);
+                            }
+                        },
+                        (error: any): void => {
+                            if (pending) {
+                                pending = false;
+                                this._reject(error);
+                            }
+                        }
                     );
                 } else {
-                    method.apply(d, [result]);
+                    this._state = PromiseState.ResolutionInProgress;
+
+                    this._dispatcher(() => {
+                        this._state = PromiseState.Resolved;
+                        this._value = value;
+
+                        var i: number,
+                            stackSize = this._stack.length;
+
+                        for (i = 0; i < stackSize; i++) {
+                            this._stack[i].resolve(value, false);
+                        }
+
+                        this._stack.splice(0, stackSize);
+                    });
                 }
-            };
+            } catch (err) {
+                if (pending) {
+                    this._reject(err);
+                }
+            }
+
+            return this;
         }
 
-        done(...callbacks: Function[]): Deferred {
-            var d = new Deferred();
-            callbacks.forEach(callback => {
-                this.doneCallbacks.push(this.wrap(d, callback, d.resolve));
-            });
-            this.checkStatus();
-            return d;
+        reject(error?: E): Deferred<T, E> {
+            if (this._state !== PromiseState.Pending) {
+                return this;
+            }
+
+            return this._reject(error);
         }
 
-        fail(...callbacks: Function[]): Deferred {
-            var d = new Deferred();
-            callbacks.forEach(callback => {
-                this.failCallbacks.push(this.wrap(d, callback, d.reject));
+        private _reject(error?: any): Deferred<T, E> {
+            this._state = PromiseState.ResolutionInProgress;
+
+            this._dispatcher(() => {
+                this._state = PromiseState.Rejected;
+                this._error = error;
+
+                var stackSize = this._stack.length,
+                    i = 0;
+
+                for (i = 0; i < stackSize; i++) {
+                    this._stack[i].reject(error, false);
+                }
+
+                this._stack.splice(0, stackSize);
             });
-            this.checkStatus();
-            return d;
+
+            return this;
         }
 
-        always(...callbacks: Function[]): Deferred {
-            var d = new Deferred();
-            callbacks.forEach(callback => {
-                this.doneCallbacks.push(this.wrap(d, callback, d.resolve));
-                this.failCallbacks.push(this.wrap(d, callback, d.reject));
-            });
-            this.checkStatus();
-            return d;
-        }
+        promise: Promise<T, E>;
+
+        private _stack: Array<Client> = [];
+        private _state = PromiseState.Pending;
+        private _value: T;
+        private _error: any;
     }
 
-    export class Promise {
+    export class Promise<T, E> implements Promise<T, E> {
+        constructor(private _deferred: Deferred<T, E>) { }
 
-        constructor(protected deferred: Deferred) {
+        then<R>(
+            successCallback?: (result: T) => R,
+            errorCallback?: (error: E) => R
+        ): Promise<R, E>;
+
+        then(successCallback: any, errorCallback: any): any {
+            return this._deferred.then(successCallback, errorCallback);
         }
 
-        then(doneFilter: Function, failFilter?: Function, progressFilter?: Function): Promise {
-            return this.deferred.then(doneFilter, failFilter, progressFilter).promise;
-        }
+        fail<R>(
+            errorCallback?: (error: E) => R
+        ): Promise<R, E>;
 
-        done(...callbacks: Function[]): Promise {
-            return (<Deferred>this.deferred.done.apply(this.deferred, callbacks)).promise;
+        fail(errorCallback: any): any {
+            return this._deferred.then(undefined, errorCallback);
         }
-
-        fail(...callbacks: Function[]): Promise {
-            return (<Deferred>this.deferred.fail.apply(this.deferred, callbacks)).promise;
-        }
-
-        always(...callbacks: Function[]): Promise {
-            return (<Deferred>this.deferred.always.apply(this.deferred, callbacks)).promise;
-        }
-
-        get resolved(): boolean {
-            return this.deferred.resolved;
-        }
-
-        get rejected(): boolean {
-            return this.deferred.rejected;
-        }
-
     }
-
-    export interface IWhen {
-        (deferred: Deferred): Promise;
-        (promise: Promise): Promise;
-        (object: any): Promise;
-        (...args: Deferred[]): Promise;
-    }
-
-    export var when: IWhen = (...args: any[]): Promise => {
-        if (args.length === 1) {
-            var arg = args[0];
-            if (arg instanceof Deferred) {
-                return (<Deferred>arg).promise;
-            }
-            if (arg instanceof Promise) {
-                return arg;
-            }
-        }
-        var done = new Deferred();
-        if (args.length === 1) {
-            done.resolve(args[0]);
-            return done.promise;
-        }
-        var pending = args.length;
-        var results = [];
-        var onDone = (...resultArgs: any[]) => {
-            results.push(resultArgs);
-            if (--pending === 0) {
-                done.resolve.apply(done, results);
-            }
-        };
-        var onFail = () => {
-            done.reject();
-        };
-        args.forEach(a => {
-            (<Deferred>a).then(onDone, onFail);
-        });
-        return done.promise;
-    };
 }
-
 
 //*********************************************************   
 //   

@@ -17,7 +17,7 @@ Reference the JavaScript file from your HTML page:
 Alternatively you can just reference the script from our CDN:
 
 ```html
-    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.3.1.js"></script>
+    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.3.5.js"></script>
 ```
 
 	
@@ -125,6 +125,9 @@ At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optio
 
 # Release Notes
 
+## 0.3.5:
+ * New typed promises syntax supporting return and exception types
+ 
 ## 0.3.1:
  * Hotfix for the token expiration loop issue
 

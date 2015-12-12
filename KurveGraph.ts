@@ -40,7 +40,7 @@ module Kurve {
             this.graph.memberOfForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
-        public memberOfAsync(odataQuery?: string): TypedPromise<Messages> {
+        public memberOfAsync(odataQuery?: string): Promise<Messages,Error> {
             return this.graph.memberOfForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
@@ -48,7 +48,7 @@ module Kurve {
             this.graph.messagesForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
-        public messagesAsync(odataQuery?: string): TypedPromise<Messages> {
+        public messagesAsync(odataQuery?: string): Promise<Messages,Error> {
             return this.graph.messagesForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
@@ -56,7 +56,7 @@ module Kurve {
             this.graph.managerForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
-        public managerAsync(odataQuery?: string): TypedPromise<User> {
+        public managerAsync(odataQuery?: string): Promise<User,Error> {
             return this.graph.managerForUserAsync(this._data.userPrincipalName, odataQuery);
         }      
 
@@ -64,7 +64,7 @@ module Kurve {
             this.graph.profilePhotoForUser(this._data.userPrincipalName, callback);
         }
 
-        public profilePhotoAsync(): TypedPromise<ProfilePhoto> {
+        public profilePhotoAsync(): Promise<ProfilePhoto, Error> {
             return this.graph.profilePhotoForUserAsync(this._data.userPrincipalName);
         }
 
@@ -72,7 +72,7 @@ module Kurve {
             this.graph.profilePhotoValueForUser(this._data.userPrincipalName, callback);
         }
 
-        public profilePhotoValueAsync(): TypedPromise<any> {
+        public profilePhotoValueAsync(): Promise<any, Error> {
             return this.graph.profilePhotoValueForUserAsync(this._data.userPrincipalName);
         }
 
@@ -80,7 +80,7 @@ module Kurve {
             this.graph.calendarForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
-        public calendarAsync(odataQuery?: string) : TypedPromise<CalendarEvents> {
+        public calendarAsync(odataQuery?: string): Promise<CalendarEvents, Error> {
             return this.graph.calendarForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
@@ -88,7 +88,7 @@ module Kurve {
 
     export class Users {
 
-        public nextLink: (callback?: (users: Kurve.Users, error: Error) => void, odataQuery?: string) => Promise
+        public nextLink: (callback?: (users: Kurve.Users, error: Error) => void, odataQuery?: string) => Promise<Users, Error>
         constructor(protected graph: Kurve.Graph, protected _data: User[]) {
         }
 
@@ -135,7 +135,7 @@ module Kurve {
 
     export class Messages {
 
-        public nextLink: (callback?: (messages: Kurve.Messages, error: Error) => void, odataQuery?: string) => Promise
+        public nextLink: (callback?: (messages: Kurve.Messages, error: Error) => void, odataQuery?: string) => Promise<Messages, Error>
         constructor(protected graph: Kurve.Graph, protected _data: Message[]) {
         }
 
@@ -148,7 +148,7 @@ module Kurve {
     }
     export class CalendarEvents {
 
-        public nextLink: (callback?: (events: Kurve.CalendarEvents, error: Error) => void, odataQuery?: string) => Promise
+        public nextLink: (callback?: (events: Kurve.CalendarEvents, error: Error) => void, odataQuery?: string) => Promise<(events: Kurve.CalendarEvents, error: Error) => void,Error>
         constructor(protected graph: Kurve.Graph, protected _data: CalendarEvent[]) {
         }
 
@@ -186,7 +186,7 @@ module Kurve {
 
     export class Groups {
 
-        public nextLink: (callback?: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string) => TypedPromise<Groups>
+        public nextLink: (callback?: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string) => Promise<Groups, Error>
         constructor(protected graph: Kurve.Graph, protected _data: Group[]) {
         }
 
@@ -215,8 +215,8 @@ module Kurve {
         }
       
         //Users
-        public meAsync(odataQuery?: string): TypedPromise<User> {
-            var d = new TypedDeferred<User>();
+        public meAsync(odataQuery?: string): Promise<User, Error> {
+            var d = new Deferred<User,Error>();
             this.me((user, error) => {
                 if (error) {
                     d.reject(error);
@@ -235,8 +235,8 @@ module Kurve {
             this.getUser(urlString, callback);
         }
 
-        public userAsync(userId: string): TypedPromise<User> {
-            var d = new TypedDeferred<User>();
+        public userAsync(userId: string): Promise<User, Error> {
+            var d = new Deferred<User,Error>();
             this.user(userId, (user, error) => {
                 if (error) {
                     d.reject(error);
@@ -252,8 +252,8 @@ module Kurve {
             this.getUser(urlString, callback);
         }
 
-        public usersAsync(odataQuery?: string): TypedPromise<Users> {
-            var d = new TypedDeferred<Users>();
+        public usersAsync(odataQuery?: string): Promise<Users, Error> {
+            var d = new Deferred<Users,Error>();
             this.users((users, error) => {
                 if (error) {
                     d.reject(error);
@@ -274,8 +274,8 @@ module Kurve {
 
         //Groups
 
-        public groupAsync(groupId: string): Promise {
-            var d = new Deferred();
+        public groupAsync(groupId: string): Promise<Group,Error> {
+            var d = new Deferred<Group,Error>();
             this.group(groupId, (group, error) => {
                 if (error) {
                     d.reject(error);
@@ -299,8 +299,9 @@ module Kurve {
             this.getGroups(urlString, callback);
         }
 
-        public groupsAsync(odataQuery?: string): Promise {
-            var d = new Deferred();
+        public groupsAsync(odataQuery?: string): Promise<Groups,Error> {
+            var d = new Deferred<Groups,Error>();
+            
             this.groups((groups, error) => {
                 if (error) {
                     d.reject(error);
@@ -323,8 +324,8 @@ module Kurve {
             }, odataQuery);
         }
 
-        public messagesForUserAsync(userPrincipalName: string, odataQuery?: string): TypedPromise<Messages> {
-            var d = new TypedDeferred<Messages>();
+        public messagesForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error> {
+            var d = new Deferred<Messages,Error>();
             this.messagesForUser(userPrincipalName, (messages, error) => {
                 if (error) {
                     d.reject(error);
@@ -347,8 +348,8 @@ module Kurve {
         //    }, odataQuery);
         }
 
-        public calendarForUserAsync(userPrincipalName: string, odataQuery?: string): TypedPromise<CalendarEvents> {
-            var d = new TypedDeferred<CalendarEvents>();
+        public calendarForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<CalendarEvents, Error> {
+            var d = new Deferred<CalendarEvents,Error>();
             // // To BE IMPLEMENTED
             //    this.calendarForUser(userPrincipalName, (events, error) => {
             //        if (error) {
@@ -367,8 +368,8 @@ module Kurve {
             this.getGroups(urlString, callback, odataQuery);
         }
 
-        public memberOfForUserAsync(userPrincipalName: string, odataQuery?: string) : TypedPromise<Messages> {
-            var d = new TypedDeferred<Messages>();
+        public memberOfForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error> {
+            var d:any = new Deferred<Messages,Error>();
             this.memberOfForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
@@ -385,8 +386,8 @@ module Kurve {
             this.getUser(urlString, callback);
         }
 
-        public managerForUserAsync(userPrincipalName: string, odataQuery?: string) : TypedPromise<User> {
-            var d = new TypedDeferred<User>();
+        public managerForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<User, Error> {
+            var d = new Deferred<User,Error>();
             this.managerForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
@@ -403,8 +404,8 @@ module Kurve {
             this.getUsers(urlString, callback);
         }
 
-        public directReportsForUserAsync(userPrincipalName: string, odataQuery?: string) : TypedPromise<Users> {
-            var d = new TypedDeferred<Users>();
+        public directReportsForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Users, Error> {
+            var d = new Deferred<Users,Error>();
             this.directReportsForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
@@ -420,8 +421,9 @@ module Kurve {
             this.getPhoto(urlString, callback);
         }
 
-        public profilePhotoForUserAsync(userPrincipalName: string): TypedPromise<ProfilePhoto> {
-            var d = new TypedDeferred < ProfilePhoto>();
+        public profilePhotoForUserAsync(userPrincipalName: string): Promise<ProfilePhoto, Error> {
+            var d = new Deferred<ProfilePhoto,Error>();
+            
             this.profilePhotoForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
@@ -437,8 +439,8 @@ module Kurve {
             this.getPhotoValue(urlString, callback);
         }
 
-        public profilePhotoValueForUserAsync(userPrincipalName: string) : TypedPromise<any>{
-            var d = new TypedDeferred<any>();
+        public profilePhotoValueForUserAsync(userPrincipalName: string): Promise<any, Error>{
+            var d = new Deferred<any,Error>();
             this.profilePhotoValueForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
@@ -450,13 +452,15 @@ module Kurve {
         }
     
         //http verbs
-        public getAsync(url: string): TypedPromise<string> {
-            var d = new TypedDeferred<string>();
+        public getAsync(url: string): Promise<string, Error> {
+            var d = new Deferred<string,Error>();
             this.get(url, (response, error) => {
-                if (!error)
+                if (!error) {
                     d.resolve(response);
-                else
+                }
+                else {
                     d.reject(error);
+                }
             });
             return d.promise;
         }
@@ -524,14 +528,16 @@ module Kurve {
 
                 if (nextLink) {
                     users.nextLink = ((callback?: (result: Users, error: Error) => void) => {
-                        var d = new Deferred();
+                        var d = new Deferred<Users,Error>();
                         this.getUsers(nextLink, ((result, error) => {
                             if (callback)
                                 callback(result, error);
-                            else if (error)
+                            else if (error) {
                                 d.reject(error);
-                            else
+                            }
+                            else {
                                 d.resolve(result);
+                            }
                         }));
                         return d.promise;
                     });
@@ -605,15 +611,18 @@ module Kurve {
                     return new Message(this, o);
                 }));
                 if (messagesODATA['@odata.nextLink']) {
-                    messages.nextLink = (callback?: (messages: Kurve.Messages, error: Error) => void, odataQuery?: string) => {
-                        var d = new Deferred();
+                    messages.nextLink = (callback?: (messages: Messages, error: Error) => void, odataQuery?: string) => {
+                        var d = new Deferred<Messages,Error>();
+                        
                         this.getMessages(messagesODATA['@odata.nextLink'], (messages, error) => {
                             if (callback)
                                 callback(messages, error);
-                            else if (error)
+                            else if (error) {
                                 d.reject(error);
-                            else
+                            }
+                            else {
                                 d.resolve(messages);
+                            }
                         }, odataQuery);
                         return d.promise;
 
@@ -649,15 +658,17 @@ module Kurve {
 
                 //implement nextLink
                 if (nextLink) {
-                    groups.nextLink = ((callback?: (result: Kurve.Groups, error: Error) => void) => {
-                        var d = new TypedDeferred<Groups>();
+                    groups.nextLink = ((callback?: (result: Groups, error: Error) => void) => {
+                        var d = new Deferred<Groups,Error>();
                         this.getGroups(nextLink, ((result, error) => {
                             if (callback)
                                 callback(result, error);
-                            else if (error)
+                            else if (error) {
                                 d.reject(error);
-                            else
+                            }
+                            else {
                                 d.resolve(result);
+                            }
                         }));
                         return d.promise;
                     });

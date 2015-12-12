@@ -1,11 +1,16 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 
 module Sample {
+    class Error {
+    }
     export class App {
         private clientId;
         private redirectUri;
         private identity: Kurve.Identity;
         private graph: Kurve.Graph;
+        //constructor() {
+        //    this.test();
+        //}
         constructor() {
             //Setup
             this.clientId = (<HTMLInputElement>document.getElementById("classID")).value;
@@ -16,7 +21,7 @@ module Sample {
 
 
             //or  this.identity.loginAsync().then(() => {
-            this.identity.login(() => {
+            this.identity.loginAsync().then(() => {
 
                 //////Option 1: Manualy passing the access token
                 ////// or... this.identity.getAccessToken("https://graph.microsoft.com", ((token) => {
@@ -51,8 +56,9 @@ module Sample {
 
             });
         }
-
+        
         //-----------------------------------------------Scenarios---------------------------------------------
+       
 
         //Scenario 1: Logout
         private logout(): void {
@@ -63,14 +69,14 @@ module Sample {
         private loadUsersWithPaging(): void {
             document.getElementById("results").innerHTML = "";
 
-            this.graph.users(((users, error) => {
-                this.getUsersCallback(users, null);
-            }), "$top=5");
-
-
-            //this.graph.usersAsync("$top=5").then(((users) => {
+            //this.graph.users(((users, error) => {
             //    this.getUsersCallback(users, null);
-            //}));
+            //}), "$top=5");
+
+
+            this.graph.usersAsync("$top=5").then(((users) => {
+                this.getUsersCallback(users, null);
+            }));
         }
     
         //Scenario 3: Load users with custom odata query
@@ -93,21 +99,24 @@ module Sample {
 
             this.graph.userAsync((<HTMLInputElement>document.getElementById("userId")).value).then((user) => {
                 document.getElementById("results").innerHTML += user.data.displayName + "</br>";
+            }).fail((error) => {
+                window.alert(error.status);
             });
         }
 
         //Scenario 6: Load user "me" and then its messages
         private loadUserMessages(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.me(((user: Kurve.User) => {
+            this.graph.meAsync().then((user: Kurve.User) => {
                 document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                user.messages((messages: Kurve.Messages, error: Kurve.Error) => {
-                    this.messagesCallback(messages, error);
+                user.messagesAsync("$top=2").then((messages: Kurve.Messages) => {
+                    this.messagesCallback(messages,null );
+                }).fail((error) =>{
+                    this.messagesCallback(null,error);
+                });
 
-                }, "$top=2");
-
-            }));
+            });
         }
 
         //Scenario 7: Load user "me" and then its groups

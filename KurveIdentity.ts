@@ -117,9 +117,9 @@ module Kurve {
             }));
         }
 
-        public getAccessTokenAsync(resource: string): Promise {
+        public getAccessTokenAsync(resource: string): Promise<string,Error> {
 
-            var d = new Deferred();
+            var d = new Deferred<string,Error>();
             this.getAccessToken(resource, ((token, error) => {
                 if (error) {
                     d.reject(error);
@@ -170,14 +170,14 @@ module Kurve {
             document.body.appendChild(iframe);
         }
 
-        public loginAsync(): Promise {
-            var d = new Deferred();
+        public loginAsync(): Promise<void, Error> {
+            var d = new Deferred<void,Error>();
             this.login(((error) => {
                 if (error) {
                     d.reject(error);
                 }
                 else {
-                    d.resolve();
+                    d.resolve(null);
                 }
             }));
             return d.promise;
