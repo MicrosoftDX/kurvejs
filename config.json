@@ -4,7 +4,8 @@
     "minFilename": "kurve.min.js",
     "declarationFilename": "kurve.d.ts",
     "outputDirectory": "./dist/",
-    "srcOutputDirectory": "./dist/"
+    "srcOutputDirectory": "./dist/",
+    "srcCompiledJavaScriptFile": "./dist/kurve.js"
   },
   "core": {
     "typescript": [
@@ -15,12 +16,6 @@
 	  "./promises.d.ts",
       "./KurveIdentity.d.ts",
       "./KurveGraph.d.ts"
-    ],
-    "files": [
-      "./dist/typedPromises.js",
-      "./dist/promises.js",
-      "./dist/KurveIdentity.js",
-      "./dist/KurveGraph.js"
     ]
   }
 }
