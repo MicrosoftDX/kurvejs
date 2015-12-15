@@ -5,12 +5,10 @@ var sourcemaps = require("gulp-sourcemaps");
 var merge2 = require("merge2");
 var concat = require("gulp-concat");
 var rename = require("gulp-rename");
-var cleants = require('gulp-clean-ts-extends');
 var changed = require('gulp-changed');
 var runSequence = require('run-sequence');
 var replace = require("gulp-replace");
 var config = require("./config.json");
-var extendsSearchRegex = /var\s__extends[\s\S]+?\};/g;
 var addModuleExports = require("./gulp-addModuleExports");
 /*
 Compiles all typescript files and creating a declaration file.
