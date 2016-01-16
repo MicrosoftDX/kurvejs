@@ -18,26 +18,19 @@ module Sample {
 
             //Create identity object
             this.identity = new Kurve.Identity(this.clientId, this.tokenProcessorUri);
-            
+            this.graph = new Kurve.Graph({ identity: this.identity });
+            if (this.identity.checkForIdentityRedirect()) {
+                if (this.identity.isLoggedIn()) { this.onLogin(); }
+            }
+        }
+                
+        public doLogin() : void {                                  
+            this.identity.loginNoWindowAsync().then(this.onLogin);
         }
         
-         
-        public doLogin() : void {
-                      
-            this.identity.loginNoWindowAsync().then(() => {
-
-                //////Option 1: Manualy passing the access token
-                ////// or... this.identity.getAccessToken("https://graph.microsoft.com", ((token) => {
-                ////this.identity.getAccessTokenAsync("https://graph.microsoft.com").then(((token) => {
-                ////    this.graph = new Kurve.Graph({ defaultAccessToken: token });
-                ////}));
-
-
-                //Option 2: Automatically linking to the Identity object
-                this.graph = new Kurve.Graph({ identity: this.identity });
-
+        public onLogin() 
+        {                  
                 //Update UI
-
                 document.getElementById("initDiv").style.display = "none";
                 document.getElementById("loginDiv").style.display = "none";
                 document.getElementById("scenarios").style.display = "";
@@ -57,8 +50,6 @@ module Sample {
                
                 document.getElementById("loggedIn").addEventListener("click", (() => { this.isLoggedIn(); }));
                 document.getElementById("whoAmI").addEventListener("click", (() => { this.whoAmI(); }));
-
-            });
         }
         
         //-----------------------------------------------Scenarios---------------------------------------------

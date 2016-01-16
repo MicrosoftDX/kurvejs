@@ -103,22 +103,22 @@ module Kurve {
             if (idToken) {
                 if (true || this.state === params["state"][0]) { //BUG? When you are in a pure redirect system you don't remember your state or nonce so don't check.
                     this.decodeIdToken(idToken);
-                    this.loginCallback(null);
+                    this.loginCallback && this.loginCallback(null);
                 } else {
                     var error = new Error();
                     error.statusText = "Invalid state";
-                    this.loginCallback(error);
+                    this.loginCallback && this.loginCallback(error);
                 }
                 return true;
             }
             else if (accessToken) {
                 throw "Should not get here.  This should be handled via the iframe approach."
                 if (this.state === params["state"][0]) {
-                    this.getTokenCallback(accessToken, null);
+                    this.getTokenCallback && this.getTokenCallback(accessToken, null);
                 } else {
                     var error = new Error();
                     error.statusText = "Invalid state";
-                    this.getTokenCallback(null, error);
+                    this.getTokenCallback && this.getTokenCallback(null, error);
                 }
             }
             return false;
