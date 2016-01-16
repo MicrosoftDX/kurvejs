@@ -272,9 +272,10 @@ module Kurve {
 
             var redirected = this.checkForIdentityRedirect();
             if (!redirected) {
+                var toSelfUrl = window.location.href.split("#")[0];  // For no loginWindows come back here
                 var url = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token" +
                     "&client_id=" + encodeURIComponent(this.clientId) +
-                    "&redirect_uri=" + encodeURIComponent(this.tokenProcessingUri) +
+                    "&redirect_uri=" + encodeURIComponent(toSelfUrl) +
                     "&state=" + encodeURIComponent(this.state) +
                     "&nonce=" + encodeURIComponent(this.nonce);
                 window.location.href = url;

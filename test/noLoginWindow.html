@@ -11,7 +11,8 @@
 <body>
   <div id="initDiv">
         Your App Class ID:<br/> <input type="text" id="classID" value="" /><button id="buttonTestClass" onclick="setClassID();"> Use a Test Class ID </button><br />
-        
+        Token Processor Page: <br/> <input type="text" id="tokenProcessorUrl" value="" /><br /><br />
+
         <button id="btnInit" onclick="init();">Initialize</button>
   </div>
    
@@ -43,7 +44,7 @@
     
     <script type="text/javascript">
         var app;
-        setClassID();
+        setDefaults();
         function init() {
             app = new Sample.App();
             document.getElementById("initDiv").style.display="none";
@@ -54,6 +55,12 @@
         }
         function setClassID() {
             document.getElementById("classID").value = "b8dd3290-662a-4f91-92b9-3e70fbabe04e";
+        }
+        function setDefaults() {
+            setClassID();
+            document.getElementById("tokenProcessorUrl").value = window.location.protocol + "//" + window.location.host
+            + window.location.pathname.substr(0, window.location.pathname.lastIndexOf("/") + 1) 
+            + "../dist/login.html";
         }        
     </script>
 </body>
