@@ -71,11 +71,12 @@ module Kurve {
             }));
         }
 
-
         public checkForIdentityRedirect(): boolean {
             function token(s: string) {
-                var index = window.location.href.indexOf(s);
-                return (index > 0) ? window.location.href.substring(index + s.length) : null;
+                var start = window.location.href.indexOf(s);
+                if (start < 0) return null;
+                var end = window.location.href.indexOf("&",start + s.length);                
+                return  window.location.href.substring(start,((end > 0) ? end : window.location.href.length));
             }
 
             function parseQueryString(str: string) {

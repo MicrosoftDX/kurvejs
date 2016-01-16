@@ -47,9 +47,9 @@
         setDefaults();
         
         function init() {
-            app = new Sample.App(document.getElementById("clientId").value,document.getElementById("tokenProcessorUrl").value);
             document.getElementById("initDiv").style.display="none";
             document.getElementById("loginDiv").style.display = "";
+            app = new Sample.App(document.getElementById("clientId").value,document.getElementById("tokenProcessorUrl").value);
         }
         
         function login() {
