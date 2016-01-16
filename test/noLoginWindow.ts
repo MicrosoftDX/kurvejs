@@ -11,10 +11,10 @@ module Sample {
         //constructor() {
         //    this.test();
         //}
-        constructor() {
+        constructor(clientId, tokenProcessorUrl) {
             //Setup
-            this.clientId = (<HTMLInputElement>document.getElementById("classID")).value;
-            this.tokenProcessorUri = (<HTMLInputElement>document.getElementById("tokenProcessorUrl")).value;
+            this.clientId = clientId;
+            this.tokenProcessorUri = tokenProcessorUrl;
 
             //Create identity object
             this.identity = new Kurve.Identity(this.clientId, this.tokenProcessorUri);
@@ -24,11 +24,11 @@ module Sample {
             }
         }
                 
-        public doLogin() : void {                                  
+        public doLogin() : void {
             this.identity.loginNoWindowAsync().then(this.onLogin);
         }
         
-        public onLogin() 
+        public onLogin()
         {                  
                 //Update UI
                 document.getElementById("initDiv").style.display = "none";

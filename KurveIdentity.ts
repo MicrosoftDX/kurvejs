@@ -20,14 +20,14 @@ module Kurve {
         private loginCallback: (error: Error) => void;
         private accessTokenCallback: (token: string, error: Error) => void;
         private getTokenCallback: (token: string, error: Error) => void;
-        private tokenProcessingUri: string;
+        private tokenProcessorUrl: string;
         private tokenCache: any;
         private logonUser: any;
         private refreshTimer: any;
 
         constructor(clientId = "", tokenProcessingUri = "") {
             this.clientId = clientId;
-            this.tokenProcessingUri = tokenProcessingUri;
+            this.tokenProcessorUrl = tokenProcessingUri;
             this.req = new XMLHttpRequest();
             this.tokenCache = {};
 
@@ -216,10 +216,10 @@ module Kurve {
             var iframe = document.createElement('iframe');
             iframe.style.display = "none";
             iframe.id = "tokenIFrame";
-            iframe.src = this.tokenProcessingUri +
+            iframe.src = this.tokenProcessorUrl +
                 "?clientId=" + encodeURIComponent(this.clientId) +
                 "&resource=" + encodeURIComponent(resource) +
-                "&redirectUri=" + encodeURIComponent(this.tokenProcessingUri) +
+                "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                 "&state=" + encodeURIComponent(this.state) +
                 "&nonce=" + encodeURIComponent(this.nonce);
             document.body.appendChild(iframe);
@@ -243,16 +243,16 @@ module Kurve {
             this.state = this.generateNonce();
             this.nonce = this.generateNonce();
 
-            window.open(this.tokenProcessingUri +
+            window.open(this.tokenProcessorUrl +
                 "?clientId=" + encodeURIComponent(this.clientId) +
-                "&redirectUri=" + encodeURIComponent(this.tokenProcessingUri) +
+                "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                 "&state=" + encodeURIComponent(this.state) +
                 "&nonce=" + encodeURIComponent(this.nonce), "_blank");
 
         }
 
 
-        public loginNoWindowAsync(): Promise<void, Error> {
+        public loginNoWindowAsync(toUrl? : string): Promise<void, Error> {
             var d = new Deferred<void, Error>();
             this.loginNoWindow((error) => {
                 if (error) {
@@ -261,21 +261,21 @@ module Kurve {
                 else {
                     d.resolve(null);
                 }
-            });
+            }, toUrl);
             return d.promise;
         }
 
-        public loginNoWindow(callback: (error: Error) => void): void {
+        public loginNoWindow(callback: (error: Error) => void, toUrl? : string): void {
             this.loginCallback = callback;
-            this.state = this.generateNonce();
+            this.state = "clientId=" + this.clientId + "&" + "tokenProcessorUrl=" + this.tokenProcessorUrl
             this.nonce = this.generateNonce();
 
             var redirected = this.checkForIdentityRedirect();
-            if (!redirected) {
-                var toSelfUrl = window.location.href.split("#")[0];  // For no loginWindows come back here
+            if (!redirected) {                
+                var redirectUri = (toUrl) ? toUrl : window.location.href.split("#")[0];  // default the no login window scenario to return to the current page
                 var url = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token" +
                     "&client_id=" + encodeURIComponent(this.clientId) +
-                    "&redirect_uri=" + encodeURIComponent(toSelfUrl) +
+                    "&redirect_uri=" + encodeURIComponent(redirectUri) +
                     "&state=" + encodeURIComponent(this.state) +
                     "&nonce=" + encodeURIComponent(this.nonce);
                 window.location.href = url;

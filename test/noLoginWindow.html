@@ -10,7 +10,7 @@
 </head>
 <body>
   <div id="initDiv">
-        Your App Class ID:<br/> <input type="text" id="classID" value="" /><button id="buttonTestClass" onclick="setClassID();"> Use a Test Class ID </button><br />
+        Your App Class ID:<br/> <input type="text" id="clientId" value="" /><button id="buttonTestClass" onclick="setClientId(null);"> Use a Test Class ID </button><br />
         Token Processor Page: <br/> <input type="text" id="tokenProcessorUrl" value="" /><br /><br />
 
         <button id="btnInit" onclick="init();">Initialize</button>
@@ -43,25 +43,58 @@
   </div>
     
     <script type="text/javascript">
-        var app;
+        var app, clientId, tokenProcessorUrl;
         setDefaults();
+        
         function init() {
-            app = new Sample.App();
+            app = new Sample.App(document.getElementById("clientId").value,document.getElementById("tokenProcessorUrl").value);
             document.getElementById("initDiv").style.display="none";
             document.getElementById("loginDiv").style.display = "";
         }
+        
         function login() {
             app.doLogin();
         }
-        function setClassID() {
-            document.getElementById("classID").value = "b8dd3290-662a-4f91-92b9-3e70fbabe04e";
+        
+        function setClientId(id) {
+            document.getElementById("clientId").value = (id) ? id : "b8dd3290-662a-4f91-92b9-3e70fbabe04e";
         }
-        function setDefaults() {
-            setClassID();
-            document.getElementById("tokenProcessorUrl").value = window.location.protocol + "//" + window.location.host
+                
+        function setTokenProcessorUrl(url) {
+            document.getElementById("tokenProcessorUrl").value = (url) ? url 
+            : window.location.protocol + "//" + window.location.host
             + window.location.pathname.substr(0, window.location.pathname.lastIndexOf("/") + 1) 
             + "../dist/login.html";
+        }
+        
+        function setDefaults() {
+            var params = parseQueryString(window.location.href);
+            params = params["state"] && parseQueryString(decodeURIComponent( params["state"][0]));           
+            clientId = params && params["clientId"] && params["clientId"][0]; 
+            setClientId(clientId);
+            tokenProcessorUrl = params && params["tokenProcessorUrl"] && params["tokenProcessorUrl"][0];
+            setTokenProcessorUrl(tokenProcessorUrl);
+            if (clientId && tokenProcessorUrl) init(); // automatically init if config info is passed in on query parameters.              
         }        
+        
+        function parseQueryString(str) {
+            var queryString = str || window.location.search || '';
+            var keyValPairs = [];
+            var params = {};
+            queryString = queryString.replace(/.*?\?/, "");
+
+            if (queryString.length) {
+                keyValPairs = queryString.split('&');
+                for (var pairNum in keyValPairs) {
+                    var key = keyValPairs[pairNum].split('=')[0];
+                    if (!key.length) continue;
+                    if (typeof params[key] === 'undefined')
+                        params[key] = [];
+                    params[key].push(keyValPairs[pairNum].split('=')[1]);
+                }
+            }
+            return params;
+        }
     </script>
 </body>
 </html>
