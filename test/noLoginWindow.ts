@@ -5,7 +5,7 @@ module Sample {
     }
     export class App {
         private clientId;
-        private redirectUri;
+        private tokenProcessingUri;
         private identity: Kurve.Identity;
         private graph: Kurve.Graph;
         //constructor() {
@@ -14,10 +14,10 @@ module Sample {
         constructor() {
             //Setup
             this.clientId = (<HTMLInputElement>document.getElementById("classID")).value;
-            this.redirectUri = (<HTMLInputElement>document.getElementById("redirectUrl")).value;
+            this.tokenProcessingUri = window.location.href; // In Place Login... so come back here.
 
             //Create identity object
-            this.identity = new Kurve.Identity(this.clientId, this.redirectUri);
+            this.identity = new Kurve.Identity(this.clientId, this.tokenProcessingUri);
             
         }
         
