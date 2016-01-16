@@ -65,11 +65,11 @@ gulp.task('typescript-compile', ["typescript-sourcemaps"], function () {
 
 gulp.task('app-compile', ["typescript-compile"], function () {
     return gulp
-        .src(['app.ts', 'dist/kurve.d.ts'], { base: '.' })
+        .src(['test/app.ts', 'test/noLoginWindow.ts', 'dist/kurve.d.ts'], { base: '.' })
         .pipe(typescript({
             noExternalResolve: true,
             target: 'ES5',
-            out: 'app.js',
+            outDir: 'test',
             typescript: require('typescript')
         }))
         .pipe(gulp.dest('./'));
