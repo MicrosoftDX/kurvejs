@@ -575,8 +575,7 @@ module Kurve {
             } else {
                 //Using the integrated Identity object
                 this.KurveIdentity.getAccessToken(this.defaultResourceID, ((token: string, error: Error) => {
-                    //cache the token
-                    
+                    // getAccessToken caches the token.                    
                     if (error)
                         callback(error);
                     else {

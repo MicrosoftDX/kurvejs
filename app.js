@@ -1,16 +1,26 @@
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 var Sample;
 (function (Sample) {
+    var Error = (function () {
+        function Error() {
+        }
+        return Error;
+    })();
     var App = (function () {
+        //constructor() {
+        //    this.test();
+        //}
         function App() {
-            var _this = this;
             //Setup
             this.clientId = document.getElementById("classID").value;
             this.redirectUri = document.getElementById("redirectUrl").value;
             //Create identity object
             this.identity = new Kurve.Identity(this.clientId, this.redirectUri);
-            //or  this.identity.loginAsync().then(() => {
-            this.identity.login(function () {
+        }
+        App.prototype.doLogin = function () {
+            var _this = this;
+            this.identity.loginAsync(window.location.href)
+                .then(function () {
                 //////Option 1: Manualy passing the access token
                 ////// or... this.identity.getAccessToken("https://graph.microsoft.com", ((token) => {
                 ////this.identity.getAccessTokenAsync("https://graph.microsoft.com").then(((token) => {
@@ -35,7 +45,7 @@ var Sample;
                 document.getElementById("loggedIn").addEventListener("click", (function () { _this.isLoggedIn(); }));
                 document.getElementById("whoAmI").addEventListener("click", (function () { _this.whoAmI(); }));
             });
-        }
+        };
         //-----------------------------------------------Scenarios---------------------------------------------
         //Scenario 1: Logout
         App.prototype.logout = function () {
@@ -45,12 +55,12 @@ var Sample;
         App.prototype.loadUsersWithPaging = function () {
             var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.graph.users((function (users, error) {
-                _this.getUsersCallback(users, null);
-            }), "$top=5");
-            //this.graph.usersAsync("$top=5").then(((users) => {
+            //this.graph.users(((users, error) => {
             //    this.getUsersCallback(users, null);
-            //}));
+            //}), "$top=5");
+            this.graph.usersAsync("$top=5").then((function (users) {
+                _this.getUsersCallback(users, null);
+            }));
         };
         //Scenario 3: Load users with custom odata query
         App.prototype.loadUsersWithOdataQuery = function (query) {
@@ -70,19 +80,23 @@ var Sample;
             document.getElementById("results").innerHTML = "";
             this.graph.userAsync(document.getElementById("userId").value).then(function (user) {
                 document.getElementById("results").innerHTML += user.data.displayName + "</br>";
+            }).fail(function (error) {
+                window.alert(error.status);
             });
         };
         //Scenario 6: Load user "me" and then its messages
         App.prototype.loadUserMessages = function () {
             var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.graph.me((function (user) {
+            this.graph.meAsync().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                user.messages(function (messages, error) {
-                    _this.messagesCallback(messages, error);
-                }, "$top=2");
-            }));
+                user.messagesAsync("$top=2").then(function (messages) {
+                    _this.messagesCallback(messages, null);
+                }).fail(function (error) {
+                    _this.messagesCallback(null, error);
+                });
+            });
         };
         //Scenario 7: Load user "me" and then its groups
         App.prototype.loadUserGroups = function () {
@@ -244,4 +258,3 @@ var Sample;
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
 //   
 //*********************************************************   
-//# sourceMappingURL=app.js.map
