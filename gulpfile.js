@@ -5,29 +5,21 @@ var sourcemaps = require("gulp-sourcemaps");
 var merge2 = require("merge2");
 var concat = require("gulp-concat");
 var rename = require("gulp-rename");
-var cleants = require('gulp-clean-ts-extends');
 var changed = require('gulp-changed');
 var runSequence = require('run-sequence');
 var replace = require("gulp-replace");
 var config = require("./config.json");
-var extendsSearchRegex = /var\s__extends[\s\S]+?\};/g;
 var addModuleExports = require("./gulp-addModuleExports");
 /*
 Compiles all typescript files and creating a declaration file.
 */
 gulp.task('default', ['typescript-compile'], function () {
-    return merge2(
-        gulp.src(config.core.files)
-   )
-    .pipe(concat(config.build.filename))
-    .pipe(cleants())
-    .pipe(replace(extendsSearchRegex, ""))
+    gulp.src(config.build.srcCompiledJavaScriptFile)
     .pipe(addModuleExports("Kurve"))
     .pipe(gulp.dest(config.build.outputDirectory))
     .pipe(rename(config.build.minFilename))
     .pipe(uglify())
     .pipe(gulp.dest(config.build.outputDirectory));
-
 });
 
 
@@ -38,7 +30,8 @@ gulp.task('typescript-sourcemaps',['move-html'], function () {
                              noExternalResolve: true,  
                              target: 'ES5',  
                              declarationFiles: true, 
-                             typescript: require('typescript') 
+                             typescript: require('typescript'),
+                             out: 'kurve.js' 
                      })); 
      return tsResult.js 
              .pipe(sourcemaps.write("./")) // sourcemaps are written. 
@@ -52,7 +45,8 @@ gulp.task('typescript-compile',["typescript-sourcemaps"], function() {
                              noExternalResolve: true,  
                              target: 'ES5',  
                              declarationFiles: true, 
-                             typescript: require('typescript') 
+                             typescript: require('typescript'),
+                             out: 'kurve.js' 
                      })); 
      return merge2([ 
          tsResult.dts 

@@ -1,5 +1,67 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 module Kurve {
+    export module Scopes {
+        class Util {
+            static rootUrl = "https://graph.microsoft.com/";
+        }
+        export class General {
+            public static OpenId: string = "openid";
+            public static OfflineAccess: string = "offline_access";        
+        }
+        export class User {
+            public static Read: string = Util.rootUrl + "User.Read";
+            public static ReadWrite: string = Util.rootUrl + "User.ReadWrite";
+            public static ReadBasicAll: string = Util.rootUrl + "User.ReadBasic.All";
+            public static ReadAll: string = Util.rootUrl + "User.Read.All";
+            public static ReadWriteAll: string = Util.rootUrl + "User.ReadWrite.All";
+        }
+        export class Contacts {
+            public static Read: string = Util.rootUrl + "Contacts.Read";
+            public static ReadWrite: string = Util.rootUrl + "Contacts.ReadWrite";
+        }
+        export class Directory {
+            public static ReadAll: string = Util.rootUrl + "Directory.Read.All";
+            public static ReadWriteAll: string = Util.rootUrl + "Directory.ReadWrite.All";
+            public static AccessAsUserAll: string = Util.rootUrl + "Directory.AccessAsUser.All";
+        }
+        export class Group {
+            public static ReadAll: string = Util.rootUrl + "Group.Read.All";
+            public static ReadWriteAll: string = Util.rootUrl + "Group.ReadWrite.All";
+            public static AccessAsUserAll: string = Util.rootUrl + "Directory.AccessAsUser.All";
+        }
+        export class Mail {
+            public static Read: string = Util.rootUrl + "Mail.Read";
+            public static ReadWrite: string = Util.rootUrl + "Mail.ReadWrite";
+            public static Send: string = Util.rootUrl + "Mail.Send";
+        }
+        export class Calendars {
+            public static Read: string = Util.rootUrl + "Calendars.Read";
+            public static ReadWrite: string = Util.rootUrl + "Calendars.ReadWrite";
+        }
+        export class Files {
+            public static Read: string = Util.rootUrl + "Files.Read";
+            public static ReadAll: string = Util.rootUrl + "Files.Read.All";
+            public static ReadWrite: string = Util.rootUrl + "Files.ReadWrite";
+            public static ReadWriteAppFolder: string = Util.rootUrl + "Files.ReadWrite.AppFolder";
+            public static ReadWriteSelected: string = Util.rootUrl + "Files.ReadWrite.Selected"; 
+        }
+        export class Tasks {
+            public static ReadWrite: string = Util.rootUrl + "Tasks.ReadWrite";
+        }
+        export class People {
+            public static Read: string = Util.rootUrl + "People.Read";
+            public static ReadWrite: string = Util.rootUrl + "People.ReadWrite";
+        }
+        export class Notes {
+            public static Create: string = Util.rootUrl + "Notes.Create";
+            public static ReadWriteCreatedByApp: string = Util.rootUrl + "Notes.ReadWrite.CreatedByApp";
+            public static Read: string = Util.rootUrl + "Notes.Read";
+            public static ReadAll: string = Util.rootUrl + "Notes.Read.All";
+            public static ReadWriteAll: string = Util.rootUrl + "Notes.ReadWrite.All";
+        }
+
+
+    }
 
     export class ProfilePhotoDataModel {
         public id: string;
@@ -28,8 +90,13 @@ module Kurve {
          public id: string;
     }
 
-    export class User  {        
-        constructor(protected graph: Kurve.Graph, protected _data: UserDataModel) {
+    export class User  {
+        private graph: Kurve.Graph;
+        private _data: Kurve.UserDataModel;
+
+        constructor(graph: Kurve.Graph, _data: UserDataModel) {
+            this.graph = graph;
+            this._data = _data;
         }
 
         get data() { return this._data; }
@@ -197,8 +264,6 @@ module Kurve {
 
     export class Graph {
         private req: XMLHttpRequest = null;
-        private state: string = null;
-        private nonce: string = null;
         private accessToken: string = null;
         private KurveIdentity: Identity = null;
         private defaultResourceID: string = "https://graph.microsoft.com";
@@ -214,6 +279,15 @@ module Kurve {
             }
         }
       
+        //Only adds scopes when linked to a v2 Oauth of kurve identity
+        private scopesForV2(scopes: string[]): string[] {
+            if (!this.KurveIdentity)
+                return null;
+            if (this.KurveIdentity.getCurrentOauthVersion() === OAuthVersion.v1)
+                return null;
+            else return scopes;
+        }
+
         //Users
         public meAsync(odataQuery?: string): Promise<User, Error> {
             var d = new Deferred<User,Error>();
@@ -228,14 +302,13 @@ module Kurve {
         }
 
         public me(callback: (user: User, error: Error) => void, odataQuery?: string): void {
+            var scopes = [Scopes.User.Read];
             var urlString: string = this.buildMeUrl() + "/";
-            if (odataQuery) {
-                urlString += "?" + odataQuery;
-            }
-            this.getUser(urlString, callback);
+            if (odataQuery) urlString += "?" + odataQuery;
+            this.getUser(urlString, callback, this.scopesForV2(scopes));
         }
 
-        public userAsync(userId: string): Promise<User, Error> {
+        public userAsync(userId: string, odataQuery?: string, basicProfileOnly = true): Promise<User, Error> {
             var d = new Deferred<User,Error>();
             this.user(userId, (user, error) => {
                 if (error) {
@@ -243,16 +316,23 @@ module Kurve {
                 } else {
                     d.resolve(user);
                 }
-            });
+            }, odataQuery, basicProfileOnly);
             return d.promise;
         }
 
-        public user(userId: string, callback: (user: Kurve.User, error: Error) => void): void {
+        public user(userId: string, callback: (user: Kurve.User, error: Error) => void, odataQuery?: string, basicProfileOnly = true): void {
+            var scopes = [];
+            if (basicProfileOnly)
+                scopes = [Scopes.User.ReadBasicAll];
+            else
+                scopes = [Scopes.User.ReadAll];
+
             var urlString: string = this.buildUsersUrl() + "/" + userId;
-            this.getUser(urlString, callback);
+            if (odataQuery) urlString += "?" + odataQuery;
+            this.getUser(urlString, callback, this.scopesForV2(scopes));
         }
 
-        public usersAsync(odataQuery?: string): Promise<Users, Error> {
+        public usersAsync(odataQuery?: string, basicProfileOnly = true): Promise<Users, Error> {
             var d = new Deferred<Users,Error>();
             this.users((users, error) => {
                 if (error) {
@@ -260,21 +340,24 @@ module Kurve {
                 } else {
                     d.resolve(users);
                 }
-            }, odataQuery);
+            }, odataQuery, basicProfileOnly);
             return d.promise;
         }
 
-        public users(callback: (users: Kurve.Users, error: Error) => void, odataQuery?: string): void {
+        public users(callback: (users: Kurve.Users, error: Error) => void, odataQuery?: string, basicProfileOnly = true): void {
+            var scopes = [];
+            if (basicProfileOnly)
+                scopes = [Scopes.User.ReadBasicAll];
+            else
+                scopes = [Scopes.User.ReadAll];
             var urlString: string = this.buildUsersUrl() + "/";
-            if (odataQuery) {
-                urlString += "?" + odataQuery;
-            }
-            this.getUsers(urlString, callback);
+            if (odataQuery) urlString += "?" + odataQuery;
+            this.getUsers(urlString, callback, this.scopesForV2(scopes));
         }
 
         //Groups
 
-        public groupAsync(groupId: string): Promise<Group,Error> {
+        public groupAsync(groupId: string, odataQuery?: string): Promise<Group,Error> {
             var d = new Deferred<Group,Error>();
             this.group(groupId, (group, error) => {
                 if (error) {
@@ -282,26 +365,20 @@ module Kurve {
                 } else {
                     d.resolve(group);
                 }
-            });
+            }, odataQuery);
             return d.promise;
         }
 
-        public group(groupId: string, callback: (group: any, error: Error) => void): void {
+        public group(groupId: string, callback: (group: any, error: Error) => void, odataQuery?: string): void {
+            var scopes = [Scopes.Group.ReadAll];
             var urlString: string = this.buildGroupsUrl() + "/" + groupId;
-            this.getGroup(urlString, callback);
+            if (odataQuery) urlString += "?" + odataQuery;
+            this.getGroup(urlString, callback, this.scopesForV2(scopes));
         }
 
-        public groups(callback: (groups: any, error: Error) => void, odataQuery?: string): void {
-            var urlString: string = this.buildGroupsUrl() + "/";
-            if (odataQuery) {
-                urlString += "?" + odataQuery;
-            }
-            this.getGroups(urlString, callback);
-        }
+        public groupsAsync(odataQuery?: string): Promise<Groups, Error> {
+            var d = new Deferred<Groups, Error>();
 
-        public groupsAsync(odataQuery?: string): Promise<Groups,Error> {
-            var d = new Deferred<Groups,Error>();
-            
             this.groups((groups, error) => {
                 if (error) {
                     d.reject(error);
@@ -311,21 +388,17 @@ module Kurve {
             }, odataQuery);
             return d.promise;
         }
-        
+
+        public groups(callback: (groups: any, error: Error) => void, odataQuery?: string): void {
+            var scopes = [Scopes.Group.ReadAll];
+            var urlString: string = this.buildGroupsUrl() + "/";
+            if (odataQuery) urlString += "?" + odataQuery;
+            this.getGroups(urlString, callback, odataQuery, this.scopesForV2(scopes));
+        }      
 
         // Messages For User
-            
-        public messagesForUser(userPrincipalName: string, callback: (messages: Messages, error: Error) => void, odataQuery?: string): void {
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
-            if (odataQuery) urlString += "?" + odataQuery;
-
-            this.getMessages(urlString, (result, error) => {
-                callback(result, error);
-            }, odataQuery);
-        }
-
         public messagesForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error> {
-            var d = new Deferred<Messages,Error>();
+            var d = new Deferred<Messages, Error>();
             this.messagesForUser(userPrincipalName, (messages, error) => {
                 if (error) {
                     d.reject(error);
@@ -336,8 +409,18 @@ module Kurve {
             return d.promise;
         }
 
-        // Calendar For User
+        public messagesForUser(userPrincipalName: string, callback: (messages: Messages, error: Error) => void, odataQuery?: string): void {
+            var scopes = [Scopes.Mail.Read];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
+            if (odataQuery) urlString += "?" + odataQuery;
 
+            this.getMessages(urlString, (result, error) => {
+                callback(result, error);
+            }, odataQuery, this.scopesForV2(scopes));
+        }
+
+
+        // Calendar For User
         public calendarForUser(userPrincipalName: string, callback: (events: CalendarEvent, error: Error) => void, odataQuery?: string): void {
         // // To BE IMPLEMENTED
         //    var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/calendar/events";
@@ -362,14 +445,8 @@ module Kurve {
         }
 
         // Groups/Relationships For User
-        public memberOfForUser(userPrincipalName: string, callback: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string) {
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/memberOf";
-            if (odataQuery) urlString += "?" + odataQuery;
-            this.getGroups(urlString, callback, odataQuery);
-        }
-
         public memberOfForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error> {
-            var d:any = new Deferred<Messages,Error>();
+            var d: any = new Deferred<Messages, Error>();
             this.memberOfForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
@@ -380,14 +457,15 @@ module Kurve {
             return d.promise;
         }
 
-        public managerForUser(userPrincipalName: string, callback: (manager: Kurve.User, error: Error) => void, odataQuery?: string) {
-            // need odataQuery;
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/manager";
-            this.getUser(urlString, callback);
+        public memberOfForUser(userPrincipalName: string, callback: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string) {
+            var scopes = [Scopes.Group.ReadAll];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/memberOf";
+            if (odataQuery) urlString += "?" + odataQuery;
+            this.getGroups(urlString, callback, odataQuery, this.scopesForV2(scopes));
         }
 
         public managerForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<User, Error> {
-            var d = new Deferred<User,Error>();
+            var d = new Deferred<User, Error>();
             this.managerForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
@@ -398,14 +476,15 @@ module Kurve {
             return d.promise;
         }
 
-        public directReportsForUser(userPrincipalName: string, callback: (users: Kurve.Users, error: Error) => void, odataQuery?: string) {
-            // Need odata query
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/directReports";
-            this.getUsers(urlString, callback);
+        public managerForUser(userPrincipalName: string, callback: (manager: Kurve.User, error: Error) => void, odataQuery?: string) {
+            var scopes = [Scopes.Directory.ReadAll];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/manager";
+            if (odataQuery) urlString += "?" + odataQuery;
+            this.getUser(urlString, callback, this.scopesForV2(scopes));
         }
 
         public directReportsForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Users, Error> {
-            var d = new Deferred<Users,Error>();
+            var d = new Deferred<Users, Error>();
             this.directReportsForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
@@ -416,14 +495,16 @@ module Kurve {
             return d.promise;
         }
 
-        public profilePhotoForUser(userPrincipalName: string, callback: (photo: ProfilePhoto, error: Error) => void) {
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo";
-            this.getPhoto(urlString, callback);
+        public directReportsForUser(userPrincipalName: string, callback: (users: Kurve.Users, error: Error) => void, odataQuery?: string) {
+            var scopes = [Scopes.Directory.ReadAll];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/directReports";
+            if (odataQuery) urlString += "?" + odataQuery;
+            this.getUsers(urlString, callback, this.scopesForV2(scopes));
         }
 
         public profilePhotoForUserAsync(userPrincipalName: string): Promise<ProfilePhoto, Error> {
-            var d = new Deferred<ProfilePhoto,Error>();
-            
+            var d = new Deferred<ProfilePhoto, Error>();
+
             this.profilePhotoForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
@@ -434,13 +515,14 @@ module Kurve {
             return d.promise;
         }
 
-        public profilePhotoValueForUser(userPrincipalName: string, callback: (photo: any, error: Error) => void) {
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo/$value";
-            this.getPhotoValue(urlString, callback);
+        public profilePhotoForUser(userPrincipalName: string, callback: (photo: ProfilePhoto, error: Error) => void) {
+            var scopes = [Scopes.User.ReadBasicAll];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo";
+            this.getPhoto(urlString, callback, this.scopesForV2(scopes));
         }
 
-        public profilePhotoValueForUserAsync(userPrincipalName: string): Promise<any, Error>{
-            var d = new Deferred<any,Error>();
+        public profilePhotoValueForUserAsync(userPrincipalName: string): Promise<any, Error> {
+            var d = new Deferred<any, Error>();
             this.profilePhotoValueForUser(userPrincipalName, (result, error) => {
                 if (error) {
                     d.reject(error);
@@ -449,6 +531,12 @@ module Kurve {
                 }
             });
             return d.promise;
+        }
+
+        public profilePhotoValueForUser(userPrincipalName: string, callback: (photo: any, error: Error) => void) {
+            var scopes = [Scopes.User.ReadBasicAll];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo/$value";
+            this.getPhotoValue(urlString, callback, this.scopesForV2(scopes));
         }
     
         //http verbs
@@ -465,7 +553,7 @@ module Kurve {
             return d.promise;
         }
 
-        public get(url: string, callback: (response: string, error: Error) => void, responseType?: string): void {
+        public get(url: string, callback: (response: string, error: Error) => void, responseType?: string, scopes?:string[]): void {
             var xhr = new XMLHttpRequest();
             if (responseType)
                 xhr.responseType = responseType;
@@ -485,7 +573,7 @@ module Kurve {
                 if (addTokenError) {
                     callback(null, addTokenError);
                 }
-            });
+            }, scopes);
         }
 
         private generateError(xhr: XMLHttpRequest): Error {
@@ -502,7 +590,8 @@ module Kurve {
 
         //Private methods
 
-        private getUsers(urlString, callback: (users: Kurve.Users, error: Error) => void): void {
+        private getUsers(urlString, callback: (users: Kurve.Users, error: Error) => void, scopes?:string[]): void {
+
             this.get(urlString, ((result: string, errorGet: Error) => {
                 
                 if (errorGet) {
@@ -544,10 +633,10 @@ module Kurve {
                 }
 
                 callback(users, null);
-            }));
+            }),null,scopes);
         }
 
-        private getUser(urlString, callback: (user: User, error: Error) => void): void {
+        private getUser(urlString, callback: (user: User, error: Error) => void, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -563,32 +652,47 @@ module Kurve {
 
                 var user = new User(this, userODATA);
                 callback(user, null);
-            });
+            },null,scopes);
 
         }
 
-        private addAccessTokenAndSend(xhr: XMLHttpRequest, callback: (error: Error) => void): void {
+        private addAccessTokenAndSend(xhr: XMLHttpRequest, callback: (error: Error) => void, scopes?:string[]): void {
             if (this.accessToken) {
                 //Using default access token
                 xhr.setRequestHeader('Authorization', 'Bearer ' + this.accessToken);
                 xhr.send();
             } else {
                 //Using the integrated Identity object
-                this.KurveIdentity.getAccessToken(this.defaultResourceID, ((token: string, error: Error) => {
-                    //cache the token
-                    
-                    if (error)
-                        callback(error);
-                    else {
-                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                        xhr.send();
-                        callback(null);
-                    }
-                }));
+
+                if (scopes) {
+                    //v2 scope based tokens
+                    this.KurveIdentity.getAccessTokenForScopes(scopes,false, ((token: string, error: Error) => {                   
+                        if (error)
+                            callback(error);
+                        else {
+                            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                            xhr.send();
+                            callback(null);
+                        }
+                    }));
+
+                }
+                else {
+                    //v1 resource based tokens
+                    this.KurveIdentity.getAccessToken(this.defaultResourceID, ((token: string, error: Error) => {                  
+                        if (error)
+                            callback(error);
+                        else {
+                            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                            xhr.send();
+                            callback(null);
+                        }
+                    }));
+                }
             }
         }
 
-        private getMessages(urlString: string, callback: (messages: Messages, error: Error) => void, odataQuery?: string): void {
+        private getMessages(urlString: string, callback: (messages: Messages, error: Error) => void, odataQuery?: string, scopes?:string[]): void {
 
             var url = urlString;
             if (odataQuery) urlString += "?" + odataQuery;
@@ -629,10 +733,10 @@ module Kurve {
                     };
                 }
                 callback(messages,  null);
-            }));
+            }),null,scopes);
         }
 
-        private getGroups(urlString: string, callback: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string): void {
+        private getGroups(urlString: string, callback: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string,scopes?:string[]): void {
 
             var url = urlString;
             if (odataQuery) urlString += "?" + odataQuery;
@@ -675,10 +779,10 @@ module Kurve {
                 }
 
                 callback(groups, null);
-            }));
+            }),null,scopes);
         }
 
-        private getGroup(urlString, callback: (group: Kurve.Group, error: Error) => void): void {
+        private getGroup(urlString, callback: (group: Kurve.Group, error: Error) => void,scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -694,11 +798,11 @@ module Kurve {
                 var group = new Kurve.Group(this, ODATA);
 
                 callback(group, null);
-            });
+            },null,scopes);
 
         }
 
-        private getPhoto(urlString, callback: (photo: ProfilePhoto, error: Error) => void): void {
+        private getPhoto(urlString, callback: (photo: ProfilePhoto, error: Error) => void, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -714,17 +818,17 @@ module Kurve {
                 var photo = new ProfilePhoto(this, ODATA);
 
                 callback(photo, null);
-            });
+            },null,scopes);
         }
 
-        private getPhotoValue(urlString, callback: (photo: any, error: Error) => void): void {
+        private getPhotoValue(urlString, callback: (photo: any, error: Error) => void,scopes?:string[]): void {
             this.get(urlString, (result: any, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
                     return;
                 }
                 callback(result, null);
-            }, "blob");
+            }, "blob",scopes);
         }
         private buildMeUrl(): string {
             return this.baseUrl + "me";

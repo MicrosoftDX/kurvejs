@@ -1,3 +1,9 @@
+var __extends = (this && this.__extends) || function (d, b) {
+for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+function __() { this.constructor = d; }
+__.prototype = b.prototype;
+d.prototype = new __();
+};
 // Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 var Kurve;
@@ -205,14 +211,30 @@ var Kurve;
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 var Kurve;
 (function (Kurve) {
+    (function (OAuthVersion) {
+        OAuthVersion[OAuthVersion["v1"] = 1] = "v1";
+        OAuthVersion[OAuthVersion["v2"] = 2] = "v2";
+    })(Kurve.OAuthVersion || (Kurve.OAuthVersion = {}));
+    var OAuthVersion = Kurve.OAuthVersion;
     var Error = (function () {
         function Error() {
         }
         return Error;
     })();
     Kurve.Error = Error;
+    var Token = (function () {
+        function Token() {
+        }
+        return Token;
+    })();
+    var IdToken = (function () {
+        function IdToken() {
+        }
+        return IdToken;
+    })();
+    Kurve.IdToken = IdToken;
     var Identity = (function () {
-        function Identity(clientId, redirectUri) {
+        function Identity(clientId, redirectUri, version) {
             var _this = this;
             if (clientId === void 0) { clientId = ""; }
             if (redirectUri === void 0) { redirectUri = ""; }
@@ -223,12 +245,17 @@ var Kurve;
             this.redirectUri = redirectUri;
             this.req = new XMLHttpRequest();
             this.tokenCache = {};
+            if (version)
+                this.version = version;
+            else
+                this.version = OAuthVersion.v1;
             //Callback handler from other windows
             window.addEventListener("message", (function (event) {
                 if (event.data.type === "id_token") {
-                    //Callback being called by the login window
-                    if (!event.data.token) {
-                        _this.loginCallback(event.data);
+                    if (event.data.error) {
+                        var e = new Error();
+                        e.text = event.data.error;
+                        _this.loginCallback(e);
                     }
                     else {
                         //check for state
@@ -244,9 +271,11 @@ var Kurve;
                     }
                 }
                 else if (event.data.type === "access_token") {
-                    //Callback being called by the iframe with the token
-                    if (!event.data.token)
-                        _this.getTokenCallback(null, event.data);
+                    if (event.data.error) {
+                        var e = new Error();
+                        e.text = event.data.error;
+                        _this.getTokenCallback(null, e);
+                    }
                     else {
                         var token = event.data.token;
                         var iframe = document.getElementById("tokenIFrame");
@@ -268,29 +297,36 @@ var Kurve;
             var decodedToken = this.base64Decode(idToken.substring(idToken.indexOf('.') + 1, idToken.lastIndexOf('.')));
             var decodedTokenJSON = JSON.parse(decodedToken);
             var expiryDate = new Date(new Date('01/01/1970 0:0 UTC').getTime() + parseInt(decodedTokenJSON.exp) * 1000);
-            this.idToken = {
-                token: idToken,
-                expiry: expiryDate,
-                upn: decodedTokenJSON.upn,
-                tenantId: decodedTokenJSON.tid,
-                family_name: decodedTokenJSON.family_name,
-                given_name: decodedTokenJSON.given_name,
-                name: decodedTokenJSON.name
-            };
+            this.idToken = new IdToken();
+            this.idToken.Token = idToken;
+            this.idToken.Expiry = expiryDate;
+            this.idToken.UPN = decodedTokenJSON.upn;
+            this.idToken.TenantId = decodedTokenJSON.tid;
+            this.idToken.FamilyName = decodedTokenJSON.family_name;
+            this.idToken.GivenName = decodedTokenJSON.given_name;
+            this.idToken.Name = decodedTokenJSON.name;
+            this.idToken.PreferredUsername = decodedTokenJSON.preferred_username;
             var expiration = expiryDate.getTime() - new Date().getTime() - 300000;
             this.refreshTimer = setTimeout((function () {
                 _this.renewIdToken();
             }), expiration);
         };
-        Identity.prototype.decodeAccessToken = function (accessToken, resource) {
+        Identity.prototype.decodeAccessToken = function (accessToken, resource, scopes) {
             var decodedToken = this.base64Decode(accessToken.substring(accessToken.indexOf('.') + 1, accessToken.lastIndexOf('.')));
             var decodedTokenJSON = JSON.parse(decodedToken);
             var expiryDate = new Date(new Date('01/01/1970 0:0 UTC').getTime() + parseInt(decodedTokenJSON.exp) * 1000);
-            this.tokenCache[resource] = {
-                resource: resource,
-                token: accessToken,
-                expiry: expiryDate
-            };
+            var key;
+            if (resource)
+                key = resource;
+            else
+                key = scopes.join(" ");
+            var token = new Token();
+            token.expiry = expiryDate;
+            token.resource = resource;
+            token.scopes = scopes;
+            token.token = accessToken;
+            token.id = key;
+            this.tokenCache[key] = token;
         };
         Identity.prototype.getIdToken = function () {
             return this.idToken;
@@ -298,12 +334,15 @@ var Kurve;
         Identity.prototype.isLoggedIn = function () {
             if (!this.idToken)
                 return false;
-            return (this.idToken.expiry > new Date());
+            return (this.idToken.Expiry > new Date());
         };
         Identity.prototype.renewIdToken = function () {
             clearTimeout(this.refreshTimer);
             this.login((function () {
             }));
+        };
+        Identity.prototype.getCurrentOauthVersion = function () {
+            return this.version;
         };
         Identity.prototype.getAccessTokenAsync = function (resource) {
             var d = new Kurve.Deferred();
@@ -319,8 +358,29 @@ var Kurve;
         };
         Identity.prototype.getAccessToken = function (resource, callback) {
             var _this = this;
+            if (this.version !== OAuthVersion.v1) {
+                var e = new Error();
+                e.statusText = "Currently this identity class is using v2 OAuth mode. You need to use getAccessTokenForScopes() method";
+                callback(null, e);
+                return;
+            }
             //Check for cache and see if we have a valid token
-            var cachedToken = this.tokenCache[resource];
+            var cachedToken = null;
+            var keys = Object.keys(this.tokenCache);
+            keys.forEach(function (key) {
+                var token = _this.tokenCache[key];
+                //remove expired tokens
+                if (token.expiry <= (new Date(new Date().getTime() + 60000))) {
+                    delete _this.tokenCache[key];
+                }
+                else {
+                    //Tries to capture a token that matches the resource
+                    var containScopes = true;
+                    if (token.resource == resource) {
+                        cachedToken = token;
+                    }
+                }
+            });
             if (cachedToken) {
                 //We have it cached, has it expired? (5 minutes error margin)
                 if (cachedToken.expiry > (new Date(new Date().getTime() + 60000))) {
@@ -339,19 +399,120 @@ var Kurve;
                     callback(token, null);
                 }
             });
-            this.nonce = this.generateNonce();
-            this.state = this.generateNonce();
+            this.nonce = "token" + this.generateNonce();
+            this.state = "token" + this.generateNonce();
             var iframe = document.createElement('iframe');
             iframe.style.display = "none";
             iframe.id = "tokenIFrame";
-            iframe.src = "./login.html?clientId=" + encodeURIComponent(this.clientId) +
+            iframe.src = this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
                 "&resource=" + encodeURIComponent(resource) +
                 "&redirectUri=" + encodeURIComponent(this.redirectUri) +
                 "&state=" + encodeURIComponent(this.state) +
-                "&nonce=" + encodeURIComponent(this.nonce);
+                "&version=" + encodeURIComponent(this.version.toString()) +
+                "&nonce=" + encodeURIComponent(this.nonce) +
+                "&op=token";
             document.body.appendChild(iframe);
         };
-        Identity.prototype.loginAsync = function () {
+        Identity.prototype.getAccessTokenForScopesAsync = function (scopes, promptForConsent) {
+            if (promptForConsent === void 0) { promptForConsent = false; }
+            var d = new Kurve.Deferred();
+            this.getAccessTokenForScopes(scopes, promptForConsent, (function (token, error) {
+                if (error) {
+                    d.reject(error);
+                }
+                else {
+                    d.resolve(token);
+                }
+            }));
+            return d.promise;
+        };
+        Identity.prototype.getAccessTokenForScopes = function (scopes, promptForConsent, callback) {
+            var _this = this;
+            if (promptForConsent === void 0) { promptForConsent = false; }
+            if (this.version !== OAuthVersion.v2) {
+                var e = new Error();
+                e.statusText = "Dynamic scopes require v2 mode. Currently this identity class is using v1";
+                callback(null, e);
+                return;
+            }
+            //Check for cache and see if we have a valid token
+            var cachedToken = null;
+            var keys = Object.keys(this.tokenCache);
+            keys.forEach(function (key) {
+                var token = _this.tokenCache[key];
+                //remove expired tokens
+                if (token.expiry <= (new Date(new Date().getTime() + 60000))) {
+                    delete _this.tokenCache[key];
+                }
+                else {
+                    //Tries to capture a token that contains all scopes and is still valid
+                    var containScopes = true;
+                    if (token.scopes) {
+                        scopes.forEach(function (scope) {
+                            if (token.scopes.indexOf(scope) < 0)
+                                containScopes = false;
+                        });
+                    }
+                    if (containScopes) {
+                        cachedToken = token;
+                    }
+                }
+            });
+            if (cachedToken) {
+                //We have it cached, has it expired? (5 minutes error margin)
+                if (cachedToken.expiry > (new Date(new Date().getTime() + 60000))) {
+                    callback(cachedToken.token, null);
+                    return;
+                }
+            }
+            //If we got this far, we don't have a valid cached token, so will need to get one.
+            //Need to create the iFrame to invoke the acquire token
+            this.getTokenCallback = (function (token, error) {
+                if (error) {
+                    if (promptForConsent || !error.text) {
+                        callback(null, error);
+                    }
+                    else if (error.text.indexOf("AADSTS65001") >= 0) {
+                        //We will need to try getting the consent
+                        _this.getAccessTokenForScopes(scopes, true, _this.getTokenCallback);
+                    }
+                    else {
+                        callback(null, error);
+                    }
+                }
+                else {
+                    _this.decodeAccessToken(token, null, scopes);
+                    callback(token, null);
+                }
+            });
+            this.nonce = "token" + this.generateNonce();
+            this.state = "token" + this.generateNonce();
+            if (!promptForConsent) {
+                var iframe = document.createElement('iframe');
+                iframe.style.display = "none";
+                iframe.id = "tokenIFrame";
+                iframe.src = this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
+                    "&scopes=" + encodeURIComponent(scopes.join(" ")) +
+                    "&redirectUri=" + encodeURIComponent(this.redirectUri) +
+                    "&version=" + encodeURIComponent(this.version.toString()) +
+                    "&state=" + encodeURIComponent(this.state) +
+                    "&nonce=" + encodeURIComponent(this.nonce) +
+                    "&login_hint=" + encodeURIComponent(this.idToken.PreferredUsername) +
+                    "&domain_hint=" + encodeURIComponent(this.idToken.TenantId === "9188040d-6c67-4c5b-b112-36a304b66dad" ? "consumers" : "organizations") +
+                    "&op=token";
+                document.body.appendChild(iframe);
+            }
+            else {
+                window.open(this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
+                    "&scopes=" + encodeURIComponent(scopes.join(" ")) +
+                    "&redirectUri=" + encodeURIComponent(this.redirectUri) +
+                    "&version=" + encodeURIComponent(this.version.toString()) +
+                    "&state=" + encodeURIComponent(this.state) +
+                    "&nonce=" + encodeURIComponent(this.nonce) +
+                    "&op=token", "_blank");
+            }
+        };
+        Identity.prototype.loginAsync = function (scopes) {
             var d = new Kurve.Deferred();
             this.login((function (error) {
                 if (error) {
@@ -360,17 +521,29 @@ var Kurve;
                 else {
                     d.resolve(null);
                 }
-            }));
+            }), scopes);
             return d.promise;
         };
-        Identity.prototype.login = function (callback) {
+        Identity.prototype.login = function (callback, scopes) {
             this.loginCallback = callback;
-            this.state = this.generateNonce();
-            this.nonce = this.generateNonce();
-            window.open("./login.html?clientId=" + encodeURIComponent(this.clientId) +
+            if (scopes && this.version === OAuthVersion.v1) {
+                var e = new Error();
+                e.text = "Scopes can only be used with OAuth v2.";
+                callback(e);
+                return;
+            }
+            this.state = "login" + this.generateNonce();
+            this.nonce = "login" + this.generateNonce();
+            var loginURL = this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
                 "&redirectUri=" + encodeURIComponent(this.redirectUri) +
                 "&state=" + encodeURIComponent(this.state) +
-                "&nonce=" + encodeURIComponent(this.nonce), "_blank");
+                "&nonce=" + encodeURIComponent(this.nonce) +
+                "&version=" + encodeURIComponent(this.version.toString()) +
+                "&op=login";
+            if (scopes) {
+                loginURL += "&scopes=" + encodeURIComponent(scopes.join(" "));
+            }
+            window.open(loginURL, "_blank");
         };
         Identity.prototype.logOut = function () {
             var url = "https://login.microsoftonline.com/common/oauth2/logout?post_logout_redirect_uri=" + encodeURI(window.location.href);
@@ -433,6 +606,114 @@ var Kurve;
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 var Kurve;
 (function (Kurve) {
+    var Scopes;
+    (function (Scopes) {
+        var Util = (function () {
+            function Util() {
+            }
+            Util.rootUrl = "https://graph.microsoft.com/";
+            return Util;
+        })();
+        var General = (function () {
+            function General() {
+            }
+            General.OpenId = "openid";
+            General.OfflineAccess = "offline_access";
+            return General;
+        })();
+        Scopes.General = General;
+        var User = (function () {
+            function User() {
+            }
+            User.Read = Util.rootUrl + "User.Read";
+            User.ReadWrite = Util.rootUrl + "User.ReadWrite";
+            User.ReadBasicAll = Util.rootUrl + "User.ReadBasic.All";
+            User.ReadAll = Util.rootUrl + "User.Read.All";
+            User.ReadWriteAll = Util.rootUrl + "User.ReadWrite.All";
+            return User;
+        })();
+        Scopes.User = User;
+        var Contacts = (function () {
+            function Contacts() {
+            }
+            Contacts.Read = Util.rootUrl + "Contacts.Read";
+            Contacts.ReadWrite = Util.rootUrl + "Contacts.ReadWrite";
+            return Contacts;
+        })();
+        Scopes.Contacts = Contacts;
+        var Directory = (function () {
+            function Directory() {
+            }
+            Directory.ReadAll = Util.rootUrl + "Directory.Read.All";
+            Directory.ReadWriteAll = Util.rootUrl + "Directory.ReadWrite.All";
+            Directory.AccessAsUserAll = Util.rootUrl + "Directory.AccessAsUser.All";
+            return Directory;
+        })();
+        Scopes.Directory = Directory;
+        var Group = (function () {
+            function Group() {
+            }
+            Group.ReadAll = Util.rootUrl + "Group.Read.All";
+            Group.ReadWriteAll = Util.rootUrl + "Group.ReadWrite.All";
+            Group.AccessAsUserAll = Util.rootUrl + "Directory.AccessAsUser.All";
+            return Group;
+        })();
+        Scopes.Group = Group;
+        var Mail = (function () {
+            function Mail() {
+            }
+            Mail.Read = Util.rootUrl + "Mail.Read";
+            Mail.ReadWrite = Util.rootUrl + "Mail.ReadWrite";
+            Mail.Send = Util.rootUrl + "Mail.Send";
+            return Mail;
+        })();
+        Scopes.Mail = Mail;
+        var Calendars = (function () {
+            function Calendars() {
+            }
+            Calendars.Read = Util.rootUrl + "Calendars.Read";
+            Calendars.ReadWrite = Util.rootUrl + "Calendars.ReadWrite";
+            return Calendars;
+        })();
+        Scopes.Calendars = Calendars;
+        var Files = (function () {
+            function Files() {
+            }
+            Files.Read = Util.rootUrl + "Files.Read";
+            Files.ReadAll = Util.rootUrl + "Files.Read.All";
+            Files.ReadWrite = Util.rootUrl + "Files.ReadWrite";
+            Files.ReadWriteAppFolder = Util.rootUrl + "Files.ReadWrite.AppFolder";
+            Files.ReadWriteSelected = Util.rootUrl + "Files.ReadWrite.Selected";
+            return Files;
+        })();
+        Scopes.Files = Files;
+        var Tasks = (function () {
+            function Tasks() {
+            }
+            Tasks.ReadWrite = Util.rootUrl + "Tasks.ReadWrite";
+            return Tasks;
+        })();
+        Scopes.Tasks = Tasks;
+        var People = (function () {
+            function People() {
+            }
+            People.Read = Util.rootUrl + "People.Read";
+            People.ReadWrite = Util.rootUrl + "People.ReadWrite";
+            return People;
+        })();
+        Scopes.People = People;
+        var Notes = (function () {
+            function Notes() {
+            }
+            Notes.Create = Util.rootUrl + "Notes.Create";
+            Notes.ReadWriteCreatedByApp = Util.rootUrl + "Notes.ReadWrite.CreatedByApp";
+            Notes.Read = Util.rootUrl + "Notes.Read";
+            Notes.ReadAll = Util.rootUrl + "Notes.Read.All";
+            Notes.ReadWriteAll = Util.rootUrl + "Notes.ReadWrite.All";
+            return Notes;
+        })();
+        Scopes.Notes = Notes;
+    })(Scopes = Kurve.Scopes || (Kurve.Scopes = {}));
     var ProfilePhotoDataModel = (function () {
         function ProfilePhotoDataModel() {
         }
@@ -623,8 +904,6 @@ var Kurve;
     var Graph = (function () {
         function Graph(identityInfo) {
             this.req = null;
-            this.state = null;
-            this.nonce = null;
             this.accessToken = null;
             this.KurveIdentity = null;
             this.defaultResourceID = "https://graph.microsoft.com";
@@ -636,6 +915,15 @@ var Kurve;
                 this.KurveIdentity = identityInfo.identity;
             }
         }
+        //Only adds scopes when linked to a v2 Oauth of kurve identity
+        Graph.prototype.scopesForV2 = function (scopes) {
+            if (!this.KurveIdentity)
+                return null;
+            if (this.KurveIdentity.getCurrentOauthVersion() === Kurve.OAuthVersion.v1)
+                return null;
+            else
+                return scopes;
+        };
         //Users
         Graph.prototype.meAsync = function (odataQuery) {
             var d = new Kurve.Deferred();
@@ -650,13 +938,14 @@ var Kurve;
             return d.promise;
         };
         Graph.prototype.me = function (callback, odataQuery) {
+            var scopes = [Scopes.User.Read];
             var urlString = this.buildMeUrl() + "/";
-            if (odataQuery) {
+            if (odataQuery)
                 urlString += "?" + odataQuery;
-            }
-            this.getUser(urlString, callback);
+            this.getUser(urlString, callback, this.scopesForV2(scopes));
         };
-        Graph.prototype.userAsync = function (userId) {
+        Graph.prototype.userAsync = function (userId, odataQuery, basicProfileOnly) {
+            if (basicProfileOnly === void 0) { basicProfileOnly = true; }
             var d = new Kurve.Deferred();
             this.user(userId, function (user, error) {
                 if (error) {
@@ -665,14 +954,23 @@ var Kurve;
                 else {
                     d.resolve(user);
                 }
-            });
+            }, odataQuery, basicProfileOnly);
             return d.promise;
         };
-        Graph.prototype.user = function (userId, callback) {
+        Graph.prototype.user = function (userId, callback, odataQuery, basicProfileOnly) {
+            if (basicProfileOnly === void 0) { basicProfileOnly = true; }
+            var scopes = [];
+            if (basicProfileOnly)
+                scopes = [Scopes.User.ReadBasicAll];
+            else
+                scopes = [Scopes.User.ReadAll];
             var urlString = this.buildUsersUrl() + "/" + userId;
-            this.getUser(urlString, callback);
+            if (odataQuery)
+                urlString += "?" + odataQuery;
+            this.getUser(urlString, callback, this.scopesForV2(scopes));
         };
-        Graph.prototype.usersAsync = function (odataQuery) {
+        Graph.prototype.usersAsync = function (odataQuery, basicProfileOnly) {
+            if (basicProfileOnly === void 0) { basicProfileOnly = true; }
             var d = new Kurve.Deferred();
             this.users(function (users, error) {
                 if (error) {
@@ -681,18 +979,23 @@ var Kurve;
                 else {
                     d.resolve(users);
                 }
-            }, odataQuery);
+            }, odataQuery, basicProfileOnly);
             return d.promise;
         };
-        Graph.prototype.users = function (callback, odataQuery) {
+        Graph.prototype.users = function (callback, odataQuery, basicProfileOnly) {
+            if (basicProfileOnly === void 0) { basicProfileOnly = true; }
+            var scopes = [];
+            if (basicProfileOnly)
+                scopes = [Scopes.User.ReadBasicAll];
+            else
+                scopes = [Scopes.User.ReadAll];
             var urlString = this.buildUsersUrl() + "/";
-            if (odataQuery) {
+            if (odataQuery)
                 urlString += "?" + odataQuery;
-            }
-            this.getUsers(urlString, callback);
+            this.getUsers(urlString, callback, this.scopesForV2(scopes));
         };
         //Groups
-        Graph.prototype.groupAsync = function (groupId) {
+        Graph.prototype.groupAsync = function (groupId, odataQuery) {
             var d = new Kurve.Deferred();
             this.group(groupId, function (group, error) {
                 if (error) {
@@ -701,19 +1004,15 @@ var Kurve;
                 else {
                     d.resolve(group);
                 }
-            });
+            }, odataQuery);
             return d.promise;
         };
-        Graph.prototype.group = function (groupId, callback) {
+        Graph.prototype.group = function (groupId, callback, odataQuery) {
+            var scopes = [Scopes.Group.ReadAll];
             var urlString = this.buildGroupsUrl() + "/" + groupId;
-            this.getGroup(urlString, callback);
-        };
-        Graph.prototype.groups = function (callback, odataQuery) {
-            var urlString = this.buildGroupsUrl() + "/";
-            if (odataQuery) {
+            if (odataQuery)
                 urlString += "?" + odataQuery;
-            }
-            this.getGroups(urlString, callback);
+            this.getGroup(urlString, callback, this.scopesForV2(scopes));
         };
         Graph.prototype.groupsAsync = function (odataQuery) {
             var d = new Kurve.Deferred();
@@ -727,15 +1026,14 @@ var Kurve;
             }, odataQuery);
             return d.promise;
         };
-        // Messages For User
-        Graph.prototype.messagesForUser = function (userPrincipalName, callback, odataQuery) {
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
+        Graph.prototype.groups = function (callback, odataQuery) {
+            var scopes = [Scopes.Group.ReadAll];
+            var urlString = this.buildGroupsUrl() + "/";
             if (odataQuery)
                 urlString += "?" + odataQuery;
-            this.getMessages(urlString, function (result, error) {
-                callback(result, error);
-            }, odataQuery);
+            this.getGroups(urlString, callback, odataQuery, this.scopesForV2(scopes));
         };
+        // Messages For User
         Graph.prototype.messagesForUserAsync = function (userPrincipalName, odataQuery) {
             var d = new Kurve.Deferred();
             this.messagesForUser(userPrincipalName, function (messages, error) {
@@ -747,6 +1045,15 @@ var Kurve;
                 }
             }, odataQuery);
             return d.promise;
+        };
+        Graph.prototype.messagesForUser = function (userPrincipalName, callback, odataQuery) {
+            var scopes = [Scopes.Mail.Read];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
+            if (odataQuery)
+                urlString += "?" + odataQuery;
+            this.getMessages(urlString, function (result, error) {
+                callback(result, error);
+            }, odataQuery, this.scopesForV2(scopes));
         };
         // Calendar For User
         Graph.prototype.calendarForUser = function (userPrincipalName, callback, odataQuery) {
@@ -770,12 +1077,6 @@ var Kurve;
             return d.promise;
         };
         // Groups/Relationships For User
-        Graph.prototype.memberOfForUser = function (userPrincipalName, callback, odataQuery) {
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/memberOf";
-            if (odataQuery)
-                urlString += "?" + odataQuery;
-            this.getGroups(urlString, callback, odataQuery);
-        };
         Graph.prototype.memberOfForUserAsync = function (userPrincipalName, odataQuery) {
             var d = new Kurve.Deferred();
             this.memberOfForUser(userPrincipalName, function (result, error) {
@@ -788,10 +1089,12 @@ var Kurve;
             }, odataQuery);
             return d.promise;
         };
-        Graph.prototype.managerForUser = function (userPrincipalName, callback, odataQuery) {
-            // need odataQuery;
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/manager";
-            this.getUser(urlString, callback);
+        Graph.prototype.memberOfForUser = function (userPrincipalName, callback, odataQuery) {
+            var scopes = [Scopes.Group.ReadAll];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/memberOf";
+            if (odataQuery)
+                urlString += "?" + odataQuery;
+            this.getGroups(urlString, callback, odataQuery, this.scopesForV2(scopes));
         };
         Graph.prototype.managerForUserAsync = function (userPrincipalName, odataQuery) {
             var d = new Kurve.Deferred();
@@ -805,10 +1108,12 @@ var Kurve;
             }, odataQuery);
             return d.promise;
         };
-        Graph.prototype.directReportsForUser = function (userPrincipalName, callback, odataQuery) {
-            // Need odata query
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/directReports";
-            this.getUsers(urlString, callback);
+        Graph.prototype.managerForUser = function (userPrincipalName, callback, odataQuery) {
+            var scopes = [Scopes.Directory.ReadAll];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/manager";
+            if (odataQuery)
+                urlString += "?" + odataQuery;
+            this.getUser(urlString, callback, this.scopesForV2(scopes));
         };
         Graph.prototype.directReportsForUserAsync = function (userPrincipalName, odataQuery) {
             var d = new Kurve.Deferred();
@@ -822,9 +1127,12 @@ var Kurve;
             }, odataQuery);
             return d.promise;
         };
-        Graph.prototype.profilePhotoForUser = function (userPrincipalName, callback) {
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo";
-            this.getPhoto(urlString, callback);
+        Graph.prototype.directReportsForUser = function (userPrincipalName, callback, odataQuery) {
+            var scopes = [Scopes.Directory.ReadAll];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/directReports";
+            if (odataQuery)
+                urlString += "?" + odataQuery;
+            this.getUsers(urlString, callback, this.scopesForV2(scopes));
         };
         Graph.prototype.profilePhotoForUserAsync = function (userPrincipalName) {
             var d = new Kurve.Deferred();
@@ -838,9 +1146,10 @@ var Kurve;
             });
             return d.promise;
         };
-        Graph.prototype.profilePhotoValueForUser = function (userPrincipalName, callback) {
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo/$value";
-            this.getPhotoValue(urlString, callback);
+        Graph.prototype.profilePhotoForUser = function (userPrincipalName, callback) {
+            var scopes = [Scopes.User.ReadBasicAll];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo";
+            this.getPhoto(urlString, callback, this.scopesForV2(scopes));
         };
         Graph.prototype.profilePhotoValueForUserAsync = function (userPrincipalName) {
             var d = new Kurve.Deferred();
@@ -853,6 +1162,11 @@ var Kurve;
                 }
             });
             return d.promise;
+        };
+        Graph.prototype.profilePhotoValueForUser = function (userPrincipalName, callback) {
+            var scopes = [Scopes.User.ReadBasicAll];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo/$value";
+            this.getPhotoValue(urlString, callback, this.scopesForV2(scopes));
         };
         //http verbs
         Graph.prototype.getAsync = function (url) {
@@ -867,7 +1181,7 @@ var Kurve;
             });
             return d.promise;
         };
-        Graph.prototype.get = function (url, callback, responseType) {
+        Graph.prototype.get = function (url, callback, responseType, scopes) {
             var _this = this;
             var xhr = new XMLHttpRequest();
             if (responseType)
@@ -888,7 +1202,7 @@ var Kurve;
                 if (addTokenError) {
                     callback(null, addTokenError);
                 }
-            });
+            }, scopes);
         };
         Graph.prototype.generateError = function (xhr) {
             var response = new Kurve.Error();
@@ -901,7 +1215,7 @@ var Kurve;
             return response;
         };
         //Private methods
-        Graph.prototype.getUsers = function (urlString, callback) {
+        Graph.prototype.getUsers = function (urlString, callback, scopes) {
             var _this = this;
             this.get(urlString, (function (result, errorGet) {
                 if (errorGet) {
@@ -938,9 +1252,9 @@ var Kurve;
                     });
                 }
                 callback(users, null);
-            }));
+            }), null, scopes);
         };
-        Graph.prototype.getUser = function (urlString, callback) {
+        Graph.prototype.getUser = function (urlString, callback, scopes) {
             var _this = this;
             this.get(urlString, function (result, errorGet) {
                 if (errorGet) {
@@ -956,9 +1270,9 @@ var Kurve;
                 }
                 var user = new User(_this, userODATA);
                 callback(user, null);
-            });
+            }, null, scopes);
         };
-        Graph.prototype.addAccessTokenAndSend = function (xhr, callback) {
+        Graph.prototype.addAccessTokenAndSend = function (xhr, callback, scopes) {
             if (this.accessToken) {
                 //Using default access token
                 xhr.setRequestHeader('Authorization', 'Bearer ' + this.accessToken);
@@ -966,19 +1280,33 @@ var Kurve;
             }
             else {
                 //Using the integrated Identity object
-                this.KurveIdentity.getAccessToken(this.defaultResourceID, (function (token, error) {
-                    //cache the token
-                    if (error)
-                        callback(error);
-                    else {
-                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                        xhr.send();
-                        callback(null);
-                    }
-                }));
+                if (scopes) {
+                    //v2 scope based tokens
+                    this.KurveIdentity.getAccessTokenForScopes(scopes, false, (function (token, error) {
+                        if (error)
+                            callback(error);
+                        else {
+                            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                            xhr.send();
+                            callback(null);
+                        }
+                    }));
+                }
+                else {
+                    //v1 resource based tokens
+                    this.KurveIdentity.getAccessToken(this.defaultResourceID, (function (token, error) {
+                        if (error)
+                            callback(error);
+                        else {
+                            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                            xhr.send();
+                            callback(null);
+                        }
+                    }));
+                }
             }
         };
-        Graph.prototype.getMessages = function (urlString, callback, odataQuery) {
+        Graph.prototype.getMessages = function (urlString, callback, odataQuery, scopes) {
             var _this = this;
             var url = urlString;
             if (odataQuery)
@@ -1016,9 +1344,9 @@ var Kurve;
                     };
                 }
                 callback(messages, null);
-            }));
+            }), null, scopes);
         };
-        Graph.prototype.getGroups = function (urlString, callback, odataQuery) {
+        Graph.prototype.getGroups = function (urlString, callback, odataQuery, scopes) {
             var _this = this;
             var url = urlString;
             if (odataQuery)
@@ -1058,9 +1386,9 @@ var Kurve;
                     });
                 }
                 callback(groups, null);
-            }));
+            }), null, scopes);
         };
-        Graph.prototype.getGroup = function (urlString, callback) {
+        Graph.prototype.getGroup = function (urlString, callback, scopes) {
             var _this = this;
             this.get(urlString, function (result, errorGet) {
                 if (errorGet) {
@@ -1076,9 +1404,9 @@ var Kurve;
                 }
                 var group = new Kurve.Group(_this, ODATA);
                 callback(group, null);
-            });
+            }, null, scopes);
         };
-        Graph.prototype.getPhoto = function (urlString, callback) {
+        Graph.prototype.getPhoto = function (urlString, callback, scopes) {
             var _this = this;
             this.get(urlString, function (result, errorGet) {
                 if (errorGet) {
@@ -1094,16 +1422,16 @@ var Kurve;
                 }
                 var photo = new ProfilePhoto(_this, ODATA);
                 callback(photo, null);
-            });
+            }, null, scopes);
         };
-        Graph.prototype.getPhotoValue = function (urlString, callback) {
+        Graph.prototype.getPhotoValue = function (urlString, callback, scopes) {
             this.get(urlString, function (result, errorGet) {
                 if (errorGet) {
                     callback(null, errorGet);
                     return;
                 }
                 callback(result, null);
-            }, "blob");
+            }, "blob", scopes);
         };
         Graph.prototype.buildMeUrl = function () {
             return this.baseUrl + "me";
@@ -1144,3 +1472,7 @@ var Kurve;
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
 //   
 //*********************************************************   
+
+if (((typeof window != "undefined" && window.module) || (typeof module != "undefined")) && typeof module.exports != "undefined") {
+    module.exports = Kurve;
+};
