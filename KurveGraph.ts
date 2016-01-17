@@ -304,6 +304,10 @@ module Kurve {
         public me(callback: (user: User, error: Error) => void, odataQuery?: string): void {
             var scopes = [Scopes.User.Read];
             var urlString: string = this.buildMeUrl() + "/";
+            if (odataQuery) {
+                urlString += "?" + odataQuery;
+            }
+            this.getUser(urlString, callback);
             if (odataQuery) urlString += "?" + odataQuery;
             this.getUser(urlString, callback, this.scopesForV2(scopes));
         }

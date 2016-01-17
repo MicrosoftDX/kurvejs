@@ -57,6 +57,17 @@ gulp.task('typescript-compile',["typescript-sourcemaps"], function() {
      ]); 
  }); 
 
+gulp.task('app-compile', ["typescript-compile"], function () {
+    return gulp
+        .src(['test/app.ts', 'test/noLoginWindow.ts', 'dist/kurve.d.ts'], { base: '.' })
+        .pipe(typescript({
+            noExternalResolve: true,
+            target: 'ES5',
+            outDir: 'test',
+            typescript: require('typescript')
+        }))
+        .pipe(gulp.dest('./'));
+});
 
 /**
  * Watch task, will call the default task if a js file is updated.
@@ -65,8 +76,8 @@ gulp.task('watch', function () {
     gulp.watch(config.core.typescript, ['default']);
 });
 
-gulp.task('move-html', function() {
-    var result = gulp.src(['index.html','login.html'])
+gulp.task('move-html', function () {
+    var result = gulp.src(['login.html'])
         .pipe(gulp.dest('./dist'));
     return result;
 });

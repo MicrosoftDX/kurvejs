@@ -48,17 +48,19 @@ module Kurve {
         private nonce: string;
         private idToken: IdToken;
         private loginCallback: (error: Error) => void;
-        private accessTokenCallback: (token:string, error: Error) => void;
+        private accessTokenCallback: (token: string, error: Error) => void;
         private getTokenCallback: (token: string, error: Error) => void;
-        private redirectUri: string;
+        private tokenProcessorUrl: string;
         private tokenCache: TokenDictionary;
         private logonUser: any;
         private refreshTimer: any;
 
         constructor(clientId = "", redirectUri = "", version?: OAuthVersion) {
   
+
+        constructor(clientId = "", tokenProcessingUri = "") {
             this.clientId = clientId;
-            this.redirectUri = redirectUri;
+            this.tokenProcessorUrl = tokenProcessingUri;
             this.req = new XMLHttpRequest();
             this.tokenCache = {};
             if (version)
@@ -109,8 +111,62 @@ module Kurve {
             }));
         }
 
+        public checkForIdentityRedirect(): boolean {
+            function token(s: string) {
+                var start = window.location.href.indexOf(s);
+                if (start < 0) return null;
+                var end = window.location.href.indexOf("&",start + s.length);                
+                return  window.location.href.substring(start,((end > 0) ? end : window.location.href.length));
+            }
+
+            function parseQueryString(str: string) {
+                var queryString = str || window.location.search || '';
+                var keyValPairs: any[] = [];
+                var params: any = {};
+                queryString = queryString.replace(/.*?\?/, "");
+
+                if (queryString.length) {
+                    keyValPairs = queryString.split('&');
+                    for (var pairNum in keyValPairs) {
+                        var key = keyValPairs[pairNum].split('=')[0];
+                        if (!key.length) continue;
+                        if (typeof params[key] === 'undefined')
+                            params[key] = [];
+                        params[key].push(keyValPairs[pairNum].split('=')[1]);
+                    }
+                }
+                return params;
+            }
+
+            var params = parseQueryString(window.location.href);
+            var idToken = token("#id_token=");
+            var accessToken = token("#access_token");
+            if (idToken) {
+                if (true || this.state === params["state"][0]) { //BUG? When you are in a pure redirect system you don't remember your state or nonce so don't check.
+                    this.decodeIdToken(idToken);
+                    this.loginCallback && this.loginCallback(null);
+                } else {
+                    var error = new Error();
+                    error.statusText = "Invalid state";
+                    this.loginCallback && this.loginCallback(error);
+                }
+                return true;
+            }
+            else if (accessToken) {
+                throw "Should not get here.  This should be handled via the iframe approach."
+                if (this.state === params["state"][0]) {
+                    this.getTokenCallback && this.getTokenCallback(accessToken, null);
+                } else {
+                    var error = new Error();
+                    error.statusText = "Invalid state";
+                    this.getTokenCallback && this.getTokenCallback(null, error);
+                }
+            }
+            return false;
+        }
+
         private decodeIdToken(idToken: string): void {
-           
+
             var decodedToken = this.base64Decode(idToken.substring(idToken.indexOf('.') + 1, idToken.lastIndexOf('.')));
             var decodedTokenJSON = JSON.parse(decodedToken);
             var expiryDate = new Date(new Date('01/01/1970 0:0 UTC').getTime() + parseInt(decodedTokenJSON.exp) * 1000);
@@ -129,7 +185,7 @@ module Kurve {
 
             this.refreshTimer = setTimeout((() => {
                 this.renewIdToken();
-            }), expiration); 
+            }), expiration);
         }
 
         private decodeAccessToken(accessToken: string, resource?:string, scopes?:string[]): void {
@@ -235,7 +291,7 @@ module Kurve {
             var iframe = document.createElement('iframe');
             iframe.style.display = "none";
             iframe.id = "tokenIFrame";
-            
+            //TODO: Fix this
             iframe.src = this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
             "&resource=" + encodeURIComponent(resource) +
             "&redirectUri=" + encodeURIComponent(this.redirectUri) +
@@ -243,19 +299,21 @@ module Kurve {
                 "&version=" + encodeURIComponent(this.version.toString()) +
                 "&nonce=" + encodeURIComponent(this.nonce) +
                 "&op=token";
+            iframe.src = this.tokenProcessorUrl +
+                "?clientId=" + encodeURIComponent(this.clientId) +
+                "&resource=" + encodeURIComponent(resource) +
+                "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
+                "&state=" + encodeURIComponent(this.state) +
+                "&nonce=" + encodeURIComponent(this.nonce);
             document.body.appendChild(iframe);
         }
 
-        public getAccessTokenForScopesAsync(scopes: string[], promptForConsent = false): Promise<string, Error> {
-            var d = new Deferred<string, Error>();
-            this.getAccessTokenForScopes(scopes, promptForConsent, ((token, error) => {
-                if (error) {
-                    d.reject(error);
-                } else {
-                    d.resolve(token);
-                }
-            }));
-            return d.promise;
+        public loginAsync(): Promise<void, Error> {
+            var d = new Deferred<void,Error>();
+            this.login(((error) => {
+        public loginAsync(toUrl?: string): Promise<void, Error> {
+            var d = new Deferred<void, Error>();
+            this.login((error) => {
         }   
 
         public getAccessTokenForScopes(scopes: string[], promptForConsent=false, callback: (token: string, error: Error) => void): void {
@@ -360,10 +418,12 @@ module Kurve {
                     d.resolve(null);
                 }
             }), scopes);
+            }, toUrl); //TODO: fix this
             return d.promise;
         }
-
+//TODO: fix this
         public login(callback: (error: Error) => void, scopes?:string[]): void {
+        public login(callback: (error: Error) => void, toUrl?: string): void {
             this.loginCallback = callback;
           
             if (scopes && this.version === OAuthVersion.v1) {
@@ -374,7 +434,7 @@ module Kurve {
             }
             this.state = "login" + this.generateNonce();
             this.nonce = "login" + this.generateNonce();
-
+//TODO: this.tokenProcessorUrl
             var loginURL = this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
                 "&redirectUri=" + encodeURIComponent(this.redirectUri) +
                 "&state=" + encodeURIComponent(this.state) +
@@ -388,6 +448,38 @@ module Kurve {
 
             
             window.open(loginURL, "_blank");
+
+        }
+
+
+        public loginNoWindowAsync(toUrl? : string): Promise<void, Error> {
+            var d = new Deferred<void, Error>();
+            this.loginNoWindow((error) => {
+                if (error) {
+                    d.reject(error);
+                }
+                else {
+                    d.resolve(null);
+                }
+            }, toUrl);
+            return d.promise;
+        }
+
+        public loginNoWindow(callback: (error: Error) => void, toUrl? : string): void {
+            this.loginCallback = callback;
+            this.state = "clientId=" + this.clientId + "&" + "tokenProcessorUrl=" + this.tokenProcessorUrl
+            this.nonce = this.generateNonce();
+
+            var redirected = this.checkForIdentityRedirect();
+            if (!redirected) {                
+                var redirectUri = (toUrl) ? toUrl : window.location.href.split("#")[0];  // default the no login window scenario to return to the current page
+                var url = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token" +
+                    "&client_id=" + encodeURIComponent(this.clientId) +
+                    "&redirect_uri=" + encodeURIComponent(redirectUri) +
+                    "&state=" + encodeURIComponent(this.state) +
+                    "&nonce=" + encodeURIComponent(this.nonce);
+                window.location.href = url;
+            }
         }
 
         public logOut(): void {
@@ -396,12 +488,16 @@ module Kurve {
         }
 
         private base64Decode(encodedString: string): string {
-            var e = {}, i, b = 0, c, x, l = 0, a, r = '', w = String.fromCharCode, L = encodedString.length;
+            var e: any = {}, i: number, b = 0, c: number, x: number, l = 0, a: any, r = '', w = String.fromCharCode, L = encodedString.length;
             var A = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
             for (i = 0; i < 64; i++) { e[A.charAt(i)] = i; }
             for (x = 0; x < L; x++) {
-                c = e[encodedString.charAt(x)]; b = (b << 6) + c; l += 6;
-                while (l >= 8) { ((a = (b >>> (l -= 8)) & 0xff) || (x < (L - 2))) && (r += w(a)); }
+                c = e[encodedString.charAt(x)];
+                b = (b << 6) + c;
+                l += 6;
+                while (l >= 8) {
+                    ((a = (b >>> (l -= 8)) & 0xff) || (x < (L - 2))) && (r += w(a));
+                }
             }
             return r;
         }

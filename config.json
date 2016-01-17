@@ -9,7 +9,6 @@
   },
   "core": {
     "typescript": [
-      "./typedPromises.ts",
       "./promises.ts",
       "./KurveIdentity.ts",
       "./KurveGraph.ts",
