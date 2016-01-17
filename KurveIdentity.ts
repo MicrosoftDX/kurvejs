@@ -79,7 +79,7 @@ module Kurve {
                 return  window.location.href.substring(start,((end > 0) ? end : window.location.href.length));
             }
 
-            function parseQueryString(str: string) {
+            function parseQueryString(str?: string) {
                 var queryString = str || window.location.search || '';
                 var keyValPairs: any[] = [];
                 var params: any = {};
@@ -98,7 +98,7 @@ module Kurve {
                 return params;
             }
 
-            var params = parseQueryString(window.location.href);
+            var params = parseQueryString();
             var idToken = token("#id_token=");
             var accessToken = token("#access_token");
             if (idToken) {
