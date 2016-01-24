@@ -55,10 +55,7 @@ module Kurve {
         private logonUser: any;
         private refreshTimer: any;
 
-        constructor(clientId = "", redirectUri = "", version?: OAuthVersion) {
-  
-
-        constructor(clientId = "", tokenProcessingUri = "") {
+        constructor(clientId = "", tokenProcessingUri = "", version?: OAuthVersion) {
             this.clientId = clientId;
             this.tokenProcessorUrl = tokenProcessingUri;
             this.req = new XMLHttpRequest();
@@ -291,29 +288,30 @@ module Kurve {
             var iframe = document.createElement('iframe');
             iframe.style.display = "none";
             iframe.id = "tokenIFrame";
-            //TODO: Fix this
-            iframe.src = this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
+            
+            iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
             "&resource=" + encodeURIComponent(resource) +
-            "&redirectUri=" + encodeURIComponent(this.redirectUri) +
+                "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                 "&state=" + encodeURIComponent(this.state) +
                 "&version=" + encodeURIComponent(this.version.toString()) +
                 "&nonce=" + encodeURIComponent(this.nonce) +
                 "&op=token";
-            iframe.src = this.tokenProcessorUrl +
-                "?clientId=" + encodeURIComponent(this.clientId) +
-                "&resource=" + encodeURIComponent(resource) +
-                "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
-                "&state=" + encodeURIComponent(this.state) +
-                "&nonce=" + encodeURIComponent(this.nonce);
+           
             document.body.appendChild(iframe);
         }
 
-        public loginAsync(): Promise<void, Error> {
-            var d = new Deferred<void,Error>();
-            this.login(((error) => {
-        public loginAsync(toUrl?: string): Promise<void, Error> {
-            var d = new Deferred<void, Error>();
-            this.login((error) => {
+      
+        public getAccessTokenForScopesAsync(scopes: string[], promptForConsent = false): Promise<string, Error> {
+
+            var d = new Deferred<string, Error>();
+            this.getAccessTokenForScopes(scopes, promptForConsent, ((token, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(token);
+                }
+            }));
+            return d.promise;
         }   
 
         public getAccessTokenForScopes(scopes: string[], promptForConsent=false, callback: (token: string, error: Error) => void): void {
@@ -384,9 +382,9 @@ module Kurve {
                 var iframe = document.createElement('iframe');
                 iframe.style.display = "none";
                 iframe.id = "tokenIFrame";
-                iframe.src = this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
+                iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
                     "&scopes=" + encodeURIComponent(scopes.join(" ")) +
-                    "&redirectUri=" + encodeURIComponent(this.redirectUri) +
+                    "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                     "&version=" + encodeURIComponent(this.version.toString()) +
                     "&state=" + encodeURIComponent(this.state) +
                     "&nonce=" + encodeURIComponent(this.nonce) +
@@ -395,35 +393,31 @@ module Kurve {
                     "&op=token";
                 document.body.appendChild(iframe);
             } else {
-                window.open(this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
+                window.open(this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
                     "&scopes=" + encodeURIComponent(scopes.join(" ")) +
-                    "&redirectUri=" + encodeURIComponent(this.redirectUri) +
+                    "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                     "&version=" + encodeURIComponent(this.version.toString()) +
                     "&state=" + encodeURIComponent(this.state) +
                     "&nonce=" + encodeURIComponent(this.nonce) +
                     "&op=token" 
                     , "_blank");
             }
-
-
         }
 
-        public loginAsync(scopes?:string[]): Promise<void, Error> {
-            var d = new Deferred<void,Error>();
-            this.login(((error) => {
+        public loginAsync(scopes?: string[]): Promise<void, Error> {
+            var d = new Deferred<void, Error>();
+            this.login((error) => {
                 if (error) {
                     d.reject(error);
                 }
                 else {
                     d.resolve(null);
                 }
-            }), scopes);
-            }, toUrl); //TODO: fix this
+            }, scopes);
             return d.promise;
         }
-//TODO: fix this
+
         public login(callback: (error: Error) => void, scopes?:string[]): void {
-        public login(callback: (error: Error) => void, toUrl?: string): void {
             this.loginCallback = callback;
           
             if (scopes && this.version === OAuthVersion.v1) {
@@ -434,9 +428,8 @@ module Kurve {
             }
             this.state = "login" + this.generateNonce();
             this.nonce = "login" + this.generateNonce();
-//TODO: this.tokenProcessorUrl
-            var loginURL = this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
-                "&redirectUri=" + encodeURIComponent(this.redirectUri) +
+            var loginURL = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
+                "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                 "&state=" + encodeURIComponent(this.state) +
                 "&nonce=" + encodeURIComponent(this.nonce) +
                 "&version=" + encodeURIComponent(this.version.toString()) +
@@ -446,9 +439,7 @@ module Kurve {
                 loginURL += "&scopes=" + encodeURIComponent(scopes.join(" "));
             }
 
-            
             window.open(loginURL, "_blank");
-
         }
 
 

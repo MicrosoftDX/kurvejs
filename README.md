@@ -8,109 +8,34 @@ Kurve<nolink>.JS is an unofficial, open source JavaScript / TypeScript library t
 
 ## How does it work?
 
-Reference the JavaScript file from your HTML page:
+The first thing you have to decide before using Kurve is which app model version you will use:
 
-```html
-    <script src="Kurve.min.js"></script>
-```
+### App Model V1:
 
-Alternatively you can just reference the script from our CDN:
+App model V1 is the current, production supported model in Azure AD. This model implies that:
 
-```html
-    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.3.5.js"></script>
-```
+1. You will register an application in Azure Active Directory, using the Azure Management Console (<a href="https://manage.windowsazure.com">https://manage.windowsazure.com</a>)
+2. During that registration, you will pre-set the permissions your application will need. This means that you won't make those decisions about what types of permissions an app needs in runtime, but instead predefine those when you register your application in Azure AD
+3. Every access token will be requested againast a resource, not a scope. For example, a resource could be Microsoft Exchange Online and another would be your custom web service
 
-	
-The identity and graph classes can work independently or together. For example, you may have authenticated and retrieved an access token from somewhere else and only give it to the graph library, or you can use the identity library for authentication.
+To find out more about using Kurve JS with app model V1, please read <b><a href="./docs/appModelV1/intro.md">this introduction document</a></b>.
 
-```javascript
+### App Model V2:
 
-//Option 1: We already have an access token obtained from another library: 
-var graph = new Kurve.Graph({ defaultAccessToken: token });
+App model V2 is a new, more modern way which is still in Preview and has several limitations at this point. It enables more flexible scenarios but you should probably avoid it in production code at this stage. This model implies that:
 
+1. You will register an application in the new application registration portal under <a href="https://apps.dev.microsoft.com/">https://apps.dev.microsoft.com/</a>, which does not require using Azure Management Portal.
+2. You do not specify application permissions during the registration. The application code itself will request for specific permissions in runtime (either during login or any time during the application execution). Kuve JS will help with that process.
 
-//Option 2: Automatically linking to the Identity object
-var identity = new Kurve.Identity(
-        "your_client_id", 
-        "your_redirect_url");
-
-var identity.login(function (error) {
-	var graph = new Kurve.Graph({ identity: identity });
-                
-} 
-```
-
-And then we can start using the graph objects:
-
-```javascript
-//Get the top 5 users
-graph.users((function(users, error) {
-                getUsersCallback(users, error);
-            }), "$top=5");
-
-//Get the top 5 users with Promises
-graph.usersAsync("$top=5").then((function(users) {
-	getUsersCallback(users, null);
-    
-//Get user "me" and then the user's e-mails from Exchange Online:
-graph.meAsync().then(function(user)  {
-	var result = "User:" + user.data.displayName;
-    user.messagesAsync(“$top=5”).then(function(messages) {
-		messagesCallback(messages);
-	});
-});
-
-function messagesCallback(messages) {
-	if (messages.nextLink){
-    //Check for messages and see if there's 
-    //another page to be loaded
-    	messages.nextLink().then(messagesCallback);
-    }
-}
-```
-
-Just like in the graph example, with identity it is also possible to choose callbacks or Promises syntax:
-
-```javascript
-var identity = new Kurve.Identity(
-        "your_clientid", 
-        "your_redirect_url");
-
-identity.login(function(error) {
-	if (!error){
-	//login worked
-    }
-	identity.getAccessToken("https://graph.microsoft.com",(function (token,error) {
-    	if (!error){
-		//token received
-        }
-	});
-});
-```
-
-If you prefer the Promises syntax, you can also do it that way:
-
-```javascript
-var identity = new Kurve.Identity(
-        "your_clientid", 
-        "your_redirect_url");
-
-identity.loginAsync().then(function() {
-	identity.getAccessTokenAsync("https://graph.microsoft.com").then(function (token) {
-		//token received
-	});
-});
-```
-
-The sample index.html and app.<nolink>js files show how to wire and use it.
+To find out more about using Kurve JS with app model V2, please read <b><a href="./docs/appModelV2/intro.md">this introduction document</a></b>.
 
 
 ## FAQ
 
 ### Is this a supported library from Microsoft?
- 
-No it is not. This is an open source project built unofficially. If you are looking for a supported APIs we encourage you to directly call Microsoft's Graph REST APIs. 
- 
+
+No it is not. This is an open source project built unofficially. If you are looking for a supported APIs we encourage you to directly call Microsoft's Graph REST APIs.
+
 ### Can I use/change this library?
 
 You are free to take the code, change and use it any way you want it. But please be advised this code isn't supported.
@@ -119,11 +44,16 @@ You are free to take the code, change and use it any way you want it. But please
 
 You are free to send us your feedback at this Github repo, send pull requests, etc. But please don't expect this to work as an official support channel
 
-### Which files do I need to run this? 
+### Which files do I need to run this?
 
 At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optionally KurveIdentity.<nolink>js + login.html. You may use the TypeScript libraries and reuse some of the sample app code (index.html and app.<nolink>js) for reference.
 
 # Release Notes
+
+## 0.3.6:
+ * Bug fixes
+ * Introduction of the app model V2 support, including dynamic scopes and integration with the graph calls
+ * Introduction of no window support, for older browsers that don't support popup windows during login
 
 ## 0.3.5:
  * New typed promises syntax supporting return and exception types

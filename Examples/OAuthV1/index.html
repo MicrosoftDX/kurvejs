@@ -4,14 +4,16 @@
     <title></title>
     <meta charset="utf-8" />
 
-    <script src="../dist/kurve.d.ts"></script>
-    <script src="app.js"></script>
+    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.3.6.js"></script>
+    <script src="./app.js"></script>
 
 </head>
 <body>
+    This example uses the v1 of the protocol, therefore the application must be registered in Azure Active Directory.<br />
+    More details <a href="https://azure.microsoft.com/en-us/documentation/articles/mobile-services-how-to-register-active-directory-authentication/">here.</a>. Also, for this sample the registered application needs access to the unified graph api.
     <div id="initDiv">
         Your App Class ID:<br/> <input type="text" id="classID" value="" /><button id="buttonTestClass" onclick="setClassID();"> Use a Test Class ID </button><br />
-        Token Processing URL: <br/> <input type="text" id="redirectUrl" value="" /><br /><br />
+        Redirect URL: <br/> <input type="text" id="redirectUrl" value="https://localhost:44300/login.html" /><br /><br />
 
         <button id="btnInit" onclick="init();">Initialize</button>
     </div>
@@ -40,14 +42,13 @@
     <script type="text/javascript">
         var app;
         function init() {
-            app = new Sample.App();
+            app = new Sample.AppV1();
         }
+
+
         function setClassID() {
-            document.getElementById("classID").value = "b8dd3290-662a-4f91-92b9-3e70fbabe04e";
+            document.getElementById("classID").value = "83399983-098b-469c-bc33-fd59dd54b3bd";
         }
-        document.getElementById("redirectUrl").value = window.location.protocol + "//" + window.location.host
-            + window.location.pathname.substr(0, window.location.pathname.lastIndexOf("/") + 1) 
-            + "../dist/login.html";
     </script>
 </body>
 </html>

@@ -60,11 +60,12 @@ declare module Kurve {
         private loginCallback;
         private accessTokenCallback;
         private getTokenCallback;
-        private redirectUri;
+        private tokenProcessorUrl;
         private tokenCache;
         private logonUser;
         private refreshTimer;
-        constructor(clientId?: string, redirectUri?: string, version?: OAuthVersion);
+        constructor(clientId?: string, tokenProcessingUri?: string, version?: OAuthVersion);
+        checkForIdentityRedirect(): boolean;
         private decodeIdToken(idToken);
         private decodeAccessToken(accessToken, resource?, scopes?);
         getIdToken(): any;
@@ -77,6 +78,8 @@ declare module Kurve {
         getAccessTokenForScopes(scopes: string[], promptForConsent: boolean, callback: (token: string, error: Error) => void): void;
         loginAsync(scopes?: string[]): Promise<void, Error>;
         login(callback: (error: Error) => void, scopes?: string[]): void;
+        loginNoWindowAsync(toUrl?: string): Promise<void, Error>;
+        loginNoWindow(callback: (error: Error) => void, toUrl?: string): void;
         logOut(): void;
         private base64Decode(encodedString);
         private generateNonce();
@@ -309,7 +312,7 @@ declare module Kurve {
         getAsync(url: string): Promise<string, Error>;
         get(url: string, callback: (response: string, error: Error) => void, responseType?: string, scopes?: string[]): void;
         private generateError(xhr);
-        private getUsers(urlString, callback, scopes?);
+        private getUsers(urlString, callback, scopes?, basicProfileOnly?);
         private getUser(urlString, callback, scopes?);
         private addAccessTokenAndSend(xhr, callback, scopes?);
         private getMessages(urlString, callback, odataQuery?, scopes?);

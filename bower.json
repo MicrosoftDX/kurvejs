@@ -1,10 +1,12 @@
 {
   "name": "kurveJS",
-  "version": "0.1.0",
+  "version": "0.3.6",
   "description": "Kurve JS library",
   "main": "",
   "authors": [
-    "Mat V <mateusv@microsoft.com>"
+    "Mat V <mat.velloso@microsoft.com>",
+	"JohnShew",
+	"David Catuhe"
   ],
   "license": "MIT",
   "homepage": "https://github.com/matvelloso/kurveJS",

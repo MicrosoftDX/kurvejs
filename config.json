@@ -1,10 +1,11 @@
 {
   "build": {
+    "version": "0.3.6",
     "filename": "kurve.js",
-    "minFilename": "kurve.min.js",
-    "declarationFilename": "kurve.d.ts",
-    "outputDirectory": "./dist/",
-    "srcOutputDirectory": "./dist/",
+    "minFilename": "kurve.min",
+    "declarationFilename": ".d.ts",
+    "outputDirectory": "./dist",
+    "srcOutputDirectory": "./dist",
     "srcCompiledJavaScriptFile": "./dist/kurve.js"
   },
   "core": {

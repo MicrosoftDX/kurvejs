@@ -307,7 +307,6 @@ module Kurve {
             if (odataQuery) {
                 urlString += "?" + odataQuery;
             }
-            this.getUser(urlString, callback);
             if (odataQuery) urlString += "?" + odataQuery;
             this.getUser(urlString, callback, this.scopesForV2(scopes));
         }
@@ -356,11 +355,10 @@ module Kurve {
                 scopes = [Scopes.User.ReadAll];
             var urlString: string = this.buildUsersUrl() + "/";
             if (odataQuery) urlString += "?" + odataQuery;
-            this.getUsers(urlString, callback, this.scopesForV2(scopes));
+            this.getUsers(urlString, callback, this.scopesForV2(scopes), basicProfileOnly);
         }
 
         //Groups
-
         public groupAsync(groupId: string, odataQuery?: string): Promise<Group,Error> {
             var d = new Deferred<Group,Error>();
             this.group(groupId, (group, error) => {
@@ -594,7 +592,7 @@ module Kurve {
 
         //Private methods
 
-        private getUsers(urlString, callback: (users: Kurve.Users, error: Error) => void, scopes?:string[]): void {
+        private getUsers(urlString, callback: (users: Kurve.Users, error: Error) => void, scopes?: string[], basicProfileOnly = true): void {
 
             this.get(urlString, ((result: string, errorGet: Error) => {
                 
@@ -621,6 +619,13 @@ module Kurve {
 
                 if (nextLink) {
                     users.nextLink = ((callback?: (result: Users, error: Error) => void) => {
+
+                        var scopes = [];
+                        if (basicProfileOnly)
+                            scopes = [Scopes.User.ReadBasicAll];
+                        else
+                            scopes = [Scopes.User.ReadAll];
+
                         var d = new Deferred<Users,Error>();
                         this.getUsers(nextLink, ((result, error) => {
                             if (callback)
@@ -631,7 +636,7 @@ module Kurve {
                             else {
                                 d.resolve(result);
                             }
-                        }));
+                        }), this.scopesForV2(scopes), basicProfileOnly);
                         return d.promise;
                     });
                 }
@@ -720,6 +725,10 @@ module Kurve {
                 }));
                 if (messagesODATA['@odata.nextLink']) {
                     messages.nextLink = (callback?: (messages: Messages, error: Error) => void, odataQuery?: string) => {
+
+                        var scopes = [Scopes.Mail.Read];
+                      
+
                         var d = new Deferred<Messages,Error>();
                         
                         this.getMessages(messagesODATA['@odata.nextLink'], (messages, error) => {
@@ -731,7 +740,7 @@ module Kurve {
                             else {
                                 d.resolve(messages);
                             }
-                        }, odataQuery);
+                        }, odataQuery, this.scopesForV2(scopes));
                         return d.promise;
 
                     };
@@ -767,6 +776,8 @@ module Kurve {
                 //implement nextLink
                 if (nextLink) {
                     groups.nextLink = ((callback?: (result: Groups, error: Error) => void) => {
+
+                        var scopes = [Scopes.Group.ReadAll];
                         var d = new Deferred<Groups,Error>();
                         this.getGroups(nextLink, ((result, error) => {
                             if (callback)
@@ -777,7 +788,7 @@ module Kurve {
                             else {
                                 d.resolve(result);
                             }
-                        }));
+                        }), odataQuery, this.scopesForV2(scopes));
                         return d.promise;
                     });
                 }

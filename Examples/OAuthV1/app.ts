@@ -3,32 +3,27 @@
 module Sample {
     class Error {
     }
-    export class App {
+    export class AppV1 {
         private clientId;
         private redirectUri;
         private identity: Kurve.Identity;
         private graph: Kurve.Graph;
-        //constructor() {
-        //    this.test();
-        //}
         constructor() {
             //Setup
             this.clientId = (<HTMLInputElement>document.getElementById("classID")).value;
             this.redirectUri = (<HTMLInputElement>document.getElementById("redirectUrl")).value;
 
             //Create identity object
-            this.identity = new Kurve.Identity(this.clientId, this.redirectUri);
-
+            this.identity = new Kurve.Identity(this.clientId, this.redirectUri, Kurve.OAuthVersion.v1);
 
             //or  this.identity.loginAsync().then(() => {
             this.identity.loginAsync().then(() => {
 
-                //////Option 1: Manualy passing the access token
-                ////// or... this.identity.getAccessToken("https://graph.microsoft.com", ((token) => {
-                ////this.identity.getAccessTokenAsync("https://graph.microsoft.com").then(((token) => {
-                ////    this.graph = new Kurve.Graph({ defaultAccessToken: token });
-                ////}));
-
+                ////Option 1: Manualy passing the access token
+                //// or... this.identity.getAccessToken("https://graph.microsoft.com", ((token) => {
+                //this.identity.getAccessTokenAsync("https://graph.microsoft.com").then(((token) => {
+                //    this.graph = new Kurve.Graph({ defaultAccessToken: token });
+                //}));
 
                 //Option 2: Automatically linking to the Identity object
                 this.graph = new Kurve.Graph({ identity: this.identity });
@@ -42,7 +37,7 @@ module Sample {
                 document.getElementById("usersWithCustomODATA").addEventListener("click", (() => { this.loadUsersWithOdataQuery((<HTMLInputElement>document.getElementById('odataquery')).value); }));
                 document.getElementById("meUser").addEventListener("click", (() => { this.loadUserMe(); }));
                 document.getElementById("userById").addEventListener("click", (() => { this.userById(); }));
-
+                
                 document.getElementById("userMessages").addEventListener("click", (() => {this.loadUserMessages();}));
                 document.getElementById("userGroups").addEventListener("click", (() => {this.loadUserGroups();}));
                 document.getElementById("userManager").addEventListener("click", (() => { this.loadUserManager(); }));
@@ -74,7 +69,7 @@ module Sample {
             //}), "$top=5");
 
 
-            this.graph.usersAsync("$top=5").then(((users) => {
+            this.graph.usersAsync("$top=5",false).then(((users) => {
                 this.getUsersCallback(users, null);
             }));
         }

@@ -1,9 +1,3 @@
-var __extends = (this && this.__extends) || function (d, b) {
-for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-function __() { this.constructor = d; }
-__.prototype = b.prototype;
-d.prototype = new __();
-};
 // Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 var Kurve;
@@ -234,15 +228,15 @@ var Kurve;
     })();
     Kurve.IdToken = IdToken;
     var Identity = (function () {
-        function Identity(clientId, redirectUri, version) {
+        function Identity(clientId, tokenProcessingUri, version) {
             var _this = this;
             if (clientId === void 0) { clientId = ""; }
-            if (redirectUri === void 0) { redirectUri = ""; }
+            if (tokenProcessingUri === void 0) { tokenProcessingUri = ""; }
             this.authContext = null;
             this.config = null;
             this.isCallback = false;
             this.clientId = clientId;
-            this.redirectUri = redirectUri;
+            this.tokenProcessorUrl = tokenProcessingUri;
             this.req = new XMLHttpRequest();
             this.tokenCache = {};
             if (version)
@@ -292,6 +286,60 @@ var Kurve;
                 }
             }));
         }
+        Identity.prototype.checkForIdentityRedirect = function () {
+            function token(s) {
+                var start = window.location.href.indexOf(s);
+                if (start < 0)
+                    return null;
+                var end = window.location.href.indexOf("&", start + s.length);
+                return window.location.href.substring(start, ((end > 0) ? end : window.location.href.length));
+            }
+            function parseQueryString(str) {
+                var queryString = str || window.location.search || '';
+                var keyValPairs = [];
+                var params = {};
+                queryString = queryString.replace(/.*?\?/, "");
+                if (queryString.length) {
+                    keyValPairs = queryString.split('&');
+                    for (var pairNum in keyValPairs) {
+                        var key = keyValPairs[pairNum].split('=')[0];
+                        if (!key.length)
+                            continue;
+                        if (typeof params[key] === 'undefined')
+                            params[key] = [];
+                        params[key].push(keyValPairs[pairNum].split('=')[1]);
+                    }
+                }
+                return params;
+            }
+            var params = parseQueryString(window.location.href);
+            var idToken = token("#id_token=");
+            var accessToken = token("#access_token");
+            if (idToken) {
+                if (true || this.state === params["state"][0]) {
+                    this.decodeIdToken(idToken);
+                    this.loginCallback && this.loginCallback(null);
+                }
+                else {
+                    var error = new Error();
+                    error.statusText = "Invalid state";
+                    this.loginCallback && this.loginCallback(error);
+                }
+                return true;
+            }
+            else if (accessToken) {
+                throw "Should not get here.  This should be handled via the iframe approach.";
+                if (this.state === params["state"][0]) {
+                    this.getTokenCallback && this.getTokenCallback(accessToken, null);
+                }
+                else {
+                    var error = new Error();
+                    error.statusText = "Invalid state";
+                    this.getTokenCallback && this.getTokenCallback(null, error);
+                }
+            }
+            return false;
+        };
         Identity.prototype.decodeIdToken = function (idToken) {
             var _this = this;
             var decodedToken = this.base64Decode(idToken.substring(idToken.indexOf('.') + 1, idToken.lastIndexOf('.')));
@@ -404,9 +452,9 @@ var Kurve;
             var iframe = document.createElement('iframe');
             iframe.style.display = "none";
             iframe.id = "tokenIFrame";
-            iframe.src = this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
+            iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
                 "&resource=" + encodeURIComponent(resource) +
-                "&redirectUri=" + encodeURIComponent(this.redirectUri) +
+                "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                 "&state=" + encodeURIComponent(this.state) +
                 "&version=" + encodeURIComponent(this.version.toString()) +
                 "&nonce=" + encodeURIComponent(this.nonce) +
@@ -491,9 +539,9 @@ var Kurve;
                 var iframe = document.createElement('iframe');
                 iframe.style.display = "none";
                 iframe.id = "tokenIFrame";
-                iframe.src = this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
+                iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
                     "&scopes=" + encodeURIComponent(scopes.join(" ")) +
-                    "&redirectUri=" + encodeURIComponent(this.redirectUri) +
+                    "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                     "&version=" + encodeURIComponent(this.version.toString()) +
                     "&state=" + encodeURIComponent(this.state) +
                     "&nonce=" + encodeURIComponent(this.nonce) +
@@ -503,9 +551,9 @@ var Kurve;
                 document.body.appendChild(iframe);
             }
             else {
-                window.open(this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
+                window.open(this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
                     "&scopes=" + encodeURIComponent(scopes.join(" ")) +
-                    "&redirectUri=" + encodeURIComponent(this.redirectUri) +
+                    "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                     "&version=" + encodeURIComponent(this.version.toString()) +
                     "&state=" + encodeURIComponent(this.state) +
                     "&nonce=" + encodeURIComponent(this.nonce) +
@@ -514,14 +562,14 @@ var Kurve;
         };
         Identity.prototype.loginAsync = function (scopes) {
             var d = new Kurve.Deferred();
-            this.login((function (error) {
+            this.login(function (error) {
                 if (error) {
                     d.reject(error);
                 }
                 else {
                     d.resolve(null);
                 }
-            }), scopes);
+            }, scopes);
             return d.promise;
         };
         Identity.prototype.login = function (callback, scopes) {
@@ -534,8 +582,8 @@ var Kurve;
             }
             this.state = "login" + this.generateNonce();
             this.nonce = "login" + this.generateNonce();
-            var loginURL = this.redirectUri + "?clientId=" + encodeURIComponent(this.clientId) +
-                "&redirectUri=" + encodeURIComponent(this.redirectUri) +
+            var loginURL = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
+                "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                 "&state=" + encodeURIComponent(this.state) +
                 "&nonce=" + encodeURIComponent(this.nonce) +
                 "&version=" + encodeURIComponent(this.version.toString()) +
@@ -544,6 +592,33 @@ var Kurve;
                 loginURL += "&scopes=" + encodeURIComponent(scopes.join(" "));
             }
             window.open(loginURL, "_blank");
+        };
+        Identity.prototype.loginNoWindowAsync = function (toUrl) {
+            var d = new Kurve.Deferred();
+            this.loginNoWindow(function (error) {
+                if (error) {
+                    d.reject(error);
+                }
+                else {
+                    d.resolve(null);
+                }
+            }, toUrl);
+            return d.promise;
+        };
+        Identity.prototype.loginNoWindow = function (callback, toUrl) {
+            this.loginCallback = callback;
+            this.state = "clientId=" + this.clientId + "&" + "tokenProcessorUrl=" + this.tokenProcessorUrl;
+            this.nonce = this.generateNonce();
+            var redirected = this.checkForIdentityRedirect();
+            if (!redirected) {
+                var redirectUri = (toUrl) ? toUrl : window.location.href.split("#")[0]; // default the no login window scenario to return to the current page
+                var url = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token" +
+                    "&client_id=" + encodeURIComponent(this.clientId) +
+                    "&redirect_uri=" + encodeURIComponent(redirectUri) +
+                    "&state=" + encodeURIComponent(this.state) +
+                    "&nonce=" + encodeURIComponent(this.nonce);
+                window.location.href = url;
+            }
         };
         Identity.prototype.logOut = function () {
             var url = "https://login.microsoftonline.com/common/oauth2/logout?post_logout_redirect_uri=" + encodeURI(window.location.href);
@@ -940,6 +1015,9 @@ var Kurve;
         Graph.prototype.me = function (callback, odataQuery) {
             var scopes = [Scopes.User.Read];
             var urlString = this.buildMeUrl() + "/";
+            if (odataQuery) {
+                urlString += "?" + odataQuery;
+            }
             if (odataQuery)
                 urlString += "?" + odataQuery;
             this.getUser(urlString, callback, this.scopesForV2(scopes));
@@ -992,7 +1070,7 @@ var Kurve;
             var urlString = this.buildUsersUrl() + "/";
             if (odataQuery)
                 urlString += "?" + odataQuery;
-            this.getUsers(urlString, callback, this.scopesForV2(scopes));
+            this.getUsers(urlString, callback, this.scopesForV2(scopes), basicProfileOnly);
         };
         //Groups
         Graph.prototype.groupAsync = function (groupId, odataQuery) {
@@ -1215,8 +1293,9 @@ var Kurve;
             return response;
         };
         //Private methods
-        Graph.prototype.getUsers = function (urlString, callback, scopes) {
+        Graph.prototype.getUsers = function (urlString, callback, scopes, basicProfileOnly) {
             var _this = this;
+            if (basicProfileOnly === void 0) { basicProfileOnly = true; }
             this.get(urlString, (function (result, errorGet) {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -1237,6 +1316,11 @@ var Kurve;
                 var nextLink = usersODATA['@odata.nextLink'];
                 if (nextLink) {
                     users.nextLink = (function (callback) {
+                        var scopes = [];
+                        if (basicProfileOnly)
+                            scopes = [Scopes.User.ReadBasicAll];
+                        else
+                            scopes = [Scopes.User.ReadAll];
                         var d = new Kurve.Deferred();
                         _this.getUsers(nextLink, (function (result, error) {
                             if (callback)
@@ -1247,7 +1331,7 @@ var Kurve;
                             else {
                                 d.resolve(result);
                             }
-                        }));
+                        }), _this.scopesForV2(scopes), basicProfileOnly);
                         return d.promise;
                     });
                 }
@@ -1329,6 +1413,7 @@ var Kurve;
                 }));
                 if (messagesODATA['@odata.nextLink']) {
                     messages.nextLink = function (callback, odataQuery) {
+                        var scopes = [Scopes.Mail.Read];
                         var d = new Kurve.Deferred();
                         _this.getMessages(messagesODATA['@odata.nextLink'], function (messages, error) {
                             if (callback)
@@ -1339,7 +1424,7 @@ var Kurve;
                             else {
                                 d.resolve(messages);
                             }
-                        }, odataQuery);
+                        }, odataQuery, _this.scopesForV2(scopes));
                         return d.promise;
                     };
                 }
@@ -1371,6 +1456,7 @@ var Kurve;
                 //implement nextLink
                 if (nextLink) {
                     groups.nextLink = (function (callback) {
+                        var scopes = [Scopes.Group.ReadAll];
                         var d = new Kurve.Deferred();
                         _this.getGroups(nextLink, (function (result, error) {
                             if (callback)
@@ -1381,7 +1467,7 @@ var Kurve;
                             else {
                                 d.resolve(result);
                             }
-                        }));
+                        }), odataQuery, _this.scopesForV2(scopes));
                         return d.promise;
                     });
                 }
@@ -1472,7 +1558,3 @@ var Kurve;
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
 //   
 //*********************************************************   
-
-if (((typeof window != "undefined" && window.module) || (typeof module != "undefined")) && typeof module.exports != "undefined") {
-    module.exports = Kurve;
-};

@@ -3,7 +3,7 @@
 module Sample {
     class Error {
     }
-    export class App {
+    export class AppNoWindow {
         private clientId;
         private tokenProcessorUri;
         private identity: Kurve.Identity;

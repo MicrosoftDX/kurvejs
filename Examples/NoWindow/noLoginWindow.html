@@ -4,8 +4,9 @@
     <title></title>
     <meta charset="utf-8" />
 
-    <script src="../dist/kurve.js"></script>
-    <script src="noLoginWindow.js"></script>
+    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.3.6.js"></script>
+    <script src="./noLoginWindow.js"></script>
+
 
 </head>
 <body>
@@ -49,7 +50,7 @@
         function init() {
             document.getElementById("initDiv").style.display="none";
             document.getElementById("loginDiv").style.display = "";
-            app = new Sample.App(document.getElementById("clientId").value,document.getElementById("tokenProcessorUrl").value);
+            app = new Sample.AppNoWindow(document.getElementById("clientId").value,document.getElementById("tokenProcessorUrl").value);
         }
         
         function login() {
@@ -57,14 +58,14 @@
         }
         
         function setClientId(id) {
-            document.getElementById("clientId").value = (id) ? id : "b8dd3290-662a-4f91-92b9-3e70fbabe04e";
+            document.getElementById("clientId").value = (id) ? id : "83399983-098b-469c-bc33-fd59dd54b3bd";
         }
                 
         function setTokenProcessorUrl(url) {
             document.getElementById("tokenProcessorUrl").value = (url) ? url 
             : window.location.protocol + "//" + window.location.host
             + window.location.pathname.substr(0, window.location.pathname.lastIndexOf("/") + 1) 
-            + "../dist/login.html";
+            + "../../login.html";
         }
         
         function setDefaults() {
