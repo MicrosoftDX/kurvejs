@@ -50,6 +50,9 @@ At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optio
 
 # Release Notes
 
+## 0.3.7:
+ * Added support for calendar events
+
 ## 0.3.6:
  * Bug fixes
  * Introduction of the app model V2 support, including dynamic scopes and integration with the graph calls
