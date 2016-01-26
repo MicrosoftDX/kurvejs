@@ -6,7 +6,7 @@ module Kurve {
         }
         export class General {
             public static OpenId: string = "openid";
-            public static OfflineAccess: string = "offline_access";        
+            public static OfflineAccess: string = "offline_access";
         }
         export class User {
             public static Read: string = Util.rootUrl + "User.Read";
@@ -43,7 +43,7 @@ module Kurve {
             public static ReadAll: string = Util.rootUrl + "Files.Read.All";
             public static ReadWrite: string = Util.rootUrl + "Files.ReadWrite";
             public static ReadWriteAppFolder: string = Util.rootUrl + "Files.ReadWrite.AppFolder";
-            public static ReadWriteSelected: string = Util.rootUrl + "Files.ReadWrite.Selected"; 
+            public static ReadWriteSelected: string = Util.rootUrl + "Files.ReadWrite.Selected";
         }
         export class Tasks {
             public static ReadWrite: string = Util.rootUrl + "Tasks.ReadWrite";
@@ -66,7 +66,7 @@ module Kurve {
     export class ProfilePhotoDataModel {
         public id: string;
         public height: Number;
-        public width: Number;        
+        public width: Number;
     }
 
     export class ProfilePhoto {
@@ -77,20 +77,20 @@ module Kurve {
     }
 
     export class UserDataModel {
-         public businessPhones : string;
-         public displayName: string;
-         public givenName: string;
-         public jobTitle: string;
-         public mail: string;
-         public mobilePhone: string;
-         public officeLocation: string;
-         public preferredLanguage: string;
-         public surname: string;
-         public userPrincipalName: string;
-         public id: string;
+        public businessPhones: string;
+        public displayName: string;
+        public givenName: string;
+        public jobTitle: string;
+        public mail: string;
+        public mobilePhone: string;
+        public officeLocation: string;
+        public preferredLanguage: string;
+        public surname: string;
+        public userPrincipalName: string;
+        public id: string;
     }
 
-    export class User  {
+    export class User {
         private graph: Kurve.Graph;
         private _data: Kurve.UserDataModel;
 
@@ -107,7 +107,7 @@ module Kurve {
             this.graph.memberOfForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
-        public memberOfAsync(odataQuery?: string): Promise<Messages,Error> {
+        public memberOfAsync(odataQuery?: string): Promise<Messages, Error> {
             return this.graph.memberOfForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
@@ -115,7 +115,7 @@ module Kurve {
             this.graph.messagesForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
-        public messagesAsync(odataQuery?: string): Promise<Messages,Error> {
+        public messagesAsync(odataQuery?: string): Promise<Messages, Error> {
             return this.graph.messagesForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
@@ -123,9 +123,9 @@ module Kurve {
             this.graph.managerForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
-        public managerAsync(odataQuery?: string): Promise<User,Error> {
+        public managerAsync(odataQuery?: string): Promise<User, Error> {
             return this.graph.managerForUserAsync(this._data.userPrincipalName, odataQuery);
-        }      
+        }
 
         public profilePhoto(callback: (photo: ProfilePhoto, error: Error) => void) {
             this.graph.profilePhotoForUser(this._data.userPrincipalName, callback);
@@ -143,12 +143,12 @@ module Kurve {
             return this.graph.profilePhotoValueForUserAsync(this._data.userPrincipalName);
         }
 
-        public calendar(callback: (calendarItems: CalendarEvents, error: Error) => void, odataQuery?: string) {
-            this.graph.calendarForUser(this._data.userPrincipalName, callback, odataQuery);
+        public calendar(callback: (calendarItems: Events, error: Error) => void, odataQuery?: string) {
+            this.graph.eventsForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
-        public calendarAsync(odataQuery?: string): Promise<CalendarEvents, Error> {
-            return this.graph.calendarForUserAsync(this._data.userPrincipalName, odataQuery);
+        public calendarAsync(odataQuery?: string): Promise<Events, Error> {
+            return this.graph.eventsForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
     }
@@ -163,6 +163,12 @@ module Kurve {
             return this._data;
         }
     }
+
+    export class EmailAddress {
+        name: string;
+        address: string;
+    }
+
     export class MessageDataModel {
         bccRecipients: string[]
         body: Object
@@ -195,14 +201,14 @@ module Kurve {
     export class Message {
         constructor(protected graph: Kurve.Graph, protected _data: MessageDataModel) {
         }
-        get data() : MessageDataModel {
+        get data(): MessageDataModel {
             return this._data;
         }
     }
 
     export class Messages {
 
-        public nextLink: (callback?: (messages: Kurve.Messages, error: Error) => void, odataQuery?: string) => Promise<Messages, Error>
+        public nextLink: (callback?: (messages: Messages, error: Error) => void, odataQuery?: string) => Promise<Messages, Error>
         constructor(protected graph: Kurve.Graph, protected _data: Message[]) {
         }
 
@@ -211,15 +217,81 @@ module Kurve {
         }
     }
 
-    export class CalendarEvent {
+    export interface ItemBody {
+        contentType: string;
+        content: string;
     }
-    export class CalendarEvents {
 
-        public nextLink: (callback?: (events: Kurve.CalendarEvents, error: Error) => void, odataQuery?: string) => Promise<(events: Kurve.CalendarEvents, error: Error) => void,Error>
-        constructor(protected graph: Kurve.Graph, protected _data: CalendarEvent[]) {
+    export interface Attendee {
+        status: ResponseStatus;
+        type: string;
+        emailAddress: EmailAddress;
+    }
+
+    export interface DateTimeTimeZone {
+        dateTime: string;
+        timeZone: string;
+    }
+
+    export interface Recipient {
+        emailAddress: EmailAddress;
+    }
+
+    export interface PatternedRecurrence { }
+
+    export interface ResponseStatus {
+        response: string;
+        time: string
+    }
+
+    export class EventDataModel {
+        attendees: Attendee[];
+        body: ItemBody;
+        bodyPreview: string;
+        categories: string[];
+        changeKey: string;
+        createdDateTime: string;
+        end: DateTimeTimeZone;
+        hasAttachments: boolean;
+        iCalUId: string;
+        IDBCursor: string;
+        importance: string;
+        isAllDay: boolean;
+        isCancelled: boolean;
+        isOrganizer: boolean;
+        isReminderOn: boolean;
+        lastModifiedDateTime: string;
+        location: Location;
+        organizer: Recipient;
+        originalEndTimeZone: string;
+        originalStartTimeZone: string;
+        recurrence: PatternedRecurrence;
+        reminderMinutesBeforeStart: number;
+        responseRequested: boolean;
+        responseStatus: ResponseStatus;
+        sensitivity: string;
+        seriesMasterId: string;
+        showAs: string;
+        start: DateTimeTimeZone;
+        subject: string;
+        type: string;
+        webLink: string;
+    }
+
+    export class Event {
+        constructor(protected graph: Kurve.Graph, protected _data: EventDataModel) {
+        }
+        get data(): EventDataModel {
+            return this._data;
+        }
+    }
+
+    export class Events {
+        public nextLink: (callback?: (events: Events, error: Error) => void, odataQuery?: string) => Promise<Events, Error>
+        constructor(protected graph: Kurve.Graph, protected _data: Event[]) {
         }
 
-        get data(): CalendarEvent[] {
+        get data(): Event[] {
             return this._data;
         }
     }
@@ -422,28 +494,27 @@ module Kurve {
         }
 
 
-        // Calendar For User
-        public calendarForUser(userPrincipalName: string, callback: (events: CalendarEvent, error: Error) => void, odataQuery?: string): void {
-        // // To BE IMPLEMENTED
-        //    var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/calendar/events";
-        //    if (odataQuery) urlString += "?" + odataQuery;
-
-        //    this.getMessages(urlString, (result, error) => {
-        //        callback(result, error);
-        //    }, odataQuery);
+        // Messages For User
+        public eventsForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Events, Error> {
+            var d = new Deferred<Events, Error>();
+            this.eventsForUser(userPrincipalName, (items, error) => {
+                if (error) {
+                    d.reject(error);
+                } else {
+                    d.resolve(items);
+                }
+            }, odataQuery);
+            return d.promise;
         }
 
-        public calendarForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<CalendarEvents, Error> {
-            var d = new Deferred<CalendarEvents,Error>();
-            // // To BE IMPLEMENTED
-            //    this.calendarForUser(userPrincipalName, (events, error) => {
-            //        if (error) {
-            //            d.reject(error);
-            //        } else {
-            //            d.resolve(events);
-            //        }
-            //    }, odataQuery);
-            return d.promise;
+        public eventsForUser(userPrincipalName: string, callback: (messages: Events, error: Error) => void, odataQuery?: string): void {
+            var scopes = [Scopes.Mail.Read];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
+            if (odataQuery) urlString += "?" + odataQuery;
+
+            this.getEvents(urlString, (result, error) => {
+                callback(result, error);
+            }, odataQuery, this.scopesForV2(scopes));
         }
 
         // Groups/Relationships For User
@@ -748,6 +819,54 @@ module Kurve {
                 callback(messages,  null);
             }),null,scopes);
         }
+
+        private getEvents(urlString: string, callback: (events: Events, error: Error) => void, odataQuery?: string, scopes?: string[]): void {
+
+            var url = urlString;
+            if (odataQuery) urlString += "?" + odataQuery;
+            this.get(url, ((result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+
+                var odata = JSON.parse(result);
+                if (odata.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = odata.error;
+                    callback(null, errorODATA);
+                    return;
+                }
+
+                var resultsArray = (odata.value ? odata.value : [odata]) as any[];
+                var items = new Kurve.Events(this, resultsArray.map(o => {
+                    return new Event(this, o);
+                }));
+                if (odata['@odata.nextLink']) {
+                    items.nextLink = (callback?: (cbEvents: Events, error: Error) => void, odataQuery?: string) => {
+
+                        var scopes = [Scopes.Mail.Read];
+
+                        var d = new Deferred<Events, Error>();
+
+                        this.getEvents(odata['@odata.nextLink'], (stuff, error) => {
+                            if (callback)
+                                callback(stuff, error);
+                            else if (error) {
+                                d.reject(error);
+                            }
+                            else {
+                                d.resolve(stuff);
+                            }
+                        }, odataQuery, this.scopesForV2(scopes));
+                        return d.promise;
+
+                    };
+                }
+                callback(items, null);
+            }), null, scopes);
+        }
+
 
         private getGroups(urlString: string, callback: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string,scopes?:string[]): void {
 

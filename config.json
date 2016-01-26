@@ -1,6 +1,6 @@
 {
   "build": {
-    "version": "0.3.6",
+    "version": "0.3.7",
     "filename": "kurve.js",
     "minFilename": "kurve.min",
     "declarationFilename": ".d.ts",
