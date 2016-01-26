@@ -39,6 +39,7 @@ module Sample {
                 document.getElementById("userById").addEventListener("click", (() => { this.userById(); }));
                 
                 document.getElementById("userMessages").addEventListener("click", (() => {this.loadUserMessages();}));
+                document.getElementById("userEvents").addEventListener("click", (() => { this.loadUserEvents(); }));
                 document.getElementById("userGroups").addEventListener("click", (() => {this.loadUserGroups();}));
                 document.getElementById("userManager").addEventListener("click", (() => { this.loadUserManager(); }));
                 document.getElementById("groupsWithPaging").addEventListener("click", (() => { this.loadGroupsWithPaging(); }));
@@ -109,6 +110,21 @@ module Sample {
                     this.messagesCallback(messages,null );
                 }).fail((error) =>{
                     this.messagesCallback(null,error);
+                });
+
+            });
+        }
+
+        //Scenario 6: Load user "me" and then its messages
+        private loadUserEvents(): void {
+            document.getElementById("results").innerHTML = "";
+            this.graph.meAsync().then((user: Kurve.User) => {
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Events:" + "</br>";
+                user.eventsAsync("$top=2").then((items: Kurve.Events) => {
+                    this.eventsCallback(items, null);
+                }).fail((error) => {
+                    this.eventsCallback(null, error);
                 });
 
             });
@@ -246,6 +262,21 @@ module Sample {
             if (messages.nextLink) {
                 messages.nextLink().then((messages) => {
                     this.messagesCallback(messages, error);
+                });
+            }
+
+        }
+
+        private eventsCallback(items: Kurve.Events, error: Kurve.Error): void {
+            if (items.data) {
+                items.data.forEach((item) => {
+                    document.getElementById("results").innerHTML += item.data.subject + "</br>";
+                });
+            }
+
+            if (items.nextLink) {
+                items.nextLink().then((results) => {
+                    this.eventsCallback(results, error);
                 });
             }
 

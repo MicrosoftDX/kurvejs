@@ -103,6 +103,14 @@ module Kurve {
 
         // These are all passthroughs to the graph
 
+        public events(callback: (items: Events, error: Error) => void, odataQuery?: string) {
+            this.graph.eventsForUser(this._data.userPrincipalName, callback, odataQuery);
+        }
+
+        public eventsAsync(odataQuery?: string): Promise<Events, Error> {
+            return this.graph.eventsForUserAsync(this._data.userPrincipalName, odataQuery);
+        }
+
         public memberOf(callback: (groups: Groups, Error) => void, Error, odataQuery?: string) {
             this.graph.memberOfForUser(this._data.userPrincipalName, callback, odataQuery);
         }
@@ -508,8 +516,8 @@ module Kurve {
         }
 
         public eventsForUser(userPrincipalName: string, callback: (messages: Events, error: Error) => void, odataQuery?: string): void {
-            var scopes = [Scopes.Mail.Read];
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
+            var scopes = [Scopes.Calendars.Read];
+            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/events";
             if (odataQuery) urlString += "?" + odataQuery;
 
             this.getEvents(urlString, (result, error) => {
