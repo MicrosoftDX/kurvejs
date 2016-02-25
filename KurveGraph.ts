@@ -177,9 +177,14 @@ module Kurve {
         address: string;
     }
 
+    export interface ItemBody {
+        contentType: string;
+        content: string;
+    }
+
     export class MessageDataModel {
         bccRecipients: string[]
-        body: Object
+        body: ItemBody;
         bodyPreview: string;
         categories: string[]
         ccRecipients: string[]
@@ -223,11 +228,6 @@ module Kurve {
         get data(): Message[] {
             return this._data;
         }
-    }
-
-    export interface ItemBody {
-        contentType: string;
-        content: string;
     }
 
     export interface Attendee {
