@@ -17,7 +17,7 @@ module Sample {
             this.tokenProcessorUri = tokenProcessorUrl;
 
             //Create identity object
-            this.identity = new Kurve.Identity(this.clientId, this.tokenProcessorUri);
+            this.identity = new Kurve.Identity({ clientId: this.clientId, tokenProcessingUri: this.tokenProcessorUri, version: Kurve.OAuthVersion.v1 });
             this.graph = new Kurve.Graph({ identity: this.identity });
             if (this.identity.checkForIdentityRedirect()) {
                 if (this.identity.isLoggedIn()) { this.onLogin(); }

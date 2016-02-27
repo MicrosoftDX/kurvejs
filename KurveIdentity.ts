@@ -34,8 +34,10 @@ module Kurve {
         public GivenName: string;
         public Name: string;
         public PreferredUsername: string;
+        public FullToken: any;
 
     }
+   
     
      export class Identity {
         public authContext: any = null;
@@ -54,14 +56,16 @@ module Kurve {
         private tokenCache: TokenDictionary;
         private logonUser: any;
         private refreshTimer: any;
+        private policy: string = "";
+        private tenant: string = "";
 
-        constructor(clientId = "", tokenProcessingUri = "", version?: OAuthVersion) {
-            this.clientId = clientId;
-            this.tokenProcessorUrl = tokenProcessingUri;
+        constructor(identitySettings: {clientId: string, tokenProcessingUri: string, version: OAuthVersion}) {
+            this.clientId = identitySettings.clientId;
+            this.tokenProcessorUrl = identitySettings.tokenProcessingUri;
             this.req = new XMLHttpRequest();
             this.tokenCache = {};
-            if (version)
-                this.version = version;
+            if (identitySettings.version)
+                this.version = identitySettings.version;
             else
                 this.version = OAuthVersion.v1;
 
@@ -168,6 +172,7 @@ module Kurve {
             var decodedTokenJSON = JSON.parse(decodedToken);
             var expiryDate = new Date(new Date('01/01/1970 0:0 UTC').getTime() + parseInt(decodedTokenJSON.exp) * 1000);
             this.idToken = new IdToken();
+            this.idToken.FullToken = decodedTokenJSON;
             this.idToken.Token = idToken;
             this.idToken.Expiry = expiryDate;
             this.idToken.UPN = decodedTokenJSON.upn;
@@ -404,7 +409,7 @@ module Kurve {
             }
         }
 
-        public loginAsync(scopes?: string[]): Promise<void, Error> {
+        public loginAsync(loginSettings?: { scopes?: string[], policy?:string, tenant?:string}): Promise<void, Error> {
             var d = new Deferred<void, Error>();
             this.login((error) => {
                 if (error) {
@@ -413,16 +418,25 @@ module Kurve {
                 else {
                     d.resolve(null);
                 }
-            }, scopes);
+            }, loginSettings);
             return d.promise;
         }
 
-        public login(callback: (error: Error) => void, scopes?:string[]): void {
+        public login(callback: (error: Error) => void, loginSettings?: { scopes?: string[], policy?: string, tenant?: string}): void {
             this.loginCallback = callback;
-          
-            if (scopes && this.version === OAuthVersion.v1) {
+            if (!loginSettings) loginSettings = {};
+            if (loginSettings.policy) this.policy = loginSettings.policy;
+
+            if (loginSettings.scopes && this.version === OAuthVersion.v1) {
                 var e = new Error();
                 e.text = "Scopes can only be used with OAuth v2.";
+                callback(e);
+                return;
+            }
+
+            if (loginSettings.policy && !loginSettings.tenant) {
+                var e = new Error();
+                e.text = "In order to use policy (AAD B2C) a tenant must be specified as well.";
                 callback(e);
                 return;
             }
@@ -433,12 +447,20 @@ module Kurve {
                 "&state=" + encodeURIComponent(this.state) +
                 "&nonce=" + encodeURIComponent(this.nonce) +
                 "&version=" + encodeURIComponent(this.version.toString()) +
-                "&op=login";
-
-            if (scopes) {
-                loginURL += "&scopes=" + encodeURIComponent(scopes.join(" "));
+                "&op=login" +
+                "&p=" + encodeURIComponent(this.policy);
+            if (loginSettings.tenant) {
+                loginURL += "&tenant=" + encodeURIComponent(loginSettings.tenant);
             }
+            if (this.version === OAuthVersion.v2) {
+                    if (!loginSettings.scopes) loginSettings.scopes = [];
+                    if (loginSettings.scopes.indexOf("profile") < 0)
+                        loginSettings.scopes.push("profile");
+                    if (loginSettings.scopes.indexOf("openid") < 0)
+                        loginSettings.scopes.push("openid");
 
+                    loginURL += "&scopes=" + encodeURIComponent(loginSettings.scopes.join(" "));
+            }
             window.open(loginURL, "_blank");
         }
 

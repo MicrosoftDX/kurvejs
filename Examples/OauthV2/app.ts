@@ -11,15 +11,19 @@ module Sample {
        
         constructor() {
             //Setup
-            this.clientId = (<HTMLInputElement>document.getElementById("classID")).value;
+            this.clientId = (<HTMLInputElement>document.getElementById("AppID")).value;
             this.redirectUri = (<HTMLInputElement>document.getElementById("redirectUrl")).value;
 
             //Create identity object
-            this.identity = new Kurve.Identity(this.clientId, this.redirectUri, Kurve.OAuthVersion.v2);
+            this.identity = new Kurve.Identity({
+                clientId: this.clientId,
+                tokenProcessingUri: this.redirectUri,
+                version: Kurve.OAuthVersion.v2
+            });
 
             //We can request for specific scopes during logon (so user will have to consent them right away and not during the flow of the app
             //The list of available consents is available under Kuve.Scopes module
-            this.identity.loginAsync([Kurve.Scopes.Mail.Read, Kurve.Scopes.General.OpenId]).then(() => {
+            this.identity.loginAsync({ scopes: [Kurve.Scopes.Mail.Read, Kurve.Scopes.General.OpenId] }).then(() => {
 
                 this.graph = new Kurve.Graph({ identity: this.identity });
 

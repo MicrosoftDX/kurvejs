@@ -10,11 +10,15 @@ module Sample {
         private graph: Kurve.Graph;
         constructor() {
             //Setup
-            this.clientId = (<HTMLInputElement>document.getElementById("classID")).value;
+            this.clientId = (<HTMLInputElement>document.getElementById("AppID")).value;
             this.redirectUri = (<HTMLInputElement>document.getElementById("redirectUrl")).value;
 
             //Create identity object
-            this.identity = new Kurve.Identity(this.clientId, this.redirectUri, Kurve.OAuthVersion.v1);
+            this.identity = new Kurve.Identity({
+                clientId: this.clientId,
+                tokenProcessingUri: this.redirectUri,
+                version: Kurve.OAuthVersion.v1
+            });
 
             //or  this.identity.loginAsync().then(() => {
             this.identity.loginAsync().then(() => {
@@ -114,6 +118,7 @@ module Sample {
 
             });
         }
+
 
         //Scenario 6: Load user "me" and then its messages
         private loadUserEvents(): void {

@@ -22,13 +22,13 @@ Important notes in this step:
 ###Step 2: Reference the JavaScript file from your HTML page:
 
 ```html
-    <script src="Kurve.min-0.3.6.js"></script>
+    <script src="Kurve.min-0.4.0.js"></script>
 ```
 
 Alternatively you can just reference the script from our CDN:
 
 ```html
-    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.3.6.js"></script>
+    <script src="https://kurvejs.blob.core.windows.net/dist/kurve.min-0.4.0.js"></script>
 ```
 
 ###Step 3: Code:
@@ -43,10 +43,11 @@ var graph = new Kurve.Graph({ defaultAccessToken: token });
 
 
 //Option 2: Automatically linking to the Identity object (note we specify we are working with the app model V1)
-var identity = new Kurve.Identity(
-        "your_client_id",
-        "your_redirect_url",
-        Kurve.OAuthVersion.v1);
+var identity = new Kurve.Identity({
+                clientId: "your_app_id",
+                tokenProcessingUri: "your_redirect_url",
+                version: Kurve.OAuthVersion.v1
+            });
 
 var identity.login(function (error) {
 	var graph = new Kurve.Graph({ identity: identity });
@@ -86,10 +87,11 @@ function messagesCallback(messages) {
 Just like in the graph example, with identity it is also possible to choose callbacks or Promises syntax:
 
 ```javascript
-var identity = new Kurve.Identity(
-        "your_clientid",
-        "your_redirect_url",
-        Kurve.OAuthVersion.v1);
+var identity = new Kurve.Identity({
+                clientId: "your_app_id",
+                tokenProcessingUri: "your_redirect_url",
+                version: Kurve.OAuthVersion.v1
+            });
 
 identity.login(function(error) {
 	if (!error){
@@ -106,10 +108,11 @@ identity.login(function(error) {
 If you prefer the Promises syntax, you can also do it that way:
 
 ```javascript
-var identity = new Kurve.Identity(
-        "your_clientid",
-        "your_redirect_url",
-        Kurve.OAuthVersion.v1);
+var identity = new Kurve.Identity({
+                clientId: "your_app_id",
+                tokenProcessingUri: "your_redirect_url",
+                version: Kurve.OAuthVersion.v1
+            });
 
 identity.loginAsync().then(function() {
 	identity.getAccessTokenAsync("https://graph.microsoft.com").then(function (token) {

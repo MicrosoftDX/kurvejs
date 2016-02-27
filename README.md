@@ -6,6 +6,18 @@ Kurve<nolink>.JS is an unofficial, open source JavaScript / TypeScript library t
 
 2. Easy access to the Microsoft Graph REST API.
 
+Kurve is meant to fit well with most JavaScript and TypeScript frameworks such as:
+1. Angular V1
+2. Angular V2
+3. Ember JS
+4. React
+
+Kuve also aims to enable single application pages looking support authentication/authorization scenarios involving:
+1. AAD app model v1 with postMessage flow
+2. AAD app model v1 with redirections
+2. AAD app model v2 with postMessage flow
+3. AAD app model v2 with B2C, enabling third party identity providers such as Facebook and signup/signin/profile edit experiences with B2C policies
+
 ## How does it work?
 
 The first thing you have to decide before using Kurve is which app model version you will use:
@@ -22,13 +34,18 @@ To find out more about using Kurve JS with app model V1, please read <b><a href=
 
 ### App Model V2:
 
-App model V2 is a new, more modern way which is still in Preview and has several limitations at this point. It enables more flexible scenarios but you should probably avoid it in production code at this stage. This model implies that:
+App model V2 is a new, more modern way which is still in Preview and has limitations at this point. It enables more flexible scenarios, including AAD B2C which leverages external identity providers such as Facebook and user signup/signin/profile edit support. This model implies that:
 
 1. You will register an application in the new application registration portal under <a href="https://apps.dev.microsoft.com/">https://apps.dev.microsoft.com/</a>, which does not require using Azure Management Portal.
 2. You do not specify application permissions during the registration. The application code itself will request for specific permissions in runtime (either during login or any time during the application execution). Kuve JS will help with that process.
 
 To find out more about using Kurve JS with app model V2, please read <b><a href="./docs/appModelV2/intro.md">this introduction document</a></b>.
 
+### App Model V2 with AAD B2C:
+
+As mentioned above, B2C enables users to sign up to your AAD tenant using external identity providers such as Facebook, Google, LinkedIn, Amazon and Microsoft Acount. You define policies and the attributes you want to collect during the sign up, for example a user might have to enter their name, e-mail and phone number so that gets recorded into your tenant and accessible to your application.
+
+To find out more about using Kurve JS with AAD B2C, please read <b><a href="./docs/B2C/intro.md">this introduction document</a></b>. You can also check the example app labeled "B2C" in this repo.
 
 ## FAQ
 
@@ -49,6 +66,13 @@ You are free to send us your feedback at this Github repo, send pull requests, e
 At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optionally KurveIdentity.<nolink>js + login.html. You may use the TypeScript libraries and reuse some of the sample app code (index.html and app.<nolink>js) for reference.
 
 # Release Notes
+
+## 0.4.0:
+ * Added support for AAD B2C
+ * Breaking change: identity constructor now uses an object to group parameters
+ * Breaking change: login method now uses an object to group parameters
+ * By default now in app model v2, both openid connect and profile scopes are requested
+ * Bug fixes, more examples
 
 ## 0.3.7:
  * Added support for calendar events

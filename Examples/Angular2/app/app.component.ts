@@ -15,6 +15,8 @@ export class AppComponent implements OnInit {
   
     constructor(private _kurveService: KurveService) { }
     doLogin() {
-        this._kurveService.doLogin();
+        this._kurveService.doLogin().then((result) => {
+            window.alert("Hello user. Here's your id token:" + JSON.stringify(this._kurveService.getIdToken()));
+        });
     }
 }
