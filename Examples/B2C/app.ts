@@ -7,8 +7,7 @@ module Sample {
         private clientId;
         private redirectUri;
         private identity: Kurve.Identity;
-        private graph: Kurve.Graph;
-       
+      
         constructor() {
             //Setup
             this.clientId = (<HTMLInputElement>document.getElementById("AppID")).value;
@@ -21,8 +20,7 @@ module Sample {
             //The list of available consents is available under Kuve.Scopes module
             this.identity.loginAsync({ policy: "B2C_1_facebooksignin", tenant:"matb2c.onmicrosoft.com" }).then(() => {
 
-                this.graph = new Kurve.Graph({ identity: this.identity });
-
+              
                 //Update UI
 
                 document.getElementById("initDiv").style.display = "none";
