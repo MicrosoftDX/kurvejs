@@ -7,12 +7,14 @@ Kurve<nolink>.JS is an unofficial, open source JavaScript / TypeScript library t
 2. Easy access to the Microsoft Graph REST API.
 
 Kurve is meant to fit well with most JavaScript and TypeScript frameworks such as:
+
 1. Angular V1<br/>
 2. Angular V2<br/>
 3. Ember JS<br/>
 4. React<br/>
 
 Kuve also aims to enable single application pages looking support authentication/authorization scenarios involving:
+
 1. AAD app model v1 with postMessage flow<br/>
 2. AAD app model v1 with redirections<br/>
 2. AAD app model v2 with postMessage flow<br/>
