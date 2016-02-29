@@ -172,26 +172,30 @@ module Kurve {
         }
     }
 
-    export class EmailAddress {
+    export interface EmailAddress {
         name: string;
         address: string;
     }
 
+    export interface Recipient {
+        emailAddress: EmailAddress;
+    } 
+    
     export interface ItemBody {
         contentType: string;
         content: string;
     }
 
     export class MessageDataModel {
-        bccRecipients: string[]
+        bccRecipients: Recipient[];
         body: ItemBody;
         bodyPreview: string;
         categories: string[]
-        ccRecipients: string[]
+        ccRecipients: Recipient[];
         changeKey: string;
         conversationId: string;
         createdDateTime: string;
-        from: any;
+        from: Recipient;
         graph: any;
         hasAttachments: boolean;
         id: string;
@@ -203,11 +207,11 @@ module Kurve {
         lastModifiedDateTime: string;
         parentFolderId: string;
         receivedDateTime: string;
-        replyTo: any[]
-        sender: any;
+        replyTo: Recipient[]
+        sender: Recipient;
         sentDateTime: string;
         subject: string;
-        toRecipients: string[]
+        toRecipients: Recipient[];
         webLink: string;
     }
 
@@ -239,10 +243,6 @@ module Kurve {
     export interface DateTimeTimeZone {
         dateTime: string;
         timeZone: string;
-    }
-
-    export interface Recipient {
-        emailAddress: EmailAddress;
     }
 
     export interface PatternedRecurrence { }
