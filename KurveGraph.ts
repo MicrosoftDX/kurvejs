@@ -172,6 +172,11 @@ module Kurve {
         }
     }
 
+    export interface ItemBody {
+        contentType: string;
+        content: string;
+    }
+
     export interface EmailAddress {
         name: string;
         address: string;
@@ -179,12 +184,7 @@ module Kurve {
 
     export interface Recipient {
         emailAddress: EmailAddress;
-    } 
-    
-    export interface ItemBody {
-        contentType: string;
-        content: string;
-    }
+    }     
 
     export class MessageDataModel {
         bccRecipients: Recipient[];
@@ -252,6 +252,11 @@ module Kurve {
         time: string
     }
 
+    export interface Location {
+        displayName: string;
+        address: any;
+    }
+
     export class EventDataModel {
         attendees: Attendee[];
         body: ItemBody;
@@ -262,6 +267,7 @@ module Kurve {
         end: DateTimeTimeZone;
         hasAttachments: boolean;
         iCalUId: string;
+        id: string;
         IDBCursor: string;
         importance: string;
         isAllDay: boolean;
