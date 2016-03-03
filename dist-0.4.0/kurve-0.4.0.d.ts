@@ -205,28 +205,31 @@ declare module Kurve {
     class Users {
         protected graph: Kurve.Graph;
         protected _data: User[];
-        nextLink: (callback?: (users: Kurve.Users, error: Error) => void, odataQuery?: string) => Promise<Users, Error>;
+        nextLink: (callback?: (users: Kurve.Users, error: Error) => void) => Promise<Users, Error>;
         constructor(graph: Kurve.Graph, _data: User[]);
         data: User[];
-    }
-    class EmailAddress {
-        name: string;
-        address: string;
     }
     interface ItemBody {
         contentType: string;
         content: string;
     }
+    interface EmailAddress {
+        name: string;
+        address: string;
+    }
+    interface Recipient {
+        emailAddress: EmailAddress;
+    }
     class MessageDataModel {
-        bccRecipients: string[];
+        bccRecipients: Recipient[];
         body: ItemBody;
         bodyPreview: string;
         categories: string[];
-        ccRecipients: string[];
+        ccRecipients: Recipient[];
         changeKey: string;
         conversationId: string;
         createdDateTime: string;
-        from: any;
+        from: Recipient;
         graph: any;
         hasAttachments: boolean;
         id: string;
@@ -238,11 +241,11 @@ declare module Kurve {
         lastModifiedDateTime: string;
         parentFolderId: string;
         receivedDateTime: string;
-        replyTo: any[];
-        sender: any;
+        replyTo: Recipient[];
+        sender: Recipient;
         sentDateTime: string;
         subject: string;
-        toRecipients: string[];
+        toRecipients: Recipient[];
         webLink: string;
     }
     class Message {
@@ -254,7 +257,7 @@ declare module Kurve {
     class Messages {
         protected graph: Kurve.Graph;
         protected _data: Message[];
-        nextLink: (callback?: (messages: Messages, error: Error) => void, odataQuery?: string) => Promise<Messages, Error>;
+        nextLink: (callback?: (messages: Messages, error: Error) => void) => Promise<Messages, Error>;
         constructor(graph: Kurve.Graph, _data: Message[]);
         data: Message[];
     }
@@ -267,14 +270,15 @@ declare module Kurve {
         dateTime: string;
         timeZone: string;
     }
-    interface Recipient {
-        emailAddress: EmailAddress;
-    }
     interface PatternedRecurrence {
     }
     interface ResponseStatus {
         response: string;
         time: string;
+    }
+    interface Location {
+        displayName: string;
+        address: any;
     }
     class EventDataModel {
         attendees: Attendee[];
@@ -286,6 +290,7 @@ declare module Kurve {
         end: DateTimeTimeZone;
         hasAttachments: boolean;
         iCalUId: string;
+        id: string;
         IDBCursor: string;
         importance: string;
         isAllDay: boolean;
@@ -318,7 +323,7 @@ declare module Kurve {
     class Events {
         protected graph: Kurve.Graph;
         protected _data: Event[];
-        nextLink: (callback?: (events: Events, error: Error) => void, odataQuery?: string) => Promise<Events, Error>;
+        nextLink: (callback?: (events: Events, error: Error) => void) => Promise<Events, Error>;
         constructor(graph: Kurve.Graph, _data: Event[]);
         data: Event[];
     }
@@ -348,7 +353,7 @@ declare module Kurve {
     class Groups {
         protected graph: Kurve.Graph;
         protected _data: Group[];
-        nextLink: (callback?: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string) => Promise<Groups, Error>;
+        nextLink: (callback?: (groups: Kurve.Groups, error: Error) => void) => Promise<Groups, Error>;
         constructor(graph: Kurve.Graph, _data: Group[]);
         data: Group[];
     }
@@ -395,9 +400,9 @@ declare module Kurve {
         private getUsers(urlString, callback, scopes?, basicProfileOnly?);
         private getUser(urlString, callback, scopes?);
         private addAccessTokenAndSend(xhr, callback, scopes?);
-        private getMessages(urlString, callback, odataQuery?, scopes?);
-        private getEvents(urlString, callback, odataQuery?, scopes?);
-        private getGroups(urlString, callback, odataQuery?, scopes?);
+        private getMessages(urlString, callback, scopes?);
+        private getEvents(urlString, callback, scopes?);
+        private getGroups(urlString, callback, scopes?);
         private getGroup(urlString, callback, scopes?);
         private getPhoto(urlString, callback, scopes?);
         private getPhotoValue(urlString, callback, scopes?);

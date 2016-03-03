@@ -163,7 +163,7 @@ module Kurve {
 
     export class Users {
 
-        public nextLink: (callback?: (users: Kurve.Users, error: Error) => void, odataQuery?: string) => Promise<Users, Error>
+        public nextLink: (callback?: (users: Kurve.Users, error: Error) => void) => Promise<Users, Error>
         constructor(protected graph: Kurve.Graph, protected _data: User[]) {
         }
 
@@ -225,7 +225,7 @@ module Kurve {
 
     export class Messages {
 
-        public nextLink: (callback?: (messages: Messages, error: Error) => void, odataQuery?: string) => Promise<Messages, Error>
+        public nextLink: (callback?: (messages: Messages, error: Error) => void) => Promise<Messages, Error>
         constructor(protected graph: Kurve.Graph, protected _data: Message[]) {
         }
 
@@ -301,7 +301,7 @@ module Kurve {
     }
 
     export class Events {
-        public nextLink: (callback?: (events: Events, error: Error) => void, odataQuery?: string) => Promise<Events, Error>
+        public nextLink: (callback?: (events: Events, error: Error) => void) => Promise<Events, Error>
         constructor(protected graph: Kurve.Graph, protected _data: Event[]) {
         }
 
@@ -339,7 +339,7 @@ module Kurve {
 
     export class Groups {
 
-        public nextLink: (callback?: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string) => Promise<Groups, Error>
+        public nextLink: (callback?: (groups: Kurve.Groups, error: Error) => void) => Promise<Groups, Error>
         constructor(protected graph: Kurve.Graph, protected _data: Group[]) {
         }
 
@@ -481,7 +481,7 @@ module Kurve {
             var scopes = [Scopes.Group.ReadAll];
             var urlString: string = this.buildGroupsUrl() + "/";
             if (odataQuery) urlString += "?" + odataQuery;
-            this.getGroups(urlString, callback, odataQuery, this.scopesForV2(scopes));
+            this.getGroups(urlString, callback, this.scopesForV2(scopes));
         }      
 
         // Messages For User
@@ -502,9 +502,7 @@ module Kurve {
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
             if (odataQuery) urlString += "?" + odataQuery;
 
-            this.getMessages(urlString, (result, error) => {
-                callback(result, error);
-            }, odataQuery, this.scopesForV2(scopes));
+            this.getMessages(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
         }
 
 
@@ -526,9 +524,7 @@ module Kurve {
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/events";
             if (odataQuery) urlString += "?" + odataQuery;
 
-            this.getEvents(urlString, (result, error) => {
-                callback(result, error);
-            }, odataQuery, this.scopesForV2(scopes));
+            this.getEvents(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
         }
 
         // Groups/Relationships For User
@@ -548,7 +544,7 @@ module Kurve {
             var scopes = [Scopes.Group.ReadAll];
             var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/memberOf";
             if (odataQuery) urlString += "?" + odataQuery;
-            this.getGroups(urlString, callback, odataQuery, this.scopesForV2(scopes));
+            this.getGroups(urlString, callback, this.scopesForV2(scopes));
         }
 
         public managerForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<User, Error> {
@@ -703,8 +699,7 @@ module Kurve {
                 var nextLink = usersODATA['@odata.nextLink'];
 
                 if (nextLink) {
-                    users.nextLink = ((callback?: (result: Users, error: Error) => void) => {
-
+                    users.nextLink = (callback?: (users: Kurve.Users, error: Error) => void) => {
                         var scopes = [];
                         if (basicProfileOnly)
                             scopes = [Scopes.User.ReadBasicAll];
@@ -712,18 +707,19 @@ module Kurve {
                             scopes = [Scopes.User.ReadAll];
 
                         var d = new Deferred<Users,Error>();
-                        this.getUsers(nextLink, ((result, error) => {
-                            if (callback)
+                        this.getUsers(nextLink, (result, error) => {
+                            if (callback) {
                                 callback(result, error);
+                            }
                             else if (error) {
                                 d.reject(error);
                             }
                             else {
                                 d.resolve(result);
                             }
-                        }), this.scopesForV2(scopes), basicProfileOnly);
+                        }, this.scopesForV2(scopes), basicProfileOnly);
                         return d.promise;
-                    });
+                    };
                 }
 
                 callback(users, null);
@@ -786,10 +782,9 @@ module Kurve {
             }
         }
 
-        private getMessages(urlString: string, callback: (messages: Messages, error: Error) => void, odataQuery?: string, scopes?:string[]): void {
+        private getMessages(urlString: string, callback: (messages: Messages, error: Error) => void, scopes?:string[]): void {
 
             var url = urlString;
-            if (odataQuery) urlString += "?" + odataQuery;
             this.get(url, ((result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -807,37 +802,35 @@ module Kurve {
                 var resultsArray = (messagesODATA.value ? messagesODATA.value : [messagesODATA]) as any[];
                 var messages = new Kurve.Messages(this, resultsArray.map(o => {
                     return new Message(this, o);
-                }));
-                if (messagesODATA['@odata.nextLink']) {
-                    messages.nextLink = (callback?: (messages: Messages, error: Error) => void, odataQuery?: string) => {
-
+                })); 
+                var nextLink = messagesODATA['@odata.nextLink'];
+                if (nextLink) {
+                    messages.nextLink = (callback?: (messages: Messages, error: Error) => void) => {
                         var scopes = [Scopes.Mail.Read];
                       
-
                         var d = new Deferred<Messages,Error>();
                         
-                        this.getMessages(messagesODATA['@odata.nextLink'], (messages, error) => {
-                            if (callback)
+                        this.getMessages(nextLink, (messages, error) => {
+                            if (callback) {
                                 callback(messages, error);
+                            }
                             else if (error) {
                                 d.reject(error);
                             }
                             else {
                                 d.resolve(messages);
                             }
-                        }, odataQuery, this.scopesForV2(scopes));
+                        }, this.scopesForV2(scopes));
                         return d.promise;
-
                     };
                 }
                 callback(messages,  null);
             }),null,scopes);
         }
 
-        private getEvents(urlString: string, callback: (events: Events, error: Error) => void, odataQuery?: string, scopes?: string[]): void {
+        private getEvents(urlString: string, callback: (events: Events, error: Error) => void, scopes?: string[]): void {
 
             var url = urlString;
-            if (odataQuery) urlString += "?" + odataQuery;
             this.get(url, ((result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -856,25 +849,25 @@ module Kurve {
                 var items = new Kurve.Events(this, resultsArray.map(o => {
                     return new Event(this, o);
                 }));
-                if (odata['@odata.nextLink']) {
-                    items.nextLink = (callback?: (cbEvents: Events, error: Error) => void, odataQuery?: string) => {
-
+                var nextLink = odata['@odata.nextLink'];
+                if (nextLink) {
+                    items.nextLink = (callback?: (cbEvents: Events, error: Error) => void) => {
                         var scopes = [Scopes.Mail.Read];
 
                         var d = new Deferred<Events, Error>();
 
-                        this.getEvents(odata['@odata.nextLink'], (stuff, error) => {
-                            if (callback)
+                        this.getEvents(nextLink, (stuff, error) => {
+                            if (callback) {
                                 callback(stuff, error);
+                            }
                             else if (error) {
                                 d.reject(error);
                             }
                             else {
                                 d.resolve(stuff);
                             }
-                        }, odataQuery, this.scopesForV2(scopes));
+                        }, this.scopesForV2(scopes));
                         return d.promise;
-
                     };
                 }
                 callback(items, null);
@@ -882,10 +875,9 @@ module Kurve {
         }
 
 
-        private getGroups(urlString: string, callback: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string,scopes?:string[]): void {
+        private getGroups(urlString: string, callback: (groups: Kurve.Groups, error: Error) => void, scopes?:string[]): void {
 
             var url = urlString;
-            if (odataQuery) urlString += "?" + odataQuery;
             this.get(url, ((result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -905,32 +897,30 @@ module Kurve {
                 }));
 
                 var nextLink = groupsODATA['@odata.nextLink'];
-
-                //implement nextLink
                 if (nextLink) {
-                    groups.nextLink = ((callback?: (result: Groups, error: Error) => void) => {
-
+                    groups.nextLink = (callback: (groups: Kurve.Groups, error: Error) => void) => {
                         var scopes = [Scopes.Group.ReadAll];
                         var d = new Deferred<Groups,Error>();
-                        this.getGroups(nextLink, ((result, error) => {
-                            if (callback)
+                        this.getGroups(nextLink, (result, error) => {
+                            if (callback) {
                                 callback(result, error);
+                            }
                             else if (error) {
                                 d.reject(error);
                             }
                             else {
                                 d.resolve(result);
                             }
-                        }), odataQuery, this.scopesForV2(scopes));
+                        }, this.scopesForV2(scopes));
                         return d.promise;
-                    });
+                    };
                 }
 
                 callback(groups, null);
             }),null,scopes);
         }
 
-        private getGroup(urlString, callback: (group: Kurve.Group, error: Error) => void,scopes?:string[]): void {
+        private getGroup(urlString, callback: (group: Kurve.Group, error: Error) => void, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -969,7 +959,7 @@ module Kurve {
             },null,scopes);
         }
 
-        private getPhotoValue(urlString, callback: (photo: any, error: Error) => void,scopes?:string[]): void {
+        private getPhotoValue(urlString, callback: (photo: any, error: Error) => void, scopes?:string[]): void {
             this.get(urlString, (result: any, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -982,10 +972,10 @@ module Kurve {
             return this.baseUrl + "me";
         }
         private buildUsersUrl(): string {
-            return this.baseUrl + "/users";
+            return this.baseUrl + "users";
         }
         private buildGroupsUrl(): string {
-            return this.baseUrl + "/groups";
+            return this.baseUrl + "groups";
         }
     }
 }
