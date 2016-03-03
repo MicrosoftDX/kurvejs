@@ -389,11 +389,7 @@ module Kurve {
 
         public me(callback: (user: User, error: Error) => void, odataQuery?: string): void {
             var scopes = [Scopes.User.Read];
-            var urlString: string = this.buildMeUrl() + "/";
-            if (odataQuery) {
-                urlString += "?" + odataQuery;
-            }
-            if (odataQuery) urlString += "?" + odataQuery;
+            var urlString = this.buildMeUrl("", odataQuery);
             this.getUser(urlString, callback, this.scopesForV2(scopes));
         }
 
@@ -416,8 +412,7 @@ module Kurve {
             else
                 scopes = [Scopes.User.ReadAll];
 
-            var urlString: string = this.buildUsersUrl() + "/" + userId;
-            if (odataQuery) urlString += "?" + odataQuery;
+            var urlString = this.buildUsersUrl(userId, odataQuery);
             this.getUser(urlString, callback, this.scopesForV2(scopes));
         }
 
@@ -439,8 +434,7 @@ module Kurve {
                 scopes = [Scopes.User.ReadBasicAll];
             else
                 scopes = [Scopes.User.ReadAll];
-            var urlString: string = this.buildUsersUrl() + "/";
-            if (odataQuery) urlString += "?" + odataQuery;
+            var urlString = this.buildUsersUrl("", odataQuery);
             this.getUsers(urlString, callback, this.scopesForV2(scopes), basicProfileOnly);
         }
 
@@ -459,8 +453,7 @@ module Kurve {
 
         public group(groupId: string, callback: (group: any, error: Error) => void, odataQuery?: string): void {
             var scopes = [Scopes.Group.ReadAll];
-            var urlString: string = this.buildGroupsUrl() + "/" + groupId;
-            if (odataQuery) urlString += "?" + odataQuery;
+            var urlString = this.buildGroupsUrl(groupId, odataQuery);
             this.getGroup(urlString, callback, this.scopesForV2(scopes));
         }
 
@@ -479,8 +472,7 @@ module Kurve {
 
         public groups(callback: (groups: any, error: Error) => void, odataQuery?: string): void {
             var scopes = [Scopes.Group.ReadAll];
-            var urlString: string = this.buildGroupsUrl() + "/";
-            if (odataQuery) urlString += "?" + odataQuery;
+            var urlString = this.buildGroupsUrl("", odataQuery);
             this.getGroups(urlString, callback, this.scopesForV2(scopes));
         }      
 
@@ -499,9 +491,7 @@ module Kurve {
 
         public messagesForUser(userPrincipalName: string, callback: (messages: Messages, error: Error) => void, odataQuery?: string): void {
             var scopes = [Scopes.Mail.Read];
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/messages";
-            if (odataQuery) urlString += "?" + odataQuery;
-
+            var urlString = this.buildUsersUrl(userPrincipalName + "/messages", odataQuery);
             this.getMessages(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
         }
 
@@ -521,9 +511,7 @@ module Kurve {
 
         public eventsForUser(userPrincipalName: string, callback: (messages: Events, error: Error) => void, odataQuery?: string): void {
             var scopes = [Scopes.Calendars.Read];
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/events";
-            if (odataQuery) urlString += "?" + odataQuery;
-
+            var urlString = this.buildUsersUrl(userPrincipalName + "/events", odataQuery);
             this.getEvents(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
         }
 
@@ -542,8 +530,7 @@ module Kurve {
 
         public memberOfForUser(userPrincipalName: string, callback: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string) {
             var scopes = [Scopes.Group.ReadAll];
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/memberOf";
-            if (odataQuery) urlString += "?" + odataQuery;
+            var urlString = this.buildUsersUrl(userPrincipalName + "/memberOf", odataQuery);
             this.getGroups(urlString, callback, this.scopesForV2(scopes));
         }
 
@@ -561,8 +548,7 @@ module Kurve {
 
         public managerForUser(userPrincipalName: string, callback: (manager: Kurve.User, error: Error) => void, odataQuery?: string) {
             var scopes = [Scopes.Directory.ReadAll];
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/manager";
-            if (odataQuery) urlString += "?" + odataQuery;
+            var urlString = this.buildUsersUrl(userPrincipalName + "/manager", odataQuery);
             this.getUser(urlString, callback, this.scopesForV2(scopes));
         }
 
@@ -580,8 +566,7 @@ module Kurve {
 
         public directReportsForUser(userPrincipalName: string, callback: (users: Kurve.Users, error: Error) => void, odataQuery?: string) {
             var scopes = [Scopes.Directory.ReadAll];
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/directReports";
-            if (odataQuery) urlString += "?" + odataQuery;
+            var urlString = this.buildUsersUrl(userPrincipalName + "/directReports", odataQuery);
             this.getUsers(urlString, callback, this.scopesForV2(scopes));
         }
 
@@ -600,7 +585,7 @@ module Kurve {
 
         public profilePhotoForUser(userPrincipalName: string, callback: (photo: ProfilePhoto, error: Error) => void) {
             var scopes = [Scopes.User.ReadBasicAll];
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo";
+            var urlString = this.buildUsersUrl(userPrincipalName + "/photo");
             this.getPhoto(urlString, callback, this.scopesForV2(scopes));
         }
 
@@ -618,7 +603,7 @@ module Kurve {
 
         public profilePhotoValueForUser(userPrincipalName: string, callback: (photo: any, error: Error) => void) {
             var scopes = [Scopes.User.ReadBasicAll];
-            var urlString = this.buildUsersUrl() + "/" + userPrincipalName + "/photo/$value";
+            var urlString = this.buildUsersUrl(userPrincipalName + "/photo/$value");
             this.getPhotoValue(urlString, callback, this.scopesForV2(scopes));
         }
     
@@ -674,7 +659,6 @@ module Kurve {
         //Private methods
 
         private getUsers(urlString, callback: (users: Kurve.Users, error: Error) => void, scopes?: string[], basicProfileOnly = true): void {
-
             this.get(urlString, ((result: string, errorGet: Error) => {
                 
                 if (errorGet) {
@@ -783,9 +767,7 @@ module Kurve {
         }
 
         private getMessages(urlString: string, callback: (messages: Messages, error: Error) => void, scopes?:string[]): void {
-
-            var url = urlString;
-            this.get(url, ((result: string, errorGet: Error) => {
+            this.get(urlString, ((result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
                     return;
@@ -829,9 +811,7 @@ module Kurve {
         }
 
         private getEvents(urlString: string, callback: (events: Events, error: Error) => void, scopes?: string[]): void {
-
-            var url = urlString;
-            this.get(url, ((result: string, errorGet: Error) => {
+            this.get(urlString, ((result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
                     return;
@@ -876,9 +856,7 @@ module Kurve {
 
 
         private getGroups(urlString: string, callback: (groups: Kurve.Groups, error: Error) => void, scopes?:string[]): void {
-
-            var url = urlString;
-            this.get(url, ((result: string, errorGet: Error) => {
+            this.get(urlString, ((result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
                     return;
@@ -968,14 +946,18 @@ module Kurve {
                 callback(result, null);
             }, "blob",scopes);
         }
-        private buildMeUrl(): string {
-            return this.baseUrl + "me";
+        
+        private buildUrl(root:string, path: string, odataQuery?: string) {
+            return this.baseUrl + root + path + (odataQuery ? "?" + odataQuery : "");
         }
-        private buildUsersUrl(): string {
-            return this.baseUrl + "users";
+        private buildMeUrl(path: string = "", odataQuery?: string) {
+            return this.buildUrl("me/", path, odataQuery);
         }
-        private buildGroupsUrl(): string {
-            return this.baseUrl + "groups";
+        private buildUsersUrl(path: string = "", odataQuery?: string) {
+            return this.buildUrl("users/", path, odataQuery);
+        }
+        private buildGroupsUrl(path: string = "", odataQuery?: string) {
+            return this.buildUrl("groups/", path, odataQuery);
         }
     }
 }
