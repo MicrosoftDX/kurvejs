@@ -59,8 +59,20 @@ module Kurve {
             public static ReadAll: string = Util.rootUrl + "Notes.Read.All";
             public static ReadWriteAll: string = Util.rootUrl + "Notes.ReadWrite.All";
         }
+    }
 
+    export class DataModelWrapper<T> {
+        constructor(protected graph: Kurve.Graph, protected _data: T) {
+        }
+        get data() { return this._data; }
+    } 
 
+    export class DataModelWrapperWithNextLink<T,S> extends DataModelWrapper<T>{
+        public nextLink: NextLink<S>;
+    }
+    
+    export interface GraphCallback<T> {
+        (T, Error): void;
     }
 
     export class ProfilePhotoDataModel {
@@ -69,11 +81,7 @@ module Kurve {
         public width: Number;
     }
 
-    export class ProfilePhoto {
-        constructor(protected graph: Kurve.Graph, protected _data: ProfilePhotoDataModel) {
-        }
-
-        get data() { return this._data; }
+    export class ProfilePhoto extends DataModelWrapper<ProfilePhotoDataModel> {
     }
 
     export class UserDataModel {
@@ -90,23 +98,9 @@ module Kurve {
         public id: string;
     }
 
-    export interface GraphCallback<T> {
-        (T, Error): void;
-    }
-
     export enum EventsEndpoint { events, calendarView }
   
-    export class User {
-        private graph: Kurve.Graph;
-        private _data: Kurve.UserDataModel;
-
-        constructor(graph: Kurve.Graph, _data: UserDataModel) {
-            this.graph = graph;
-            this._data = _data;
-        }
-
-        get data() { return this._data; }
-
+    export class User extends DataModelWrapper<UserDataModel> {
         // These are all passthroughs to the graph
 
         public events(callback: GraphCallback<Events>, odataQuery?: string) {
@@ -170,16 +164,8 @@ module Kurve {
     export interface NextLink<T> {
         (callback? : GraphCallback<T>): Promise<T, Error>;
     }
-    
-    export class Users {
 
-        public nextLink: NextLink<Users>;
-        constructor(protected graph: Kurve.Graph, protected _data: User[]) {
-        }
-
-        get data(): User[] {
-            return this._data;
-        }
+    export class Users extends DataModelWrapperWithNextLink<User[], Users>{
     }
 
     export interface ItemBody {
@@ -225,23 +211,10 @@ module Kurve {
         webLink: string;
     }
 
-    export class Message {
-        constructor(protected graph: Kurve.Graph, protected _data: MessageDataModel) {
-        }
-        get data(): MessageDataModel {
-            return this._data;
-        }
+    export class Message extends DataModelWrapper<MessageDataModel>{
     }
 
-    export class Messages {
-
-        public nextLink: NextLink<Messages>;
-        constructor(protected graph: Kurve.Graph, protected _data: Message[]) {
-        }
-
-        get data(): Message[] {
-            return this._data;
-        }
+    export class Messages extends DataModelWrapperWithNextLink<Message[], Messages>{
     }
 
     export interface Attendee {
@@ -302,21 +275,12 @@ module Kurve {
         webLink: string;
     }
 
-    export class Event {
-        constructor(protected graph: Kurve.Graph, protected _data: EventDataModel) {
-        }
-        get data(): EventDataModel {
-            return this._data;
-        }
+    export class Event extends DataModelWrapper<EventDataModel>{
     }
       
-    export class Events {
-        public nextLink: NextLink<Events>;
+    export class Events extends DataModelWrapperWithNextLink<Event[], Events>{
         constructor(protected graph: Kurve.Graph, protected endpoint: EventsEndpoint, protected _data: Event[]) {
-        }
-
-        get data(): Event[] {
-            return this._data;
+            super(graph, _data);
         }
     }
 
@@ -339,23 +303,10 @@ module Kurve {
         public visibility: string;      
     }
 
-    export class Group {
-        constructor(protected graph: Kurve.Graph, protected _data: GroupDataModel) {
-        }
-
-        get data() { return this._data; }
-
+    export class Group extends DataModelWrapper<GroupDataModel>{
     }
 
-    export class Groups {
-
-        public nextLink: NextLink<Groups>;
-        constructor(protected graph: Kurve.Graph, protected _data: Group[]) {
-        }
-
-        get data(): Group[] {
-            return this._data;
-        }
+    export class Groups extends DataModelWrapperWithNextLink<Group[], Groups>{
     }
 
     export class Graph {
