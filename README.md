@@ -2,23 +2,23 @@
 
 Kurve<nolink>.JS is an unofficial, open source JavaScript / TypeScript library that aims to provide:
 
-1. Easy authentication and authorization using Azure Active Directory.  With Kurve you don't have to worry about navigating away from you web app for login or token requests.  Kurve also supports Promises making it easier to write handle asychronous requests.
+* Easy authentication and authorization using Azure Active Directory.  With Kurve you don't have to worry about navigating away from you web app for login or token requests.  Kurve also supports Promises making it easier to handle asychronous requests.
 
-2. Easy access to the Microsoft Graph REST API.  Kurve can automatically and incrementally acquire the tokens and permissions to ensure graph operations succeed.
+* Easy access to the Microsoft Graph REST API.  Kurve can automatically and incrementally acquire the tokens and permissions from the user required to ensure graph operations succeed.
 
 Kurve works well with most JavaScript and TypeScript frameworks including:
 
-1. Angular V1<br/>
-2. Angular V2<br/>
-3. Ember JS<br/>
-4. React<br/>
+* Angular V1<br/>
+* Angular V2<br/>
+* Ember JS<br/>
+* React<br/>
 
-Kuve enables developers building web applications - including single application pages - to easily support a range of  authentication and authorization scenarios including:
+Kuve enables developers building web applications - including single application pages - to support a range of authentication and authorization scenarios including:
 
-1. AAD app model v1 with a postMessage flow<br/>
-2. AAD app model v1 with redirections<br/>
-2. AAD app model v2 with a postMessage flow<br/>
-3. AAD app model v2 with Active Directoy B2C.  This makes it easy to add third party identity providers such as Facebook and signup/signin/profile edit experiences using AD B2C policies<br/>
+* AAD app model v1 with a postMessage flow<br/>
+* AAD app model v1 with redirections<br/>
+* AAD app model v2 with a postMessage flow<br/>
+* AAD app model v2 with Active Directoy B2C.  This makes it easy to add third party identity providers such as Facebook and signup/signin/profile edit experiences using AD B2C policies<br/>
 
 ## How does it work?
 
