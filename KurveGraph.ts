@@ -90,7 +90,11 @@ module Kurve {
         public id: string;
     }
 
-    export enum EventEndpoint { events, calendarView }
+    export interface GraphCallback<T> {
+        (T, Error): void;
+    }
+
+    export enum EventsEndpoint { events, calendarView }
   
     export class User {
         private graph: Kurve.Graph;
@@ -105,15 +109,15 @@ module Kurve {
 
         // These are all passthroughs to the graph
 
-        public events(callback: (events: Events, error: Error) => void, odataQuery?: string) {
-            this.graph.eventsForUser(this._data.userPrincipalName, EventEndpoint.events, callback, odataQuery);
+        public events(callback: GraphCallback<Events>, odataQuery?: string) {
+            this.graph.eventsForUser(this._data.userPrincipalName, EventsEndpoint.events, callback, odataQuery);
         }
 
         public eventsAsync(odataQuery?: string): Promise<Events, Error> {
-            return this.graph.eventsForUserAsync(this._data.userPrincipalName, EventEndpoint.events, odataQuery);
+            return this.graph.eventsForUserAsync(this._data.userPrincipalName, EventsEndpoint.events, odataQuery);
         }
 
-        public memberOf(callback: (groups: Groups, Error) => void, Error, odataQuery?: string) {
+        public memberOf(callback: GraphCallback<Groups>, Error, odataQuery?: string) {
             this.graph.memberOfForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
@@ -121,7 +125,7 @@ module Kurve {
             return this.graph.memberOfForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
-        public messages(callback: (messages: Messages, error: Error) => void, odataQuery?: string) {
+        public messages(callback: GraphCallback<Messages>, odataQuery?: string) {
             this.graph.messagesForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
@@ -129,7 +133,7 @@ module Kurve {
             return this.graph.messagesForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
-        public manager(callback: (user: Kurve.User, error: Error) => void, odataQuery?: string) {
+        public manager(callback: GraphCallback<User>, odataQuery?: string) {
             this.graph.managerForUser(this._data.userPrincipalName, callback, odataQuery);
         }
 
@@ -137,7 +141,7 @@ module Kurve {
             return this.graph.managerForUserAsync(this._data.userPrincipalName, odataQuery);
         }
 
-        public profilePhoto(callback: (photo: ProfilePhoto, error: Error) => void) {
+        public profilePhoto(callback: GraphCallback<ProfilePhoto>) {
             this.graph.profilePhotoForUser(this._data.userPrincipalName, callback);
         }
 
@@ -145,7 +149,7 @@ module Kurve {
             return this.graph.profilePhotoForUserAsync(this._data.userPrincipalName);
         }
 
-        public profilePhotoValue(callback: (val: any, error: Error) => void) {
+        public profilePhotoValue(callback: GraphCallback<any>) {
             this.graph.profilePhotoValueForUser(this._data.userPrincipalName, callback);
         }
 
@@ -153,19 +157,23 @@ module Kurve {
             return this.graph.profilePhotoValueForUserAsync(this._data.userPrincipalName);
         }
 
-        public calendarView(callback: (events: Events, error: Error) => void, odataQuery?: string) {
-            this.graph.eventsForUser(this._data.userPrincipalName, EventEndpoint.calendarView, callback, odataQuery);
+        public calendarView(callback: GraphCallback<Events>, odataQuery?: string) {
+            this.graph.eventsForUser(this._data.userPrincipalName, EventsEndpoint.calendarView, callback, odataQuery);
         }
 
         public calendarViewAsync(odataQuery?: string): Promise<Events, Error> {
-            return this.graph.eventsForUserAsync(this._data.userPrincipalName, EventEndpoint.calendarView, odataQuery);
+            return this.graph.eventsForUserAsync(this._data.userPrincipalName, EventsEndpoint.calendarView, odataQuery);
         }
 
     }
-
+    
+    export interface NextLink<T> {
+        (callback? : GraphCallback<T>): Promise<T, Error>;
+    }
+    
     export class Users {
 
-        public nextLink: (callback?: (users: Kurve.Users, error: Error) => void) => Promise<Users, Error>
+        public nextLink: NextLink<Users>;
         constructor(protected graph: Kurve.Graph, protected _data: User[]) {
         }
 
@@ -227,7 +235,7 @@ module Kurve {
 
     export class Messages {
 
-        public nextLink: (callback?: (messages: Messages, error: Error) => void) => Promise<Messages, Error>
+        public nextLink: NextLink<Messages>;
         constructor(protected graph: Kurve.Graph, protected _data: Message[]) {
         }
 
@@ -303,10 +311,8 @@ module Kurve {
     }
       
     export class Events {
-        public nextLink: (callback?: (events: Events, error: Error) => void) => Promise<Events, Error>
-        private endpoint: EventEndpoint;
-        constructor(protected graph: Kurve.Graph, endpoint: EventEndpoint, protected _data: Event[]) {
-            this.endpoint = endpoint;
+        public nextLink: NextLink<Events>;
+        constructor(protected graph: Kurve.Graph, protected endpoint: EventsEndpoint, protected _data: Event[]) {
         }
 
         get data(): Event[] {
@@ -343,7 +349,7 @@ module Kurve {
 
     export class Groups {
 
-        public nextLink: (callback?: (groups: Kurve.Groups, error: Error) => void) => Promise<Groups, Error>
+        public nextLink: NextLink<Groups>;
         constructor(protected graph: Kurve.Graph, protected _data: Group[]) {
         }
 
@@ -391,7 +397,7 @@ module Kurve {
             return d.promise;
         }
 
-        public me(callback: (user: User, error: Error) => void, odataQuery?: string): void {
+        public me(callback: GraphCallback<User>, odataQuery?: string): void {
             var scopes = [Scopes.User.Read];
             var urlString = this.buildMeUrl("", odataQuery);
             this.getUser(urlString, callback, this.scopesForV2(scopes));
@@ -409,7 +415,7 @@ module Kurve {
             return d.promise;
         }
 
-        public user(userId: string, callback: (user: Kurve.User, error: Error) => void, odataQuery?: string, basicProfileOnly = true): void {
+        public user(userId: string, callback: GraphCallback<User>, odataQuery?: string, basicProfileOnly = true): void {
             var scopes = [];
             if (basicProfileOnly)
                 scopes = [Scopes.User.ReadBasicAll];
@@ -432,7 +438,7 @@ module Kurve {
             return d.promise;
         }
 
-        public users(callback: (users: Kurve.Users, error: Error) => void, odataQuery?: string, basicProfileOnly = true): void {
+        public users(callback: GraphCallback<Users>, odataQuery?: string, basicProfileOnly = true): void {
             var scopes = [];
             if (basicProfileOnly)
                 scopes = [Scopes.User.ReadBasicAll];
@@ -455,7 +461,7 @@ module Kurve {
             return d.promise;
         }
 
-        public group(groupId: string, callback: (group: any, error: Error) => void, odataQuery?: string): void {
+        public group(groupId: string, callback: GraphCallback<Group>, odataQuery?: string): void {
             var scopes = [Scopes.Group.ReadAll];
             var urlString = this.buildGroupsUrl(groupId, odataQuery);
             this.getGroup(urlString, callback, this.scopesForV2(scopes));
@@ -474,7 +480,7 @@ module Kurve {
             return d.promise;
         }
 
-        public groups(callback: (groups: any, error: Error) => void, odataQuery?: string): void {
+        public groups(callback: GraphCallback<Groups>, odataQuery?: string): void {
             var scopes = [Scopes.Group.ReadAll];
             var urlString = this.buildGroupsUrl("", odataQuery);
             this.getGroups(urlString, callback, this.scopesForV2(scopes));
@@ -493,7 +499,7 @@ module Kurve {
             return d.promise;
         }
 
-        public messagesForUser(userPrincipalName: string, callback: (messages: Messages, error: Error) => void, odataQuery?: string): void {
+        public messagesForUser(userPrincipalName: string, callback: GraphCallback<Messages>, odataQuery?: string): void {
             var scopes = [Scopes.Mail.Read];
             var urlString = this.buildUsersUrl(userPrincipalName + "/messages", odataQuery);
             this.getMessages(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
@@ -501,7 +507,7 @@ module Kurve {
 
 
         // Events For User
-        public eventsForUserAsync(userPrincipalName: string, endpoint: EventEndpoint, odataQuery?: string): Promise<Events, Error> {
+        public eventsForUserAsync(userPrincipalName: string, endpoint: EventsEndpoint, odataQuery?: string): Promise<Events, Error> {
             var d = new Deferred<Events, Error>();
             this.eventsForUser(userPrincipalName, endpoint, (items, error) => {
                 if (error) {
@@ -513,9 +519,9 @@ module Kurve {
             return d.promise;
         }
 
-        public eventsForUser(userPrincipalName: string, endpoint: EventEndpoint, callback: (messages: Events, error: Error) => void, odataQuery?: string): void {
+        public eventsForUser(userPrincipalName: string, endpoint: EventsEndpoint, callback: (messages: Events, error: Error) => void, odataQuery?: string): void {
             var scopes = [Scopes.Calendars.Read];
-            var urlString = this.buildUsersUrl(userPrincipalName + "/" + EventEndpoint[endpoint], odataQuery);
+            var urlString = this.buildUsersUrl(userPrincipalName + "/" + EventsEndpoint[endpoint], odataQuery);
             this.getEvents(urlString, endpoint, (result, error) => callback(result, error), this.scopesForV2(scopes));
         }
 
@@ -532,7 +538,7 @@ module Kurve {
             return d.promise;
         }
 
-        public memberOfForUser(userPrincipalName: string, callback: (groups: Kurve.Groups, error: Error) => void, odataQuery?: string) {
+        public memberOfForUser(userPrincipalName: string, callback: GraphCallback<Groups>, odataQuery?: string) {
             var scopes = [Scopes.Group.ReadAll];
             var urlString = this.buildUsersUrl(userPrincipalName + "/memberOf", odataQuery);
             this.getGroups(urlString, callback, this.scopesForV2(scopes));
@@ -550,7 +556,7 @@ module Kurve {
             return d.promise;
         }
 
-        public managerForUser(userPrincipalName: string, callback: (manager: Kurve.User, error: Error) => void, odataQuery?: string) {
+        public managerForUser(userPrincipalName: string, callback: GraphCallback<User>, odataQuery?: string) {
             var scopes = [Scopes.Directory.ReadAll];
             var urlString = this.buildUsersUrl(userPrincipalName + "/manager", odataQuery);
             this.getUser(urlString, callback, this.scopesForV2(scopes));
@@ -568,7 +574,7 @@ module Kurve {
             return d.promise;
         }
 
-        public directReportsForUser(userPrincipalName: string, callback: (users: Kurve.Users, error: Error) => void, odataQuery?: string) {
+        public directReportsForUser(userPrincipalName: string, callback: GraphCallback<Users>, odataQuery?: string) {
             var scopes = [Scopes.Directory.ReadAll];
             var urlString = this.buildUsersUrl(userPrincipalName + "/directReports", odataQuery);
             this.getUsers(urlString, callback, this.scopesForV2(scopes));
@@ -587,7 +593,7 @@ module Kurve {
             return d.promise;
         }
 
-        public profilePhotoForUser(userPrincipalName: string, callback: (photo: ProfilePhoto, error: Error) => void) {
+        public profilePhotoForUser(userPrincipalName: string, callback: GraphCallback<ProfilePhoto>) {
             var scopes = [Scopes.User.ReadBasicAll];
             var urlString = this.buildUsersUrl(userPrincipalName + "/photo");
             this.getPhoto(urlString, callback, this.scopesForV2(scopes));
@@ -605,7 +611,7 @@ module Kurve {
             return d.promise;
         }
 
-        public profilePhotoValueForUser(userPrincipalName: string, callback: (photo: any, error: Error) => void) {
+        public profilePhotoValueForUser(userPrincipalName: string, callback: GraphCallback<any>) {
             var scopes = [Scopes.User.ReadBasicAll];
             var urlString = this.buildUsersUrl(userPrincipalName + "/photo/$value");
             this.getPhotoValue(urlString, callback, this.scopesForV2(scopes));
@@ -625,7 +631,7 @@ module Kurve {
             return d.promise;
         }
 
-        public get(url: string, callback: (response: string, error: Error) => void, responseType?: string, scopes?:string[]): void {
+        public get(url: string, callback: GraphCallback<string>, responseType?: string, scopes?:string[]): void {
             var xhr = new XMLHttpRequest();
             if (responseType)
                 xhr.responseType = responseType;
@@ -662,8 +668,8 @@ module Kurve {
 
         //Private methods
 
-        private getUsers(urlString, callback: (users: Kurve.Users, error: Error) => void, scopes?: string[], basicProfileOnly = true): void {
-            this.get(urlString, ((result: string, errorGet: Error) => {
+        private getUsers(urlString, callback: GraphCallback<Users>, scopes?: string[], basicProfileOnly = true): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
                 
                 if (errorGet) {
                     callback(null, errorGet);
@@ -687,7 +693,7 @@ module Kurve {
                 var nextLink = usersODATA['@odata.nextLink'];
 
                 if (nextLink) {
-                    users.nextLink = (callback?: (users: Kurve.Users, error: Error) => void) => {
+                    users.nextLink = (callback?: GraphCallback<Users>) => {
                         var scopes = [];
                         if (basicProfileOnly)
                             scopes = [Scopes.User.ReadBasicAll];
@@ -695,7 +701,7 @@ module Kurve {
                             scopes = [Scopes.User.ReadAll];
 
                         var d = new Deferred<Users,Error>();
-                        this.getUsers(nextLink, (result, error) => {
+                        this.getUsers(nextLink, (result: Users, error: Error) => {
                             if (callback) {
                                 callback(result, error);
                             }
@@ -711,10 +717,10 @@ module Kurve {
                 }
 
                 callback(users, null);
-            }),null,scopes);
+            },null,scopes);
         }
 
-        private getUser(urlString, callback: (user: User, error: Error) => void, scopes?:string[]): void {
+        private getUser(urlString, callback: GraphCallback<User>, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -770,8 +776,8 @@ module Kurve {
             }
         }
 
-        private getMessages(urlString: string, callback: (messages: Messages, error: Error) => void, scopes?:string[]): void {
-            this.get(urlString, ((result: string, errorGet: Error) => {
+        private getMessages(urlString: string, callback: GraphCallback<Messages>, scopes?:string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
                     return;
@@ -791,12 +797,12 @@ module Kurve {
                 })); 
                 var nextLink = messagesODATA['@odata.nextLink'];
                 if (nextLink) {
-                    messages.nextLink = (callback?: (messages: Messages, error: Error) => void) => {
+                    messages.nextLink = (callback?: GraphCallback<Messages>) => {
                         var scopes = [Scopes.Mail.Read];
                       
                         var d = new Deferred<Messages,Error>();
                         
-                        this.getMessages(nextLink, (messages, error) => {
+                        this.getMessages(nextLink, (messages: Messages, error: Error) => {
                             if (callback) {
                                 callback(messages, error);
                             }
@@ -811,11 +817,11 @@ module Kurve {
                     };
                 }
                 callback(messages,  null);
-            }),null,scopes);
+            },null,scopes);
         }
 
-        private getEvents(urlString: string, endpoint: EventEndpoint, callback: (events: Events, error: Error) => void, scopes?: string[]): void {
-            this.get(urlString, ((result: string, errorGet: Error) => {
+        private getEvents(urlString: string, endpoint: EventsEndpoint, callback: GraphCallback<Events>, scopes?: string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
                     return;
@@ -833,32 +839,32 @@ module Kurve {
                 var events = new Kurve.Events(this, endpoint, resultsArray.map(o => new Event(this, o)));
                 var nextLink = odata['@odata.nextLink'];
                 if (nextLink) {
-                    events.nextLink = (callback?: (cbEvents: Events, error: Error) => void) => {
+                    events.nextLink = (callback?: GraphCallback<Events>) => {
                         var scopes = [Scopes.Mail.Read];
 
                         var d = new Deferred<Events, Error>();
 
-                        this.getEvents(nextLink, endpoint, (stuff, error) => {
+                        this.getEvents(nextLink, endpoint, (result: Events, error: Error) => {
                             if (callback) {
-                                callback(stuff, error);
+                                callback(result, error);
                             }
                             else if (error) {
                                 d.reject(error);
                             }
                             else {
-                                d.resolve(stuff);
+                                d.resolve(result);
                             }
                         }, this.scopesForV2(scopes));
                         return d.promise;
                     };
                 }
                 callback(events, null);
-            }), null, scopes);
+            }, null, scopes);
         }
 
 
-        private getGroups(urlString: string, callback: (groups: Kurve.Groups, error: Error) => void, scopes?:string[]): void {
-            this.get(urlString, ((result: string, errorGet: Error) => {
+        private getGroups(urlString: string, callback: GraphCallback<Groups>, scopes?:string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
                     return;
@@ -878,10 +884,10 @@ module Kurve {
 
                 var nextLink = groupsODATA['@odata.nextLink'];
                 if (nextLink) {
-                    groups.nextLink = (callback: (groups: Kurve.Groups, error: Error) => void) => {
+                    groups.nextLink = (callback: GraphCallback<Groups>) => {
                         var scopes = [Scopes.Group.ReadAll];
                         var d = new Deferred<Groups,Error>();
-                        this.getGroups(nextLink, (result, error) => {
+                        this.getGroups(nextLink, (result: Groups, error: Error) => {
                             if (callback) {
                                 callback(result, error);
                             }
@@ -897,10 +903,10 @@ module Kurve {
                 }
 
                 callback(groups, null);
-            }),null,scopes);
+            },null,scopes);
         }
 
-        private getGroup(urlString, callback: (group: Kurve.Group, error: Error) => void, scopes?:string[]): void {
+        private getGroup(urlString, callback: GraphCallback<Group>, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -920,7 +926,7 @@ module Kurve {
 
         }
 
-        private getPhoto(urlString, callback: (photo: ProfilePhoto, error: Error) => void, scopes?:string[]): void {
+        private getPhoto(urlString, callback: GraphCallback<ProfilePhoto>, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -939,7 +945,7 @@ module Kurve {
             },null,scopes);
         }
 
-        private getPhotoValue(urlString, callback: (photo: any, error: Error) => void, scopes?:string[]): void {
+        private getPhotoValue(urlString, callback: GraphCallback<any>, scopes?:string[]): void {
             this.get(urlString, (result: any, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
