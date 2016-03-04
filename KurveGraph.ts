@@ -90,6 +90,8 @@ module Kurve {
         public id: string;
     }
 
+    export enum EventEndpoint { events, calendarView }
+  
     export class User {
         private graph: Kurve.Graph;
         private _data: Kurve.UserDataModel;
@@ -103,12 +105,12 @@ module Kurve {
 
         // These are all passthroughs to the graph
 
-        public events(callback: (items: Events, error: Error) => void, odataQuery?: string) {
-            this.graph.eventsForUser(this._data.userPrincipalName, callback, odataQuery);
+        public events(callback: (events: Events, error: Error) => void, odataQuery?: string) {
+            this.graph.eventsForUser(this._data.userPrincipalName, EventEndpoint.events, callback, odataQuery);
         }
 
         public eventsAsync(odataQuery?: string): Promise<Events, Error> {
-            return this.graph.eventsForUserAsync(this._data.userPrincipalName, odataQuery);
+            return this.graph.eventsForUserAsync(this._data.userPrincipalName, EventEndpoint.events, odataQuery);
         }
 
         public memberOf(callback: (groups: Groups, Error) => void, Error, odataQuery?: string) {
@@ -151,12 +153,12 @@ module Kurve {
             return this.graph.profilePhotoValueForUserAsync(this._data.userPrincipalName);
         }
 
-        public calendar(callback: (calendarItems: Events, error: Error) => void, odataQuery?: string) {
-            this.graph.eventsForUser(this._data.userPrincipalName, callback, odataQuery);
+        public calendarView(callback: (events: Events, error: Error) => void, odataQuery?: string) {
+            this.graph.eventsForUser(this._data.userPrincipalName, EventEndpoint.calendarView, callback, odataQuery);
         }
 
-        public calendarAsync(odataQuery?: string): Promise<Events, Error> {
-            return this.graph.eventsForUserAsync(this._data.userPrincipalName, odataQuery);
+        public calendarViewAsync(odataQuery?: string): Promise<Events, Error> {
+            return this.graph.eventsForUserAsync(this._data.userPrincipalName, EventEndpoint.calendarView, odataQuery);
         }
 
     }
@@ -299,10 +301,12 @@ module Kurve {
             return this._data;
         }
     }
-
+      
     export class Events {
         public nextLink: (callback?: (events: Events, error: Error) => void) => Promise<Events, Error>
-        constructor(protected graph: Kurve.Graph, protected _data: Event[]) {
+        private endpoint: EventEndpoint;
+        constructor(protected graph: Kurve.Graph, endpoint: EventEndpoint, protected _data: Event[]) {
+            this.endpoint = endpoint;
         }
 
         get data(): Event[] {
@@ -496,10 +500,10 @@ module Kurve {
         }
 
 
-        // Messages For User
-        public eventsForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Events, Error> {
+        // Events For User
+        public eventsForUserAsync(userPrincipalName: string, endpoint: EventEndpoint, odataQuery?: string): Promise<Events, Error> {
             var d = new Deferred<Events, Error>();
-            this.eventsForUser(userPrincipalName, (items, error) => {
+            this.eventsForUser(userPrincipalName, endpoint, (items, error) => {
                 if (error) {
                     d.reject(error);
                 } else {
@@ -509,10 +513,10 @@ module Kurve {
             return d.promise;
         }
 
-        public eventsForUser(userPrincipalName: string, callback: (messages: Events, error: Error) => void, odataQuery?: string): void {
+        public eventsForUser(userPrincipalName: string, endpoint: EventEndpoint, callback: (messages: Events, error: Error) => void, odataQuery?: string): void {
             var scopes = [Scopes.Calendars.Read];
-            var urlString = this.buildUsersUrl(userPrincipalName + "/events", odataQuery);
-            this.getEvents(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
+            var urlString = this.buildUsersUrl(userPrincipalName + "/" + EventEndpoint[endpoint], odataQuery);
+            this.getEvents(urlString, endpoint, (result, error) => callback(result, error), this.scopesForV2(scopes));
         }
 
         // Groups/Relationships For User
@@ -810,7 +814,7 @@ module Kurve {
             }),null,scopes);
         }
 
-        private getEvents(urlString: string, callback: (events: Events, error: Error) => void, scopes?: string[]): void {
+        private getEvents(urlString: string, endpoint: EventEndpoint, callback: (events: Events, error: Error) => void, scopes?: string[]): void {
             this.get(urlString, ((result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -826,17 +830,15 @@ module Kurve {
                 }
 
                 var resultsArray = (odata.value ? odata.value : [odata]) as any[];
-                var items = new Kurve.Events(this, resultsArray.map(o => {
-                    return new Event(this, o);
-                }));
+                var events = new Kurve.Events(this, endpoint, resultsArray.map(o => new Event(this, o)));
                 var nextLink = odata['@odata.nextLink'];
                 if (nextLink) {
-                    items.nextLink = (callback?: (cbEvents: Events, error: Error) => void) => {
+                    events.nextLink = (callback?: (cbEvents: Events, error: Error) => void) => {
                         var scopes = [Scopes.Mail.Read];
 
                         var d = new Deferred<Events, Error>();
 
-                        this.getEvents(nextLink, (stuff, error) => {
+                        this.getEvents(nextLink, endpoint, (stuff, error) => {
                             if (callback) {
                                 callback(stuff, error);
                             }
@@ -850,7 +852,7 @@ module Kurve {
                         return d.promise;
                     };
                 }
-                callback(items, null);
+                callback(events, null);
             }), null, scopes);
         }
 
