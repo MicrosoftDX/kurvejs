@@ -158,16 +158,24 @@ declare module Kurve {
             static ReadWriteAll: string;
         }
     }
+    class DataModelWrapper<T> {
+        protected graph: Graph;
+        protected _data: T;
+        constructor(graph: Graph, _data: T);
+        data: T;
+    }
+    class DataModelWrapperWithNextLink<T, S> extends DataModelWrapper<T> {
+        nextLink: NextLink<S>;
+    }
+    interface PromiseCallback<T> {
+        (T: any, Error: any): void;
+    }
     class ProfilePhotoDataModel {
         id: string;
         height: Number;
         width: Number;
     }
-    class ProfilePhoto {
-        protected graph: Kurve.Graph;
-        protected _data: ProfilePhotoDataModel;
-        constructor(graph: Kurve.Graph, _data: ProfilePhotoDataModel);
-        data: ProfilePhotoDataModel;
+    class ProfilePhoto extends DataModelWrapper<ProfilePhotoDataModel> {
     }
     class UserDataModel {
         businessPhones: string;
@@ -182,42 +190,30 @@ declare module Kurve {
         userPrincipalName: string;
         id: string;
     }
-    interface GraphCallback<T> {
-        (T: any, Error: any): void;
-    }
     enum EventsEndpoint {
         events = 0,
         calendarView = 1,
     }
-    class User {
-        private graph;
-        private _data;
-        constructor(graph: Kurve.Graph, _data: UserDataModel);
-        data: UserDataModel;
-        events(callback: GraphCallback<Events>, odataQuery?: string): void;
+    class User extends DataModelWrapper<UserDataModel> {
+        events(callback: PromiseCallback<Events>, odataQuery?: string): void;
         eventsAsync(odataQuery?: string): Promise<Events, Error>;
-        memberOf(callback: GraphCallback<Groups>, Error: any, odataQuery?: string): void;
-        memberOfAsync(odataQuery?: string): Promise<Messages, Error>;
-        messages(callback: GraphCallback<Messages>, odataQuery?: string): void;
+        memberOf(callback: PromiseCallback<Groups>, Error: any, odataQuery?: string): void;
+        memberOfAsync(odataQuery?: string): Promise<Groups, Error>;
+        messages(callback: PromiseCallback<Messages>, odataQuery?: string): void;
         messagesAsync(odataQuery?: string): Promise<Messages, Error>;
-        manager(callback: GraphCallback<User>, odataQuery?: string): void;
+        manager(callback: PromiseCallback<User>, odataQuery?: string): void;
         managerAsync(odataQuery?: string): Promise<User, Error>;
-        profilePhoto(callback: GraphCallback<ProfilePhoto>): void;
-        profilePhotoAsync(): Promise<ProfilePhoto, Error>;
-        profilePhotoValue(callback: GraphCallback<any>): void;
-        profilePhotoValueAsync(): Promise<any, Error>;
-        calendarView(callback: GraphCallback<Events>, odataQuery?: string): void;
+        profilePhoto(callback: PromiseCallback<ProfilePhoto>, odataQuery?: string): void;
+        profilePhotoAsync(odataQuery?: string): Promise<ProfilePhoto, Error>;
+        profilePhotoValue(callback: PromiseCallback<any>, odataQuery?: string): void;
+        profilePhotoValueAsync(odataQuery?: string): Promise<any, Error>;
+        calendarView(callback: PromiseCallback<Events>, odataQuery?: string): void;
         calendarViewAsync(odataQuery?: string): Promise<Events, Error>;
     }
     interface NextLink<T> {
-        (callback?: GraphCallback<T>): Promise<T, Error>;
+        (callback?: PromiseCallback<T>): Promise<T, Error>;
     }
-    class Users {
-        protected graph: Kurve.Graph;
-        protected _data: User[];
-        nextLink: NextLink<Users>;
-        constructor(graph: Kurve.Graph, _data: User[]);
-        data: User[];
+    class Users extends DataModelWrapperWithNextLink<User[], Users> {
     }
     interface ItemBody {
         contentType: string;
@@ -258,18 +254,9 @@ declare module Kurve {
         toRecipients: Recipient[];
         webLink: string;
     }
-    class Message {
-        protected graph: Kurve.Graph;
-        protected _data: MessageDataModel;
-        constructor(graph: Kurve.Graph, _data: MessageDataModel);
-        data: MessageDataModel;
+    class Message extends DataModelWrapper<MessageDataModel> {
     }
-    class Messages {
-        protected graph: Kurve.Graph;
-        protected _data: Message[];
-        nextLink: NextLink<Messages>;
-        constructor(graph: Kurve.Graph, _data: Message[]);
-        data: Message[];
+    class Messages extends DataModelWrapperWithNextLink<Message[], Messages> {
     }
     interface Attendee {
         status: ResponseStatus;
@@ -324,19 +311,13 @@ declare module Kurve {
         type: string;
         webLink: string;
     }
-    class Event {
-        protected graph: Kurve.Graph;
-        protected _data: EventDataModel;
-        constructor(graph: Kurve.Graph, _data: EventDataModel);
-        data: EventDataModel;
+    class Event extends DataModelWrapper<EventDataModel> {
     }
-    class Events {
-        protected graph: Kurve.Graph;
+    class Events extends DataModelWrapperWithNextLink<Event[], Events> {
+        protected graph: Graph;
         protected endpoint: EventsEndpoint;
         protected _data: Event[];
-        nextLink: NextLink<Events>;
-        constructor(graph: Kurve.Graph, endpoint: EventsEndpoint, _data: Event[]);
-        data: Event[];
+        constructor(graph: Graph, endpoint: EventsEndpoint, _data: Event[]);
     }
     class Contact {
     }
@@ -355,18 +336,9 @@ declare module Kurve {
         securityEnabled: Boolean;
         visibility: string;
     }
-    class Group {
-        protected graph: Kurve.Graph;
-        protected _data: GroupDataModel;
-        constructor(graph: Kurve.Graph, _data: GroupDataModel);
-        data: GroupDataModel;
+    class Group extends DataModelWrapper<GroupDataModel> {
     }
-    class Groups {
-        protected graph: Kurve.Graph;
-        protected _data: Group[];
-        nextLink: NextLink<Groups>;
-        constructor(graph: Kurve.Graph, _data: Group[]);
-        data: Group[];
+    class Groups extends DataModelWrapperWithNextLink<Group[], Groups> {
     }
     class Graph {
         private req;
@@ -382,31 +354,31 @@ declare module Kurve {
         });
         private scopesForV2(scopes);
         meAsync(odataQuery?: string): Promise<User, Error>;
-        me(callback: GraphCallback<User>, odataQuery?: string): void;
+        me(callback: PromiseCallback<User>, odataQuery?: string): void;
         userAsync(userId: string, odataQuery?: string, basicProfileOnly?: boolean): Promise<User, Error>;
-        user(userId: string, callback: GraphCallback<User>, odataQuery?: string, basicProfileOnly?: boolean): void;
+        user(userId: string, callback: PromiseCallback<User>, odataQuery?: string, basicProfileOnly?: boolean): void;
         usersAsync(odataQuery?: string, basicProfileOnly?: boolean): Promise<Users, Error>;
-        users(callback: GraphCallback<Users>, odataQuery?: string, basicProfileOnly?: boolean): void;
+        users(callback: PromiseCallback<Users>, odataQuery?: string, basicProfileOnly?: boolean): void;
         groupAsync(groupId: string, odataQuery?: string): Promise<Group, Error>;
-        group(groupId: string, callback: GraphCallback<Group>, odataQuery?: string): void;
+        group(groupId: string, callback: PromiseCallback<Group>, odataQuery?: string): void;
         groupsAsync(odataQuery?: string): Promise<Groups, Error>;
-        groups(callback: GraphCallback<Groups>, odataQuery?: string): void;
+        groups(callback: PromiseCallback<Groups>, odataQuery?: string): void;
         messagesForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error>;
-        messagesForUser(userPrincipalName: string, callback: GraphCallback<Messages>, odataQuery?: string): void;
+        messagesForUser(userPrincipalName: string, callback: PromiseCallback<Messages>, odataQuery?: string): void;
         eventsForUserAsync(userPrincipalName: string, endpoint: EventsEndpoint, odataQuery?: string): Promise<Events, Error>;
         eventsForUser(userPrincipalName: string, endpoint: EventsEndpoint, callback: (messages: Events, error: Error) => void, odataQuery?: string): void;
-        memberOfForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error>;
-        memberOfForUser(userPrincipalName: string, callback: GraphCallback<Groups>, odataQuery?: string): void;
+        memberOfForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Groups, Error>;
+        memberOfForUser(userPrincipalName: string, callback: PromiseCallback<Groups>, odataQuery?: string): void;
         managerForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<User, Error>;
-        managerForUser(userPrincipalName: string, callback: GraphCallback<User>, odataQuery?: string): void;
+        managerForUser(userPrincipalName: string, callback: PromiseCallback<User>, odataQuery?: string): void;
         directReportsForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Users, Error>;
-        directReportsForUser(userPrincipalName: string, callback: GraphCallback<Users>, odataQuery?: string): void;
-        profilePhotoForUserAsync(userPrincipalName: string): Promise<ProfilePhoto, Error>;
-        profilePhotoForUser(userPrincipalName: string, callback: GraphCallback<ProfilePhoto>): void;
-        profilePhotoValueForUserAsync(userPrincipalName: string): Promise<any, Error>;
-        profilePhotoValueForUser(userPrincipalName: string, callback: GraphCallback<any>): void;
+        directReportsForUser(userPrincipalName: string, callback: PromiseCallback<Users>, odataQuery?: string): void;
+        profilePhotoForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<ProfilePhoto, Error>;
+        profilePhotoForUser(userPrincipalName: string, callback: PromiseCallback<ProfilePhoto>, odataQuery?: string): void;
+        profilePhotoValueForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<any, Error>;
+        profilePhotoValueForUser(userPrincipalName: string, callback: PromiseCallback<any>, odataQuery?: string): void;
         getAsync(url: string): Promise<string, Error>;
-        get(url: string, callback: GraphCallback<string>, responseType?: string, scopes?: string[]): void;
+        get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
         private generateError(xhr);
         private getUsers(urlString, callback, scopes?, basicProfileOnly?);
         private getUser(urlString, callback, scopes?);

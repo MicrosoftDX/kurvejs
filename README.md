@@ -69,6 +69,11 @@ At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optio
 
 # Release Notes
 
+## 0.4.1:
+ * Added support for /calendarView calendar events
+ * Simplified code with inheritance and generics
+ * Bug fixes
+
 ## 0.4.0:
  * Added support for AAD B2C
  * Breaking change: identity constructor now uses an object to group parameters
