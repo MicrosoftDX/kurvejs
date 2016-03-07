@@ -1043,11 +1043,7 @@ var Kurve;
         };
         Graph.prototype.user = function (userId, callback, odataQuery, basicProfileOnly) {
             if (basicProfileOnly === void 0) { basicProfileOnly = true; }
-            var scopes = [];
-            if (basicProfileOnly)
-                scopes = [Scopes.User.ReadBasicAll];
-            else
-                scopes = [Scopes.User.ReadAll];
+            var scopes = basicProfileOnly ? [Scopes.User.ReadBasicAll] : [Scopes.User.ReadAll];
             var urlString = this.buildUsersUrl(userId, odataQuery);
             this.getUser(urlString, callback, this.scopesForV2(scopes));
         };
@@ -1059,11 +1055,7 @@ var Kurve;
         };
         Graph.prototype.users = function (callback, odataQuery, basicProfileOnly) {
             if (basicProfileOnly === void 0) { basicProfileOnly = true; }
-            var scopes = [];
-            if (basicProfileOnly)
-                scopes = [Scopes.User.ReadBasicAll];
-            else
-                scopes = [Scopes.User.ReadAll];
+            var scopes = basicProfileOnly ? [Scopes.User.ReadBasicAll] : [Scopes.User.ReadAll];
             var urlString = this.buildUsersUrl("", odataQuery);
             this.getUsers(urlString, callback, this.scopesForV2(scopes), basicProfileOnly);
         };

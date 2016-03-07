@@ -355,12 +355,7 @@ module Kurve {
         }
 
         public user(userId: string, callback: PromiseCallback<User>, odataQuery?: string, basicProfileOnly = true): void {
-            var scopes = [];
-            if (basicProfileOnly)
-                scopes = [Scopes.User.ReadBasicAll];
-            else
-                scopes = [Scopes.User.ReadAll];
-
+            var scopes = basicProfileOnly ? [Scopes.User.ReadBasicAll] : [Scopes.User.ReadAll];
             var urlString = this.buildUsersUrl(userId, odataQuery);
             this.getUser(urlString, callback, this.scopesForV2(scopes));
         }
@@ -372,11 +367,7 @@ module Kurve {
         }
 
         public users(callback: PromiseCallback<Users>, odataQuery?: string, basicProfileOnly = true): void {
-            var scopes = [];
-            if (basicProfileOnly)
-                scopes = [Scopes.User.ReadBasicAll];
-            else
-                scopes = [Scopes.User.ReadAll];
+            var scopes = basicProfileOnly ? [Scopes.User.ReadBasicAll] : [Scopes.User.ReadAll];
             var urlString = this.buildUsersUrl("", odataQuery);
             this.getUsers(urlString, callback, this.scopesForV2(scopes), basicProfileOnly);
         }
