@@ -65,12 +65,12 @@ module Kurve {
         constructor(protected graph: Graph, protected _data: T) {
         }
         get data() { return this._data; }
-    } 
+    }
 
     export class DataModelWrapperWithNextLink<T,S> extends DataModelWrapper<T>{
         public nextLink: NextLink<S>;
     }
-    
+
     export class ProfilePhotoDataModel {
         public id: string;
         public height: Number;
@@ -95,7 +95,7 @@ module Kurve {
     }
 
     export enum EventsEndpoint { events, calendarView }
-  
+
     export class User extends DataModelWrapper<UserDataModel> {
         // These are all passthroughs to the graph
 
@@ -154,9 +154,8 @@ module Kurve {
         public calendarViewAsync(odataQuery?: string): Promise<Events, Error> {
             return this.graph.eventsForUserAsync(this._data.userPrincipalName, EventsEndpoint.calendarView, odataQuery);
         }
-
     }
-    
+
     export interface NextLink<T> {
         (callback? : PromiseCallback<T>): Promise<T, Error>;
     }
@@ -176,7 +175,7 @@ module Kurve {
 
     export interface Recipient {
         emailAddress: EmailAddress;
-    }     
+    }
 
     export class MessageDataModel {
         bccRecipients: Recipient[];
@@ -273,7 +272,7 @@ module Kurve {
 
     export class Event extends DataModelWrapper<EventDataModel>{
     }
-      
+
     export class Events extends DataModelWrapperWithNextLink<Event[], Events>{
         constructor(protected graph: Graph, protected endpoint: EventsEndpoint, protected _data: Event[]) {
             super(graph, _data);
@@ -296,13 +295,49 @@ module Kurve {
         public onPremisesSyncEnabled: Boolean;
         public proxyAddresses: string[];
         public securityEnabled: Boolean;
-        public visibility: string;      
+        public visibility: string;
     }
 
     export class Group extends DataModelWrapper<GroupDataModel>{
     }
 
     export class Groups extends DataModelWrapperWithNextLink<Group[], Groups>{
+    }
+
+	export enum AttachmentType {
+		fileAttachment,
+		itemAttachment,
+		referenceAttachment
+	}
+
+    export class AttachmentDataModel {
+        public contentId: string;
+        public id: string;
+        public isInline: string;
+        public lastModifiedDateTime: Date;
+        public name: string;
+        public size: number;
+
+        /* File Attachments */
+        public contentBytes: string;
+        public contentLocation: string;
+        public contentType: string;
+    }
+
+    export class Attachment extends DataModelWrapper<AttachmentDataModel>{
+        public getType() : AttachmentType {
+            switch (this._data['@odata.type']) {
+                case "#microsoft.graph.fileAttachment":
+                    return AttachmentType.fileAttachment;
+                case "#microsoft.graph.itemAttachment":
+                    return AttachmentType.itemAttachment;
+                case "#microsoft.graph.referenceAttachment":
+                    return AttachmentType.referenceAttachment;
+            }
+        }
+    }
+
+    export class Attachments extends DataModelWrapperWithNextLink<Attachment[], Attachments>{
     }
 
     export class Graph {
@@ -321,7 +356,7 @@ module Kurve {
                 this.KurveIdentity = identityInfo.identity;
             }
         }
-      
+
         //Only adds scopes when linked to a v2 Oauth of kurve identity
         private scopesForV2(scopes: string[]): string[] {
             if (!this.KurveIdentity)
@@ -391,7 +426,7 @@ module Kurve {
             var scopes = [Scopes.Group.ReadAll];
             var urlString = this.buildGroupsUrl("", odataQuery);
             this.getGroups(urlString, callback, this.scopesForV2(scopes));
-        }      
+        }
 
         // Messages For User
         public messagesForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error> {
@@ -405,7 +440,6 @@ module Kurve {
             var urlString = this.buildUsersUrl(userPrincipalName + "/messages", odataQuery);
             this.getMessages(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
         }
-
 
         // Events For User
         public eventsForUserAsync(userPrincipalName: string, endpoint: EventsEndpoint, odataQuery?: string): Promise<Events, Error> {
@@ -480,7 +514,32 @@ module Kurve {
             var urlString = this.buildUsersUrl(userPrincipalName + "/photo/$value", odataQuery);
             this.getPhotoValue(urlString, callback, this.scopesForV2(scopes));
         }
-    
+
+        // Message Attachments
+        public messageAttachmentsForUserAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Attachments, Error> {
+            var d = new Deferred<any, Error>();
+            this.messageAttachmentsForUser(userPrincipalName, messageId, (result, error) => error ? d.reject(error) : d.resolve(result), odataQuery);
+            return d.promise;
+        }
+
+        public messageAttachmentsForUser(userPrincipalName: string, messageId: string, callback: PromiseCallback<Attachments>, odataQuery?: string): void {
+            var scopes = [Scopes.Mail.Read];
+            var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId + "/attachments", odataQuery);
+            this.getMessageAttachmentsForUser(urlString, callback, this.scopesForV2(scopes));
+        }
+
+        public messageAttachmentForUserAsync(userPrincipalName: string, messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error> {
+            var d = new Deferred<Attachment,Error>();
+            this.messageAttachmentForUser(userPrincipalName, messageId, attachmentId, (attachment, error) => error ? d.reject(error) : d.resolve(attachment), odataQuery);
+            return d.promise;
+        }
+
+        public messageAttachmentForUser(userPrincipalName: string, messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string): void {
+            var scopes = [Scopes.Mail.Read];
+            var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId + "/attachments/" + attachmentId, odataQuery);
+            this.getMessageAttachmentForUser(urlString, callback, this.scopesForV2(scopes));
+        }
+
         //http verbs
         public getAsync(url: string): Promise<string, Error> {
             var d = new Deferred<string,Error>();
@@ -588,7 +647,7 @@ module Kurve {
 
                 if (scopes) {
                     //v2 scope based tokens
-                    this.KurveIdentity.getAccessTokenForScopes(scopes,false, ((token: string, error: Error) => {                   
+                    this.KurveIdentity.getAccessTokenForScopes(scopes,false, ((token: string, error: Error) => {
                         if (error)
                             callback(error);
                         else {
@@ -601,7 +660,7 @@ module Kurve {
                 }
                 else {
                     //v1 resource based tokens
-                    this.KurveIdentity.getAccessToken(this.defaultResourceID, ((token: string, error: Error) => {                  
+                    this.KurveIdentity.getAccessToken(this.defaultResourceID, ((token: string, error: Error) => {
                         if (error)
                             callback(error);
                         else {
@@ -769,7 +828,62 @@ module Kurve {
                 callback(result, null);
             }, "blob",scopes);
         }
-        
+
+        private getMessageAttachmentsForUser(urlString: string, callback: PromiseCallback<Attachments>, scopes?:string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+
+                var attachmentsODATA = JSON.parse(result);
+                if (attachmentsODATA.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = attachmentsODATA.error;
+                    callback(null, errorODATA);
+                    return;
+                }
+
+                var resultsArray = (attachmentsODATA.value ? attachmentsODATA.value : [attachmentsODATA]) as any[];
+                var attachments = new Attachments(this, resultsArray.map(o => new Attachment(this, o)));
+                var nextLink = attachmentsODATA['@odata.nextLink'];
+                if (nextLink) {
+                    attachments.nextLink = (callback?: PromiseCallback<Attachments>) => {
+                        var scopes = [Scopes.Mail.Read];
+                        var d = new Deferred<Attachments,Error>();
+                        this.getMessageAttachmentsForUser(nextLink, (attachments: Attachments, error: Error) => {
+                            if (callback)
+                                callback(attachments, error);
+                            else
+                                error ? d.reject(error) : d.resolve(attachments);
+                        }, this.scopesForV2(scopes));
+                        return d.promise;
+                    }
+                }
+                callback(attachments,  null);
+            },null,scopes);
+        }
+
+        private getMessageAttachmentForUser(urlString, callback: PromiseCallback<Attachment>, scopes?:string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+                var ODATA = JSON.parse(result);
+                if (ODATA.error) {
+                    var ODATAError = new Error();
+                    ODATAError.other = ODATA.error;
+                    callback(null, ODATAError);
+                    return;
+                }
+                var attachment = new Attachment(this, ODATA);
+
+                callback(attachment, null);
+            },null,scopes);
+
+        }
+
         private buildUrl(root:string, path: string, odataQuery?: string) {
             return this.baseUrl + root + path + (odataQuery ? "?" + odataQuery : "");
         }
@@ -785,37 +899,37 @@ module Kurve {
     }
 }
 
-//*********************************************************   
-//   
+//*********************************************************
+//
 //Kurve js, https://github.com/microsoftdx/kurvejs
-//  
-//Copyright (c) Microsoft Corporation  
-//All rights reserved.   
-//  
-// MIT License:  
-// Permission is hereby granted, free of charge, to any person obtaining  
-// a copy of this software and associated documentation files (the  
-// ""Software""), to deal in the Software without restriction, including  
-// without limitation the rights to use, copy, modify, merge, publish,  
-// distribute, sublicense, and/or sell copies of the Software, and to  
-// permit persons to whom the Software is furnished to do so, subject to  
-// the following conditions:  
+//
+//Copyright (c) Microsoft Corporation
+//All rights reserved.
+//
+// MIT License:
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// ""Software""), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
 
 
 
 
-// The above copyright notice and this permission notice shall be  
-// included in all copies or substantial portions of the Software.  
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
 
 
 
 
-// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,  
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF  
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND  
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE  
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION  
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION  
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
-//   
-//*********************************************************   
+// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//*********************************************************
