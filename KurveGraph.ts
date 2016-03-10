@@ -515,29 +515,29 @@ module Kurve {
             this.getPhotoValue(urlString, callback, this.scopesForV2(scopes));
         }
 
-        // Attachments
-        public attachmentsAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Attachments, Error> {
+        // Message Attachments
+        public messageAttachmentsForUserAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Attachments, Error> {
             var d = new Deferred<any, Error>();
-            this.attachments(userPrincipalName, messageId, (result, error) => error ? d.reject(error) : d.resolve(result), odataQuery);
+            this.messageAttachmentsForUser(userPrincipalName, messageId, (result, error) => error ? d.reject(error) : d.resolve(result), odataQuery);
             return d.promise;
         }
 
-        public attachments(userPrincipalName: string, messageId: string, callback: PromiseCallback<Attachments>, odataQuery?: string): void {
+        public messageAttachmentsForUser(userPrincipalName: string, messageId: string, callback: PromiseCallback<Attachments>, odataQuery?: string): void {
             var scopes = [Scopes.Mail.Read];
             var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId + "/attachments", odataQuery);
-            this.getAttachments(urlString, callback, this.scopesForV2(scopes));
+            this.getMessageAttachmentsForUser(urlString, callback, this.scopesForV2(scopes));
         }
 
-        public attachmentAsync(userPrincipalName: string, messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error> {
+        public messageAttachmentForUserAsync(userPrincipalName: string, messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error> {
             var d = new Deferred<Attachment,Error>();
-            this.attachment(userPrincipalName, messageId, attachmentId, (attachment, error) => error ? d.reject(error) : d.resolve(attachment), odataQuery);
+            this.messageAttachmentForUser(userPrincipalName, messageId, attachmentId, (attachment, error) => error ? d.reject(error) : d.resolve(attachment), odataQuery);
             return d.promise;
         }
 
-        public attachment(userPrincipalName: string, messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string): void {
+        public messageAttachmentForUser(userPrincipalName: string, messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string): void {
             var scopes = [Scopes.Mail.Read];
             var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId + "/attachments/" + attachmentId, odataQuery);
-            this.getAttachment(urlString, callback, this.scopesForV2(scopes));
+            this.getMessageAttachmentForUser(urlString, callback, this.scopesForV2(scopes));
         }
 
         //http verbs
@@ -829,7 +829,7 @@ module Kurve {
             }, "blob",scopes);
         }
 
-        private getAttachments(urlString: string, callback: PromiseCallback<Attachments>, scopes?:string[]): void {
+        private getMessageAttachmentsForUser(urlString: string, callback: PromiseCallback<Attachments>, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -851,7 +851,7 @@ module Kurve {
                     attachments.nextLink = (callback?: PromiseCallback<Attachments>) => {
                         var scopes = [Scopes.Mail.Read];
                         var d = new Deferred<Attachments,Error>();
-                        this.getAttachments(nextLink, (attachments: Attachments, error: Error) => {
+                        this.getMessageAttachmentsForUser(nextLink, (attachments: Attachments, error: Error) => {
                             if (callback)
                                 callback(attachments, error);
                             else
@@ -864,7 +864,7 @@ module Kurve {
             },null,scopes);
         }
 
-        private getAttachment(urlString, callback: PromiseCallback<Attachment>, scopes?:string[]): void {
+        private getMessageAttachmentForUser(urlString, callback: PromiseCallback<Attachment>, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
