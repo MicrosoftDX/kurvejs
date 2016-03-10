@@ -48,29 +48,29 @@ module Kurve {
     }
     
     export class Identity {
-        public authContext: any = null;
-        public config: any = null;
-        public isCallback: boolean = false;
+//      public authContext: any = null;
+//      public config: any = null;
+//      public isCallback: boolean = false;
         public clientId: string;
-        private req: XMLHttpRequest;
+//      private req: XMLHttpRequest;
         private state: string;
         private version: OAuthVersion;
         private nonce: string;
         private idToken: IdToken;
         private loginCallback: (error: Error) => void;
-        private accessTokenCallback: (token: string, error: Error) => void;
+//      private accessTokenCallback: (token: string, error: Error) => void;
         private getTokenCallback: (token: string, error: Error) => void;
         private tokenProcessorUrl: string;
         private tokenCache: TokenDictionary;
-        private logonUser: any;
+//      private logonUser: any;
         private refreshTimer: any;
         private policy: string = "";
-        private tenant: string = "";
+//      private tenant: string = "";
 
         constructor(identitySettings: IdentitySettings) {
             this.clientId = identitySettings.clientId;
             this.tokenProcessorUrl = identitySettings.tokenProcessingUri;
-            this.req = new XMLHttpRequest();
+//          this.req = new XMLHttpRequest();
             this.tokenCache = {};
             if (identitySettings.version)
                 this.version = identitySettings.version;
@@ -224,9 +224,7 @@ module Kurve {
 
         private renewIdToken(): void {
             clearTimeout(this.refreshTimer);
-            this.login((() => {
-
-            }));
+            this.login(() => { });
         }
 
         public getCurrentOauthVersion(): OAuthVersion {
