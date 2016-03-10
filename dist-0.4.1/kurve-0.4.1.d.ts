@@ -1,4 +1,7 @@
 declare module Kurve {
+    interface PromiseCallback<T> {
+        (T: any, Error: any): void;
+    }
     class Deferred<T, E> {
         private _dispatcher;
         constructor();
@@ -48,6 +51,11 @@ declare module Kurve {
         PreferredUsername: string;
         FullToken: any;
     }
+    interface IdentitySettings {
+        clientId: string;
+        tokenProcessingUri: string;
+        version: OAuthVersion;
+    }
     class Identity {
         authContext: any;
         config: any;
@@ -67,11 +75,7 @@ declare module Kurve {
         private refreshTimer;
         private policy;
         private tenant;
-        constructor(identitySettings: {
-            clientId: string;
-            tokenProcessingUri: string;
-            version: OAuthVersion;
-        });
+        constructor(identitySettings: IdentitySettings);
         checkForIdentityRedirect(): boolean;
         private decodeIdToken(idToken);
         private decodeAccessToken(accessToken, resource?, scopes?);
@@ -80,7 +84,7 @@ declare module Kurve {
         private renewIdToken();
         getCurrentOauthVersion(): OAuthVersion;
         getAccessTokenAsync(resource: string): Promise<string, Error>;
-        getAccessToken(resource: string, callback: (token: string, error: Error) => void): void;
+        getAccessToken(resource: string, callback: PromiseCallback<string>): void;
         getAccessTokenForScopesAsync(scopes: string[], promptForConsent?: boolean): Promise<string, Error>;
         getAccessTokenForScopes(scopes: string[], promptForConsent: boolean, callback: (token: string, error: Error) => void): void;
         loginAsync(loginSettings?: {
@@ -166,9 +170,6 @@ declare module Kurve {
     }
     class DataModelWrapperWithNextLink<T, S> extends DataModelWrapper<T> {
         nextLink: NextLink<S>;
-    }
-    interface PromiseCallback<T> {
-        (T: any, Error: any): void;
     }
     class ProfilePhotoDataModel {
         id: string;

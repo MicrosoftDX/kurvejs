@@ -71,10 +71,6 @@ module Kurve {
         public nextLink: NextLink<S>;
     }
     
-    export interface PromiseCallback<T> {
-        (T, Error): void;
-    }
-
     export class ProfilePhotoDataModel {
         public id: string;
         public height: Number;
