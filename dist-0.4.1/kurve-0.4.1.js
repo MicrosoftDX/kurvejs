@@ -250,7 +250,7 @@ var Kurve;
             else
                 this.version = OAuthVersion.v1;
             //Callback handler from other windows
-            window.addEventListener("message", function (event) {
+            window.addEventListener("message", (function (event) {
                 if (event.data.type === "id_token") {
                     if (event.data.error) {
                         var e = new Error();
@@ -290,7 +290,7 @@ var Kurve;
                         }
                     }
                 }
-            });
+            }));
         }
         Identity.prototype.checkForIdentityRedirect = function () {
             function token(s) {
@@ -335,6 +335,14 @@ var Kurve;
             }
             else if (accessToken) {
                 throw "Should not get here.  This should be handled via the iframe approach.";
+                if (this.state === params["state"][0]) {
+                    this.getTokenCallback && this.getTokenCallback(accessToken, null);
+                }
+                else {
+                    var error = new Error();
+                    error.statusText = "Invalid state";
+                    this.getTokenCallback && this.getTokenCallback(null, error);
+                }
             }
             return false;
         };
@@ -412,18 +420,29 @@ var Kurve;
                 return;
             }
             //Check for cache and see if we have a valid token
-            for (var key in this.tokenCache) {
-                var token = this.tokenCache[key];
-                //remove tokens that are expired, or will expire within 5 minutes)
-                if (token.expiry <= new Date(new Date().getTime() + 60000)) {
-                    delete this.tokenCache[key];
+            var cachedToken = null;
+            var keys = Object.keys(this.tokenCache);
+            keys.forEach(function (key) {
+                var token = _this.tokenCache[key];
+                //remove expired tokens
+                if (token.expiry <= (new Date(new Date().getTime() + 60000))) {
+                    delete _this.tokenCache[key];
                 }
-                else if (token.resource == resource) {
-                    callback(token.token, null);
+                else {
+                    //Tries to capture a token that matches the resource
+                    var containScopes = true;
+                    if (token.resource == resource) {
+                        cachedToken = token;
+                    }
+                }
+            });
+            if (cachedToken) {
+                //We have it cached, has it expired? (5 minutes error margin)
+                if (cachedToken.expiry > (new Date(new Date().getTime() + 60000))) {
+                    callback(cachedToken.token, null);
                     return;
                 }
             }
-            ;
             //If we got this far, we need to go get this token
             //Need to create the iFrame to invoke the acquire token
             this.getTokenCallback = (function (token, error) {
@@ -452,14 +471,14 @@ var Kurve;
         Identity.prototype.getAccessTokenForScopesAsync = function (scopes, promptForConsent) {
             if (promptForConsent === void 0) { promptForConsent = false; }
             var d = new Kurve.Deferred();
-            this.getAccessTokenForScopes(scopes, promptForConsent, function (token, error) {
+            this.getAccessTokenForScopes(scopes, promptForConsent, (function (token, error) {
                 if (error) {
                     d.reject(error);
                 }
                 else {
                     d.resolve(token);
                 }
-            });
+            }));
             return d.promise;
         };
         Identity.prototype.getAccessTokenForScopes = function (scopes, promptForConsent, callback) {
@@ -473,14 +492,31 @@ var Kurve;
             }
             //Check for cache and see if we have a valid token
             var cachedToken = null;
-            for (var key in this.tokenCache) {
-                var token = this.tokenCache[key];
-                //remove tokens that are expired, or will expire within 5 minutes)
-                if (token.expiry <= new Date(new Date().getTime() + 60000)) {
-                    delete this.tokenCache[key];
+            var keys = Object.keys(this.tokenCache);
+            keys.forEach(function (key) {
+                var token = _this.tokenCache[key];
+                //remove expired tokens
+                if (token.expiry <= (new Date(new Date().getTime() + 60000))) {
+                    delete _this.tokenCache[key];
                 }
-                else if (token.scopes && scopes.every(function (scope) { return token.scopes.indexOf(scope) >= 0; })) {
-                    callback(token.token, null);
+                else {
+                    //Tries to capture a token that contains all scopes and is still valid
+                    var containScopes = true;
+                    if (token.scopes) {
+                        scopes.forEach(function (scope) {
+                            if (token.scopes.indexOf(scope) < 0)
+                                containScopes = false;
+                        });
+                    }
+                    if (containScopes) {
+                        cachedToken = token;
+                    }
+                }
+            });
+            if (cachedToken) {
+                //We have it cached, has it expired? (5 minutes error margin)
+                if (cachedToken.expiry > (new Date(new Date().getTime() + 60000))) {
+                    callback(cachedToken.token, null);
                     return;
                 }
             }

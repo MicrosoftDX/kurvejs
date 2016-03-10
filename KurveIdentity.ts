@@ -5,14 +5,12 @@ module Kurve {
         v1=1,
         v2=2
     }
-
     export class Error {
         public status: number;
         public statusText: string;
         public text: string;
         public other: any;
     }
-
     class Token {
         id: string;
         scopes: string[];
@@ -20,7 +18,6 @@ module Kurve {
         token: string;
         expiry: Date;
     }
-
     interface TokenDictionary {
         [index: string]: Token;
     }
@@ -41,13 +38,8 @@ module Kurve {
 
     }
    
-    export interface IdentitySettings {
-        clientId: string;
-        tokenProcessingUri: string;
-        version: OAuthVersion;
-    }
     
-    export class Identity {
+     export class Identity {
         public authContext: any = null;
         public config: any = null;
         public isCallback: boolean = false;
@@ -67,7 +59,7 @@ module Kurve {
         private policy: string = "";
         private tenant: string = "";
 
-        constructor(identitySettings: IdentitySettings) {
+        constructor(identitySettings: {clientId: string, tokenProcessingUri: string, version: OAuthVersion}) {
             this.clientId = identitySettings.clientId;
             this.tokenProcessorUrl = identitySettings.tokenProcessingUri;
             this.req = new XMLHttpRequest();
@@ -78,7 +70,7 @@ module Kurve {
                 this.version = OAuthVersion.v1;
 
             //Callback handler from other windows
-            window.addEventListener("message", event => {
+            window.addEventListener("message", ((event: MessageEvent) => {
                 if (event.data.type === "id_token") {
                     if (event.data.error) {
                         var e: Error = new Error();
@@ -117,7 +109,7 @@ module Kurve {
                         }
                     }
                 }
-            });
+            }));
         }
 
         public checkForIdentityRedirect(): boolean {
@@ -163,7 +155,6 @@ module Kurve {
             }
             else if (accessToken) {
                 throw "Should not get here.  This should be handled via the iframe approach."
-/*
                 if (this.state === params["state"][0]) {
                     this.getTokenCallback && this.getTokenCallback(accessToken, null);
                 } else {
@@ -171,7 +162,6 @@ module Kurve {
                     error.statusText = "Invalid state";
                     this.getTokenCallback && this.getTokenCallback(null, error);
                 }
-*/
             }
             return false;
         }
@@ -191,6 +181,7 @@ module Kurve {
             this.idToken.GivenName = decodedTokenJSON.given_name;
             this.idToken.Name = decodedTokenJSON.name;
             this.idToken.PreferredUsername = decodedTokenJSON.preferred_username;
+
             
             var expiration: Number = expiryDate.getTime() - new Date().getTime() - 300000;
 
@@ -203,7 +194,11 @@ module Kurve {
             var decodedToken = this.base64Decode(accessToken.substring(accessToken.indexOf('.') + 1, accessToken.lastIndexOf('.')));
             var decodedTokenJSON = JSON.parse(decodedToken);
             var expiryDate = new Date(new Date('01/01/1970 0:0 UTC').getTime() + parseInt(decodedTokenJSON.exp) * 1000);
-            var key = resource || scopes.join(" ");
+            var key: string;
+            if (resource)
+                key = resource;
+            else
+                key = scopes.join(" ");
             var token = new Token();
             token.expiry = expiryDate;
             token.resource = resource;
@@ -246,29 +241,38 @@ module Kurve {
             return d.promise;
         }   
 
-        public getAccessToken(resource: string, callback: PromiseCallback<string>): void {
+        public getAccessToken(resource: string, callback: (token: string, error: Error) => void): void {
             if (this.version !== OAuthVersion.v1) {
                 var e = new Error();
                 e.statusText = "Currently this identity class is using v2 OAuth mode. You need to use getAccessTokenForScopes() method";
                 callback(null, e);
                 return;
             }
-
             //Check for cache and see if we have a valid token
-            for (var key in this.tokenCache) {
+            var cachedToken = null;
+            var keys = Object.keys(this.tokenCache);
+            keys.forEach((key) => {
                 var token = this.tokenCache[key];
                 
-                //remove tokens that are expired, or will expire within 5 minutes)
-                if (token.expiry <= new Date(new Date().getTime() + 60000)) {
+                //remove expired tokens
+                if (token.expiry <= (new Date(new Date().getTime() + 60000))) {
                     delete this.tokenCache[key];
+                } else {
+                    //Tries to capture a token that matches the resource
+                    var containScopes = true;
+                    if (token.resource == resource) {
+                        cachedToken = token;
+                    }
                 }
-                //Tries to capture a token that matches the resource
-                else if (token.resource == resource) {
-                    callback(token.token, null);
+            });
+
+            if (cachedToken) {
+                //We have it cached, has it expired? (5 minutes error margin)
+                if (cachedToken.expiry > (new Date(new Date().getTime() + 60000))) {
+                    callback(<string>cachedToken.token, null);
                     return;
                 }
-            };
-
+            }
             //If we got this far, we need to go get this token
 
             //Need to create the iFrame to invoke the acquire token
@@ -279,6 +283,7 @@ module Kurve {
                 else {
                     this.decodeAccessToken(token, resource);
                     callback(token, null);
+
                 }
             });
 
@@ -304,13 +309,13 @@ module Kurve {
         public getAccessTokenForScopesAsync(scopes: string[], promptForConsent = false): Promise<string, Error> {
 
             var d = new Deferred<string, Error>();
-            this.getAccessTokenForScopes(scopes, promptForConsent, (token, error) => {
+            this.getAccessTokenForScopes(scopes, promptForConsent, ((token, error) => {
                 if (error) {
                     d.reject(error);
                 } else {
                     d.resolve(token);
                 }
-            });
+            }));
             return d.promise;
         }   
 
@@ -324,16 +329,32 @@ module Kurve {
             
             //Check for cache and see if we have a valid token
             var cachedToken = null;
-            for (var key in this.tokenCache) {
+            var keys = Object.keys(this.tokenCache);
+            keys.forEach((key) => {
                 var token = this.tokenCache[key];
                 
-                //remove tokens that are expired, or will expire within 5 minutes)
-                if (token.expiry <= new Date(new Date().getTime() + 60000)) {
+                //remove expired tokens
+                if (token.expiry <= (new Date(new Date().getTime() + 60000))) {
                     delete this.tokenCache[key];
+                } else {
+                    //Tries to capture a token that contains all scopes and is still valid
+                    var containScopes = true;
+                    if (token.scopes) {
+                        scopes.forEach((scope: string) => {
+                            if (token.scopes.indexOf(scope) < 0)
+                                containScopes = false;
+                        });
+                    }
+
+                    if (containScopes) {
+                        cachedToken = token;
+                    }
                 }
-                //Tries to capture a token that contains all scopes and is still valid
-                else if (token.scopes && scopes.every(scope => token.scopes.indexOf(scope) >= 0)) {
-                    callback(token.token, null);
+            });
+            if (cachedToken) {
+                //We have it cached, has it expired? (5 minutes error margin)
+                if (cachedToken.expiry > (new Date(new Date().getTime() + 60000))) {
+                    callback(<string>cachedToken.token, null);
                     return;
                 }
             }

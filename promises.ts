@@ -3,15 +3,12 @@
 
 module Kurve {
 
+
     function DispatchDeferred(closure: () => void) {
         setTimeout(closure, 0);
     }
 
     enum PromiseState { Pending, ResolutionInProgress, Resolved, Rejected }
-
-    export interface PromiseCallback<T> {
-        (T, Error): void;
-    }
 
     class Client {
         constructor(
