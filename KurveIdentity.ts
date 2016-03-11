@@ -25,6 +25,59 @@ module Kurve {
         [index: string]: Token;
     }
 
+    export interface TokenStorage {
+        add(token: Token);
+        remove(token: Token);
+        getAll(): Token[];
+        clear();
+    }
+
+    class TokenCache {
+        private tokens: TokenDictionary;
+
+        constructor(private tokenStorage: TokenStorage) {
+            this.tokens = {};
+            if (tokenStorage) {
+                tokenStorage.getAll().forEach((token) => {
+                    this.tokens[token.id] = new Token(token);
+                });
+            }
+        }
+
+        public add(token: Token) {
+            this.tokens[token.id] = token;
+            this.tokenStorage && this.tokenStorage.add(token);
+        }
+
+        public getForResource(resource: string): Token {
+            var cachedToken = this.tokens[resource];
+            if (cachedToken && cachedToken.isExpired) {
+                this.tokenStorage && this.tokenStorage.remove(cachedToken);
+                this.tokens[resource] = null;
+                return null;
+            }
+            return cachedToken;
+        }
+
+        public getForScopes(scopes: string[]): Token {
+            for (var key in this.tokens) {
+                var token = this.tokens[key];
+
+                if (token.isExpired) {
+                    this.tokenStorage && this.tokenStorage.remove(token);
+                    this.tokens[key] = null;
+                } else if (token.scopes && scopes.every(scope => token.scopes.indexOf(scope) >= 0)) {
+                    return token;
+                }
+            }
+        }
+
+        public clear() {
+            this.tokens = {};
+            this.tokenStorage && this.tokenStorage.clear();
+        }
+    }
+
     export class IdToken {
         public Token: string;
         public IssuerIdentifier: string;
@@ -40,13 +93,13 @@ module Kurve {
         public FullToken: any;
 
     }
-   
+
     export interface IdentitySettings {
         clientId: string;
         tokenProcessingUri: string;
         version: OAuthVersion;
     }
-    
+
     export class Identity {
 //      public authContext: any = null;
 //      public config: any = null;
@@ -84,7 +137,7 @@ module Kurve {
                         var e: Error = new Error();
                         e.text = event.data.error;
                         this.loginCallback(e);
-                        
+
                     } else {
                         //check for state
                         if (this.state !== event.data.state) {
@@ -124,7 +177,7 @@ module Kurve {
             function token(s: string) {
                 var start = window.location.href.indexOf(s);
                 if (start < 0) return null;
-                var end = window.location.href.indexOf("&",start + s.length);                
+                var end = window.location.href.indexOf("&",start + s.length);
                 return  window.location.href.substring(start,((end > 0) ? end : window.location.href.length));
             }
 
@@ -191,7 +244,7 @@ module Kurve {
             this.idToken.GivenName = decodedTokenJSON.given_name;
             this.idToken.Name = decodedTokenJSON.name;
             this.idToken.PreferredUsername = decodedTokenJSON.preferred_username;
-            
+
             var expiration: Number = expiryDate.getTime() - new Date().getTime() - 300000;
 
             this.refreshTimer = setTimeout((() => {
@@ -242,7 +295,7 @@ module Kurve {
                 }
             }));
             return d.promise;
-        }   
+        }
 
         public getAccessToken(resource: string, callback: PromiseCallback<string>): void {
             if (this.version !== OAuthVersion.v1) {
@@ -255,7 +308,7 @@ module Kurve {
             //Check for cache and see if we have a valid token
             for (var key in this.tokenCache) {
                 var token = this.tokenCache[key];
-                
+
                 //remove tokens that are expired, or will expire within 5 minutes)
                 if (token.expiry <= new Date(new Date().getTime() + 60000)) {
                     delete this.tokenCache[key];
@@ -286,7 +339,7 @@ module Kurve {
             var iframe = document.createElement('iframe');
             iframe.style.display = "none";
             iframe.id = "tokenIFrame";
-            
+
             iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
             "&resource=" + encodeURIComponent(resource) +
                 "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
@@ -294,11 +347,11 @@ module Kurve {
                 "&version=" + encodeURIComponent(this.version.toString()) +
                 "&nonce=" + encodeURIComponent(this.nonce) +
                 "&op=token";
-           
+
             document.body.appendChild(iframe);
         }
 
-      
+
         public getAccessTokenForScopesAsync(scopes: string[], promptForConsent = false): Promise<string, Error> {
 
             var d = new Deferred<string, Error>();
@@ -310,7 +363,7 @@ module Kurve {
                 }
             });
             return d.promise;
-        }   
+        }
 
         public getAccessTokenForScopes(scopes: string[], promptForConsent=false, callback: (token: string, error: Error) => void): void {
             if (this.version !== OAuthVersion.v2) {
@@ -319,12 +372,12 @@ module Kurve {
                 callback(null, e);
                 return;
             }
-            
+
             //Check for cache and see if we have a valid token
             var cachedToken = null;
             for (var key in this.tokenCache) {
                 var token = this.tokenCache[key];
-                
+
                 //remove tokens that are expired, or will expire within 5 minutes)
                 if (token.expiry <= new Date(new Date().getTime() + 60000)) {
                     delete this.tokenCache[key];
@@ -381,7 +434,7 @@ module Kurve {
                     "&version=" + encodeURIComponent(this.version.toString()) +
                     "&state=" + encodeURIComponent(this.state) +
                     "&nonce=" + encodeURIComponent(this.nonce) +
-                    "&op=token" 
+                    "&op=token"
                     , "_blank");
             }
         }
@@ -461,7 +514,7 @@ module Kurve {
             this.nonce = this.generateNonce();
 
             var redirected = this.checkForIdentityRedirect();
-            if (!redirected) {                
+            if (!redirected) {
                 var redirectUri = (toUrl) ? toUrl : window.location.href.split("#")[0];  // default the no login window scenario to return to the current page
                 var url = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token" +
                     "&client_id=" + encodeURIComponent(this.clientId) +
@@ -504,37 +557,37 @@ module Kurve {
 }
 
 
-//*********************************************************   
-//   
+//*********************************************************
+//
 //Kurve js, https://github.com/microsoftdx/kurvejs
-//  
-//Copyright (c) Microsoft Corporation  
-//All rights reserved.   
-//  
-// MIT License:  
-// Permission is hereby granted, free of charge, to any person obtaining  
-// a copy of this software and associated documentation files (the  
-// ""Software""), to deal in the Software without restriction, including  
-// without limitation the rights to use, copy, modify, merge, publish,  
-// distribute, sublicense, and/or sell copies of the Software, and to  
-// permit persons to whom the Software is furnished to do so, subject to  
-// the following conditions:  
+//
+//Copyright (c) Microsoft Corporation
+//All rights reserved.
+//
+// MIT License:
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// ""Software""), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
 
 
 
 
-// The above copyright notice and this permission notice shall be  
-// included in all copies or substantial portions of the Software.  
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
 
 
 
 
-// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,  
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF  
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND  
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE  
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION  
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION  
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
-//   
-//*********************************************************   
+// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//*********************************************************
