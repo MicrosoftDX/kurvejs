@@ -67,7 +67,7 @@ module Kurve {
         get data() { return this._data; }
     }
 
-    export class DataModelWrapperWithNextLink<T,S> extends DataModelWrapper<T>{
+    export class DataModelListWrapper<T,S> extends DataModelWrapper<T[]>{
         public nextLink: NextLink<S>;
     }
 
@@ -154,13 +154,21 @@ module Kurve {
         public calendarViewAsync(odataQuery?: string): Promise<Events, Error> {
             return this.graph.eventsForUserAsync(this._data.userPrincipalName, EventsEndpoint.calendarView, odataQuery);
         }
+
+        public mailFolders(callback: PromiseCallback<MailFolders>, odataQuery?: string) {
+            this.graph.mailFoldersForUser(this._data.userPrincipalName, callback, odataQuery);
+        }
+
+        public mailFoldersAsync(odataQuery?: string): Promise<MailFolders, Error> {
+            return this.graph.mailFoldersForUserAsync(this._data.userPrincipalName, odataQuery);
+        }
     }
 
     export interface NextLink<T> {
         (callback? : PromiseCallback<T>): Promise<T, Error>;
     }
 
-    export class Users extends DataModelWrapperWithNextLink<User[], Users>{
+    export class Users extends DataModelListWrapper<User, Users>{
     }
 
     export interface ItemBody {
@@ -209,7 +217,7 @@ module Kurve {
     export class Message extends DataModelWrapper<MessageDataModel>{
     }
 
-    export class Messages extends DataModelWrapperWithNextLink<Message[], Messages>{
+    export class Messages extends DataModelListWrapper<Message, Messages>{
     }
 
     export interface Attendee {
@@ -272,8 +280,8 @@ module Kurve {
 
     export class Event extends DataModelWrapper<EventDataModel>{
     }
-
-    export class Events extends DataModelWrapperWithNextLink<Event[], Events>{
+      
+    export class Events extends DataModelListWrapper<Event, Events>{
         constructor(protected graph: Graph, protected endpoint: EventsEndpoint, protected _data: Event[]) {
             super(graph, _data);
         }
@@ -301,7 +309,21 @@ module Kurve {
     export class Group extends DataModelWrapper<GroupDataModel>{
     }
 
-    export class Groups extends DataModelWrapperWithNextLink<Group[], Groups>{
+    export class Groups extends DataModelListWrapper<Group, Groups>{
+    }
+
+    export class MailFolderDataModel {
+        public id: string;
+        public displayName: string;
+        public childFolderCount: number;
+        public unreadItemCount: number;
+        public totalItemCount: number;
+    }
+
+    export class MailFolder extends DataModelWrapper<MailFolderDataModel>{
+    }
+
+    export class MailFolders extends DataModelListWrapper<MailFolder, MailFolders>{
     }
 
 	export enum AttachmentType {
@@ -337,7 +359,7 @@ module Kurve {
         }
     }
 
-    export class Attachments extends DataModelWrapperWithNextLink<Attachment[], Attachments>{
+    export class Attachments extends DataModelListWrapper<Attachment, Attachments>{
     }
 
     export class Graph {
@@ -439,6 +461,19 @@ module Kurve {
             var scopes = [Scopes.Mail.Read];
             var urlString = this.buildUsersUrl(userPrincipalName + "/messages", odataQuery);
             this.getMessages(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
+        }
+
+        // MailFolders For User
+        public mailFoldersForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<MailFolders, Error> {
+            var d = new Deferred<MailFolders, Error>();
+            this.mailFoldersForUser(userPrincipalName, (messages, error) => error ? d.reject(error) : d.resolve(messages), odataQuery);
+            return d.promise;
+        }
+
+        public mailFoldersForUser(userPrincipalName: string, callback: PromiseCallback<MailFolders>, odataQuery?: string): void {
+            var scopes = [Scopes.Mail.Read];
+            var urlString = this.buildUsersUrl(userPrincipalName + "/mailFolders", odataQuery);
+            this.getMailFolders(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
         }
 
         // Events For User
@@ -828,6 +863,41 @@ module Kurve {
                 callback(result, null);
             }, "blob",scopes);
         }
+        
+        private getMailFolders(urlString, callback: PromiseCallback<MailFolders>, scopes?: string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+
+                var odata = JSON.parse(result);
+                if (odata.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = odata.error;
+                    callback(null, errorODATA);
+                }
+
+                var resultsArray:MailFolderDataModel[] = (odata.value ? odata.value : [odata]);
+                var mailFolders = new MailFolders(this, resultsArray.map(o => new MailFolder(this, o)));
+                var nextLink = odata['@odata.nextLink'];
+                if (nextLink) {
+                    mailFolders.nextLink = (callback?: PromiseCallback<MailFolders>) => {
+                        var scopes = [Scopes.User.ReadAll];
+                        var d = new Deferred<MailFolders,Error>();
+                        this.getMailFolders(nextLink, (result: MailFolders, error: Error) => {
+                            if (callback)
+                                callback(result, error);
+                            else
+                                error ? d.reject(error) : d.resolve(result);
+                        }, this.scopesForV2(scopes));
+                        return d.promise;
+                    }
+                }
+                callback(mailFolders, null);
+            },null,scopes);
+        }
+
 
         private getMessageAttachments(urlString: string, callback: PromiseCallback<Attachments>, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
@@ -843,7 +913,6 @@ module Kurve {
                     callback(null, errorODATA);
                     return;
                 }
-
                 var resultsArray = (attachmentsODATA.value ? attachmentsODATA.value : [attachmentsODATA]) as any[];
                 var attachments = new Attachments(this, resultsArray.map(o => new Attachment(this, o)));
                 var nextLink = attachmentsODATA['@odata.nextLink'];
@@ -860,6 +929,7 @@ module Kurve {
                         return d.promise;
                     }
                 }
+
                 callback(attachments,  null);
             },null,scopes);
         }
@@ -881,7 +951,6 @@ module Kurve {
 
                 callback(attachment, null);
             },null,scopes);
-
         }
 
         private buildUrl(root:string, path: string, odataQuery?: string) {
