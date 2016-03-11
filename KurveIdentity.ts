@@ -64,7 +64,7 @@ module Kurve {
         
         public getForResource(resource: string): Token {
             var cachedToken = this.tokens[resource];
-            if (cachedToken && (<Token>cachedToken).isExpired) {
+            if (cachedToken && cachedToken.isExpired) {
                 this.tokenStorage && this.tokenStorage.remove(cachedToken);
                 this.tokens[resource] = null;
                 return null;
