@@ -12,17 +12,83 @@ module Kurve {
         public text: string;
         public other: any;
     }
-
-    class Token {
+    
+    export class Token {
         id: string;
         scopes: string[];
         resource: string;
         token: string;
         expiry: Date;
+        
+        constructor(tokenData?) {
+            tokenData = tokenData || {};
+            this.id = tokenData.id,
+            this.scopes = tokenData.scopes;
+            this.resource = tokenData.resource;
+            this.token = tokenData.token;
+            this.expiry = new Date(tokenData.expiry);
+        }
+        
+        public get isExpired() {
+            return this.expiry <= new Date(new Date().getTime() + 60000);
+        }
     }
 
-    interface TokenDictionary {
+    export interface TokenDictionary {
         [index: string]: Token;
+    }
+    
+    export interface TokenStorage {
+        add(token: Token);
+        remove(token: Token);
+        getAll(): Token[];
+        clear();
+    }
+    
+    class TokenCache {
+        private tokens: TokenDictionary;
+        
+        constructor(private tokenStorage: TokenStorage) {
+            this.tokens = {};
+            if (tokenStorage) {
+                tokenStorage.getAll().forEach((token) => {
+                    this.tokens[token.id] = new Token(token);
+                });
+            }
+        }
+        
+        public add(token: Token) {
+            this.tokens[token.id] = token;
+            this.tokenStorage && this.tokenStorage.add(token);
+        }
+        
+        public getForResource(resource: string): Token {
+            var cachedToken = this.tokens[resource];
+            if (cachedToken && (<Token>cachedToken).isExpired) {
+                this.tokenStorage && this.tokenStorage.remove(cachedToken);
+                this.tokens[resource] = null;
+                return null;
+            }
+            return cachedToken;
+        }
+        
+        public getForScopes(scopes: string[]): Token {
+            for (var key in this.tokens) {
+                var token = this.tokens[key];
+                
+                if (token.isExpired) {
+                    this.tokenStorage && this.tokenStorage.remove(token);
+                    this.tokens[key] = null;
+                } else if (token.scopes && scopes.every(scope => token.scopes.indexOf(scope) >= 0)) {
+                    return token;
+                }
+            }
+        }
+        
+        public clear() {
+            this.tokens = {};
+            this.tokenStorage && this.tokenStorage.clear();
+        }
     }
 
     export class IdToken {
@@ -45,6 +111,7 @@ module Kurve {
         clientId: string;
         tokenProcessingUri: string;
         version: OAuthVersion;
+        tokenStorage?: TokenStorage;
     }
     
     export class Identity {
@@ -61,7 +128,7 @@ module Kurve {
 //      private accessTokenCallback: (token: string, error: Error) => void;
         private getTokenCallback: (token: string, error: Error) => void;
         private tokenProcessorUrl: string;
-        private tokenCache: TokenDictionary;
+        private tokenCache: TokenCache;
 //      private logonUser: any;
         private refreshTimer: any;
         private policy: string = "";
@@ -71,12 +138,13 @@ module Kurve {
             this.clientId = identitySettings.clientId;
             this.tokenProcessorUrl = identitySettings.tokenProcessingUri;
 //          this.req = new XMLHttpRequest();
-            this.tokenCache = {};
             if (identitySettings.version)
                 this.version = identitySettings.version;
             else
                 this.version = OAuthVersion.v1;
-
+                
+            this.tokenCache = new TokenCache(identitySettings.tokenStorage);
+            
             //Callback handler from other windows
             window.addEventListener("message", event => {
                 if (event.data.type === "id_token") {
@@ -211,7 +279,7 @@ module Kurve {
             token.token = accessToken;
             token.id = key;
 
-            this.tokenCache[key] = token;
+            this.tokenCache.add(token);
         }
 
         public getIdToken(): any {
@@ -251,21 +319,11 @@ module Kurve {
                 callback(null, e);
                 return;
             }
-
-            //Check for cache and see if we have a valid token
-            for (var key in this.tokenCache) {
-                var token = this.tokenCache[key];
-                
-                //remove tokens that are expired, or will expire within 5 minutes)
-                if (token.expiry <= new Date(new Date().getTime() + 60000)) {
-                    delete this.tokenCache[key];
-                }
-                //Tries to capture a token that matches the resource
-                else if (token.resource == resource) {
-                    callback(token.token, null);
-                    return;
-                }
-            };
+            
+            var token = this.tokenCache.getForResource(resource);
+            if (token) {
+                return callback(token.token, null);
+            }
 
             //If we got this far, we need to go get this token
 
@@ -320,20 +378,9 @@ module Kurve {
                 return;
             }
             
-            //Check for cache and see if we have a valid token
-            var cachedToken = null;
-            for (var key in this.tokenCache) {
-                var token = this.tokenCache[key];
-                
-                //remove tokens that are expired, or will expire within 5 minutes)
-                if (token.expiry <= new Date(new Date().getTime() + 60000)) {
-                    delete this.tokenCache[key];
-                }
-                //Tries to capture a token that contains all scopes and is still valid
-                else if (token.scopes && scopes.every(scope => token.scopes.indexOf(scope) >= 0)) {
-                    callback(token.token, null);
-                    return;
-                }
+            var token = this.tokenCache.getForScopes(scopes);
+            if (token) {
+                return callback(token.token, null);
             }
 
             //If we got this far, we don't have a valid cached token, so will need to get one.
@@ -473,6 +520,7 @@ module Kurve {
         }
 
         public logOut(): void {
+            this.tokenCache.clear();
             var url = "https://login.microsoftonline.com/common/oauth2/logout?post_logout_redirect_uri=" + encodeURI(window.location.href);
             window.location.href = url;
         }
