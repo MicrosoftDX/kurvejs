@@ -186,6 +186,7 @@ module Kurve {
     }
 
     export class MessageDataModel {
+        attachments: AttachmentDataModel[];
         bccRecipients: Recipient[];
         body: ItemBody;
         bodyPreview: string;
@@ -335,7 +336,7 @@ module Kurve {
     export class AttachmentDataModel {
         public contentId: string;
         public id: string;
-        public isInline: string;
+        public isInline: boolean;
         public lastModifiedDateTime: Date;
         public name: string;
         public size: number;
