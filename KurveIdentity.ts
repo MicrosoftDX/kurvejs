@@ -76,11 +76,13 @@ module Kurve {
             for (var key in this.tokens) {
                 var token = this.tokens[key];
 
-                if (token.isExpired) {
-                    this.tokenStorage && this.tokenStorage.remove(token);
-                    delete this.tokens[key];
-                } else if (token.scopes && scopes.every(scope => token.scopes.indexOf(scope) >= 0)) {
-                    return token;
+                if (token.scopes && scopes.every(scope => token.scopes.indexOf(scope) >= 0)) {
+                    if (token.isExpired) {
+                        this.tokenStorage && this.tokenStorage.remove(token);
+                        delete this.tokens[key];
+                    } else {
+                        return token;
+                    }
                 }
             }
         }
