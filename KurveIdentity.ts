@@ -41,9 +41,9 @@ module Kurve {
     }
 
     export interface TokenStorage {
-        add(token: Token);
-        remove(token: Token);
-        getAll(): Token[];
+        add(key: string, token: any);
+        remove(key: string);
+        getAll(): any[];
         clear();
     }
 
@@ -66,13 +66,13 @@ module Kurve {
 
         public add(token: Token) {
             this.tokens[token.id] = token;
-            this.tokenStorage && this.tokenStorage.add(token);
+            this.tokenStorage && this.tokenStorage.add(token.id, token);
         }
 
         public getForResource(resource: string): Token {
             var cachedToken = this.tokens[resource];
             if (cachedToken && cachedToken.isExpired) {
-                this.tokenStorage && this.tokenStorage.remove(cachedToken);
+                this.tokenStorage && this.tokenStorage.remove(cachedToken.id);
                 delete this.tokens[resource];
                 return null;
             }
@@ -85,7 +85,7 @@ module Kurve {
 
                 if (token.scopes && scopes.every(scope => token.scopes.indexOf(scope) >= 0)) {
                     if (token.isExpired) {
-                        this.tokenStorage && this.tokenStorage.remove(token);
+                        this.tokenStorage && this.tokenStorage.remove(token.id);
                         delete this.tokens[key];
                     } else {
                         return token;
