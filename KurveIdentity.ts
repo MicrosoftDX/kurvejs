@@ -20,13 +20,15 @@ module Kurve {
         token: string;
         expiry: Date;
 
-        constructor(tokenData?) {
-            tokenData = tokenData || {};
-            this.id = tokenData.id,
-            this.scopes = tokenData.scopes;
-            this.resource = tokenData.resource;
-            this.token = tokenData.token;
-            this.expiry = new Date(tokenData.expiry);
+        constructor(token: Token);
+        constructor(token?: { id?: string, scopes?: string[], resource?: string, token?: string, expiry?: string });
+        constructor(token: any) {
+            token = token || {};
+            this.id = token.id,
+            this.scopes = token.scopes;
+            this.resource = token.resource;
+            this.token = token.token;
+            this.expiry = new Date(token.expiry);
         }
 
         public get isExpired() {
