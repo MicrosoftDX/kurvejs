@@ -52,7 +52,12 @@ module Kurve {
             this.tokens = {};
             if (tokenStorage) {
                 tokenStorage.getAll().forEach((token) => {
-                    this.tokens[token.id] = new Token(token);
+                    token = new Token(token);
+                    if (token.isExpired) {
+                        this.tokenStorage.remove(token);
+                    } else {
+                        this.tokens[token.id] = token;
+                    }
                 });
             }
         }
