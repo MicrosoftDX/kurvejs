@@ -153,6 +153,7 @@ module Kurve {
                 this.version = OAuthVersion.v1;
 
             this.tokenCache = new TokenCache(identitySettings.tokenStorage);
+
             //Callback handler from other windows
             window.addEventListener("message", event => {
                 if (event.data.type === "id_token") {
