@@ -36,7 +36,7 @@ module Kurve {
         }
     }
 
-    interface TokenDictionary {
+    export interface TokenDictionary {
         [index: string]: Token;
     }
 
@@ -120,6 +120,7 @@ module Kurve {
         clientId: string;
         tokenProcessingUri: string;
         version: OAuthVersion;
+        tokenStorage?: TokenStorage;
     }
 
     export class Identity {
@@ -136,7 +137,7 @@ module Kurve {
 //      private accessTokenCallback: (token: string, error: Error) => void;
         private getTokenCallback: (token: string, error: Error) => void;
         private tokenProcessorUrl: string;
-        private tokenCache: TokenDictionary;
+        private tokenCache: TokenCache;
 //      private logonUser: any;
         private refreshTimer: any;
         private policy: string = "";
@@ -146,7 +147,6 @@ module Kurve {
             this.clientId = identitySettings.clientId;
             this.tokenProcessorUrl = identitySettings.tokenProcessingUri;
 //          this.req = new XMLHttpRequest();
-            this.tokenCache = {};
             if (identitySettings.version)
                 this.version = identitySettings.version;
             else
@@ -287,7 +287,7 @@ module Kurve {
             token.token = accessToken;
             token.id = key;
 
-            this.tokenCache[key] = token;
+            this.tokenCache.add(token);
         }
 
         public getIdToken(): any {
@@ -528,6 +528,7 @@ module Kurve {
         }
 
         public logOut(): void {
+            this.tokenCache.clear();
             var url = "https://login.microsoftonline.com/common/oauth2/logout?post_logout_redirect_uri=" + encodeURI(window.location.href);
             window.location.href = url;
         }
