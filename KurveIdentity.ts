@@ -13,14 +13,14 @@ module Kurve {
         public other: any;
     }
 
-    class Token {
+    class CachedToken {
         id: string;
         scopes: string[];
         resource: string;
         token: string;
         expiry: Date;
 
-        constructor(token: Token);
+        constructor(token: CachedToken);
         constructor(token?: { id?: string, scopes?: string[], resource?: string, token?: string, expiry?: string });
         constructor(token: any) {
             token = token || {};
@@ -36,8 +36,8 @@ module Kurve {
         }
     }
 
-    interface TokenDictionary {
-        [index: string]: Token;
+    interface CachedTokenDictionary {
+        [index: string]: CachedToken;
     }
 
     export interface TokenStorage {
@@ -48,45 +48,45 @@ module Kurve {
     }
 
     class TokenCache {
-        private tokens: TokenDictionary;
+        private cachedTokens: CachedTokenDictionary;
 
         constructor(private tokenStorage: TokenStorage) {
-            this.tokens = {};
+            this.cachedTokens = {};
             if (tokenStorage) {
                 tokenStorage.getAll().forEach((token) => {
-                    token = new Token(token);
+                    token = new CachedToken(token);
                     if (token.isExpired) {
                         this.tokenStorage.remove(token);
                     } else {
-                        this.tokens[token.id] = token;
+                        this.cachedTokens[token.id] = token;
                     }
                 });
             }
         }
 
-        public add(token: Token) {
-            this.tokens[token.id] = token;
+        public add(token: CachedToken) {
+            this.cachedTokens[token.id] = token;
             this.tokenStorage && this.tokenStorage.add(token.id, token);
         }
 
-        public getForResource(resource: string): Token {
-            var cachedToken = this.tokens[resource];
+        public getForResource(resource: string): CachedToken {
+            var cachedToken = this.cachedTokens[resource];
             if (cachedToken && cachedToken.isExpired) {
                 this.tokenStorage && this.tokenStorage.remove(cachedToken.id);
-                delete this.tokens[resource];
+                delete this.cachedTokens[resource];
                 return null;
             }
             return cachedToken;
         }
 
-        public getForScopes(scopes: string[]): Token {
-            for (var key in this.tokens) {
-                var token = this.tokens[key];
+        public getForScopes(scopes: string[]): CachedToken {
+            for (var key in this.cachedTokens) {
+                var token = this.cachedTokens[key];
 
                 if (token.scopes && scopes.every(scope => token.scopes.indexOf(scope) >= 0)) {
                     if (token.isExpired) {
                         this.tokenStorage && this.tokenStorage.remove(token.id);
-                        delete this.tokens[key];
+                        delete this.cachedTokens[key];
                     } else {
                         return token;
                     }
@@ -95,7 +95,7 @@ module Kurve {
         }
 
         public clear() {
-            this.tokens = {};
+            this.cachedTokens = {};
             this.tokenStorage && this.tokenStorage.clear();
         }
     }
@@ -281,7 +281,7 @@ module Kurve {
             var decodedTokenJSON = JSON.parse(decodedToken);
             var expiryDate = new Date(new Date('01/01/1970 0:0 UTC').getTime() + parseInt(decodedTokenJSON.exp) * 1000);
             var key = resource || scopes.join(" ");
-            var token = new Token();
+            var token = new CachedToken();
             token.expiry = expiryDate;
             token.resource = resource;
             token.scopes = scopes;
