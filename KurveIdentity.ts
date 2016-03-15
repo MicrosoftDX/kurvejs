@@ -25,10 +25,13 @@ module Kurve {
             return this.expiry <= new Date(new Date().getTime() + 60000);
         }
 
-        public hasScopes(requiredScopes) {
-            var actualScopes = <Array<string>>this.scopes || [];
+        public hasScopes(requiredScopes: string[]) {
+            if (!this.scopes) {
+                return false;
+            }
+
             return requiredScopes.every(requiredScope => {
-                return actualScopes.some(actualScope => requiredScope == actualScope);
+                return this.scopes.some(actualScope => requiredScope === actualScope);
             });
         }
     }
