@@ -34,6 +34,13 @@ module Kurve {
         public get isExpired() {
             return this.expiry <= new Date(new Date().getTime() + 60000);
         }
+
+        public hasScopes(requiredScopes) {
+            var actualScopes = <Array<string>>this.scopes || [];
+            return requiredScopes.every(requiredScope => {
+                return actualScopes.some(actualScope => requiredScope == actualScope);
+            });
+        }
     }
 
     interface CachedTokenDictionary {
@@ -72,8 +79,7 @@ module Kurve {
         public getForResource(resource: string): CachedToken {
             var cachedToken = this.cachedTokens[resource];
             if (cachedToken && cachedToken.isExpired) {
-                this.tokenStorage && this.tokenStorage.remove(cachedToken.id);
-                delete this.cachedTokens[resource];
+                this.remove(resource);
                 return null;
             }
             return cachedToken;
@@ -81,22 +87,28 @@ module Kurve {
 
         public getForScopes(scopes: string[]): CachedToken {
             for (var key in this.cachedTokens) {
-                var token = this.cachedTokens[key];
+                var cachedToken = this.cachedTokens[key];
 
-                if (token.scopes && scopes.every(scope => token.scopes.indexOf(scope) >= 0)) {
-                    if (token.isExpired) {
-                        this.tokenStorage && this.tokenStorage.remove(token.id);
-                        delete this.cachedTokens[key];
+                if (cachedToken.hasScopes(scopes)) {
+                    if (cachedToken.isExpired) {
+                        this.remove(key);
                     } else {
-                        return token;
+                        return cachedToken;
                     }
                 }
             }
+
+            return null;
         }
 
         public clear() {
             this.cachedTokens = {};
             this.tokenStorage && this.tokenStorage.clear();
+        }
+
+        private remove(key) {
+            this.tokenStorage && this.tokenStorage.remove(key);
+            delete this.cachedTokens[key];
         }
     }
 
