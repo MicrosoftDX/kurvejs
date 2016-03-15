@@ -14,22 +14,12 @@ module Kurve {
     }
 
     class CachedToken {
-        id: string;
-        scopes: string[];
-        resource: string;
-        token: string;
-        expiry: Date;
-
-        constructor(token: CachedToken);
-        constructor(token?: { id?: string, scopes?: string[], resource?: string, token?: string, expiry?: string });
-        constructor(token: any) {
-            token = token || {};
-            this.id = token.id,
-            this.scopes = token.scopes;
-            this.resource = token.resource;
-            this.token = token.token;
-            this.expiry = new Date(token.expiry);
-        }
+        constructor(
+            public id: string,
+            public scopes: string[],
+            public resource: string,
+            public token: string,
+            public expiry: Date) {};
 
         public get isExpired() {
             return this.expiry <= new Date(new Date().getTime() + 60000);
@@ -60,12 +50,12 @@ module Kurve {
         constructor(private tokenStorage: TokenStorage) {
             this.cachedTokens = {};
             if (tokenStorage) {
-                tokenStorage.getAll().forEach((token) => {
-                    token = new CachedToken(token);
-                    if (token.isExpired) {
-                        this.tokenStorage.remove(token);
+                tokenStorage.getAll().forEach(({ id, scopes, resource, token, expiry }) => {
+                    var cachedToken = new CachedToken(id, scopes, resource, token, new Date(expiry));
+                    if (cachedToken.isExpired) {
+                        this.tokenStorage.remove(cachedToken.id);
                     } else {
-                        this.cachedTokens[token.id] = token;
+                        this.cachedTokens[cachedToken.id] = cachedToken;
                     }
                 });
             }
@@ -293,13 +283,8 @@ module Kurve {
             var decodedTokenJSON = JSON.parse(decodedToken);
             var expiryDate = new Date(new Date('01/01/1970 0:0 UTC').getTime() + parseInt(decodedTokenJSON.exp) * 1000);
             var key = resource || scopes.join(" ");
-            var token = new CachedToken();
-            token.expiry = expiryDate;
-            token.resource = resource;
-            token.scopes = scopes;
-            token.token = accessToken;
-            token.id = key;
 
+            var token = new CachedToken(key, scopes, resource, accessToken, expiryDate);
             this.tokenCache.add(token);
         }
 
