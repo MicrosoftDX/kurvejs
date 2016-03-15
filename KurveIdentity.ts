@@ -13,7 +13,7 @@ module Kurve {
         public other: any;
     }
 
-    export class Token {
+    class Token {
         id: string;
         scopes: string[];
         resource: string;
@@ -36,7 +36,7 @@ module Kurve {
         }
     }
 
-    export interface TokenDictionary {
+    interface TokenDictionary {
         [index: string]: Token;
     }
 
