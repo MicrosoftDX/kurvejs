@@ -162,6 +162,24 @@ module Kurve {
         public mailFoldersAsync(odataQuery?: string): Promise<MailFolders, Error> {
             return this.graph.mailFoldersForUserAsync(this._data.userPrincipalName, odataQuery);
         }
+        
+        public message(messageId: string, callback: PromiseCallback<Message>, odataQuery?: string) {
+            this.graph.messageForUser(this._data.userPrincipalName, messageId, callback, odataQuery);
+        }
+
+        public messageAsync(messageId: string, odataQuery?: string): Promise<Message, Error> {
+            return this.graph.messageForUserAsync(this._data.userPrincipalName, messageId, odataQuery);
+        }
+        
+        public messageAttachment(messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string) {
+            this.graph.messageAttachmentForUser(this._data.userPrincipalName, messageId, attachmentId, callback, odataQuery);
+        }
+
+        public messageAttachmentAsync(messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error> {
+            return this.graph.messageAttachmentForUserAsync(this._data.userPrincipalName, messageId, attachmentId, odataQuery);
+        }
+
+
     }
 
     export interface NextLink<T> {
@@ -452,6 +470,18 @@ module Kurve {
         }
 
         // Messages For User
+        public messageForUserAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Message, Error> {
+            var d = new Deferred<Message, Error>();
+            this.messageForUser(userPrincipalName, messageId, (message, error) => error ? d.reject(error) : d.resolve(message), odataQuery);
+            return d.promise;
+        }
+
+        public messageForUser(userPrincipalName: string, messageId: string, callback: PromiseCallback<Message>, odataQuery?: string): void {
+            var scopes = [Scopes.Mail.Read];
+            var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId, odataQuery);
+            this.getMessage(urlString, messageId, (result, error) => callback(result, error), this.scopesForV2(scopes));
+        }
+
         public messagesForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error> {
             var d = new Deferred<Messages, Error>();
             this.messagesForUser(userPrincipalName, (messages, error) => error ? d.reject(error) : d.resolve(messages), odataQuery);
@@ -709,6 +739,25 @@ module Kurve {
             }
         }
 
+        private getMessage(urlString: string, messageId: string, callback: PromiseCallback<Message>, scopes?:string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+                var ODATA = JSON.parse(result);
+                if (ODATA.error) {
+                    var ODATAError = new Error();
+                    ODATAError.other = ODATA.error;
+                    callback(null, ODATAError);
+                    return;
+                }
+                var message = new Message(this, ODATA);
+
+                callback(message, null);
+            }, null, scopes);
+
+        }
         private getMessages(urlString: string, callback: PromiseCallback<Messages>, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
@@ -816,7 +865,7 @@ module Kurve {
             },null,scopes);
         }
 
-        private getGroup(urlString, callback: PromiseCallback<Group>, scopes?:string[]): void {
+        private getGroup(urlString: string, callback: PromiseCallback<Group>, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
