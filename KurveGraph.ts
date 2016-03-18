@@ -171,6 +171,15 @@ module Kurve {
             return this.graph.messageForUserAsync(this._data.userPrincipalName, messageId, odataQuery);
         }
         
+        public event(eventId: string, callback: PromiseCallback<Message>, odataQuery?: string) {
+            this.graph.eventForUser(this._data.userPrincipalName, eventId, callback, odataQuery);
+        }
+
+        public eventAsync(eventId: string, odataQuery?: string): Promise<Event, Error> {
+            return this.graph.eventForUserAsync(this._data.userPrincipalName, eventId, odataQuery);
+        }
+        
+        
         public messageAttachment(messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string) {
             this.graph.messageAttachmentForUser(this._data.userPrincipalName, messageId, attachmentId, callback, odataQuery);
         }
@@ -508,6 +517,19 @@ module Kurve {
         }
 
         // Events For User
+        
+        public eventForUserAsync(userPrincipalName: string, eventId: string, odataQuery?: string): Promise<Event, Error> {
+            var d = new Deferred<Event, Error>();
+            this.eventForUser(userPrincipalName, eventId, (event, error) => error ? d.reject(error) : d.resolve(event), odataQuery);
+            return d.promise;
+        }
+
+        public eventForUser(userPrincipalName: string, eventId: string, callback: PromiseCallback<Event>, odataQuery?: string): void {
+            var scopes = [Scopes.Calendars.Read];
+            var urlString = this.buildUsersUrl(userPrincipalName + "/events/" + eventId, odataQuery);
+            this.getEvent(urlString, eventId, (result, error) => callback(result, error), this.scopesForV2(scopes));
+        }
+
         public eventsForUserAsync(userPrincipalName: string, endpoint: EventsEndpoint, odataQuery?: string): Promise<Events, Error> {
             var d = new Deferred<Events, Error>();
             this.eventsForUser(userPrincipalName, endpoint, (events, error) => error ? d.reject(error) : d.resolve(events), odataQuery);
@@ -758,6 +780,7 @@ module Kurve {
             }, null, scopes);
 
         }
+
         private getMessages(urlString: string, callback: PromiseCallback<Messages>, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
@@ -791,6 +814,26 @@ module Kurve {
                 }
                 callback(messages,  null);
             },null,scopes);
+        }
+
+        private getEvent(urlString: string, EventId: string, callback: PromiseCallback<Event>, scopes?:string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+                var ODATA = JSON.parse(result);
+                if (ODATA.error) {
+                    var ODATAError = new Error();
+                    ODATAError.other = ODATA.error;
+                    callback(null, ODATAError);
+                    return;
+                }
+                var event = new Event(this, ODATA);
+
+                callback(event, null);
+            }, null, scopes);
+
         }
 
         private getEvents(urlString: string, endpoint: EventsEndpoint, callback: PromiseCallback<Events>, scopes?: string[]): void {
