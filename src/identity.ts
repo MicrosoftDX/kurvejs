@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
-module Kurve {
+
+import { Deferred, Promise, PromiseCallback } from "./promises";
 
     export enum OAuthVersion {
         v1=1,
@@ -558,7 +559,6 @@ module Kurve {
             return text;
         }
     }
-}
 
 
 //*********************************************************

@@ -1,24 +1,32 @@
 {
-    "name": "kurveJS",
-    "version": "0.4.1",
-    "description": "Kurve JS library",
-    "main": "",
-    "license": "MIT",
-    "devDependencies": {
-        "gulp": "^3.9.0",
-        "gulp-changed": "~1.2.1",
-        "gulp-clean-ts-extends": "~0.1.1",
-        "gulp-concat": "~2.5.2",
-        "gulp-rename": "~1.2.2",
-        "gulp-replace": "~0.5.3",
-        "gulp-sourcemaps": "~1.5.2",
-        "gulp-typescript": "~2.9.0",
-        "gulp-uglify": "~1.2.0",
-        "gulp-util": "~3.0.4",
-        "gulp-webserver": "^0.9.1",
-        "merge2": "~0.3.5",
-        "run-sequence": "~1.1.0",
-        "through2": "~0.6.5",
-        "typescript": "~1.6.2"
-    }
+  "name": "kurve-js",
+  "version": "0.5.0",
+  "description": "Kurve JS library",
+  "license": "MIT",
+  "main": "./dist/kurve.js",
+  "typings": "./dist/kurve.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MicrosoftDX/kurvejs"
+  },
+  "devDependencies": {
+    "chai": "3.5.0",
+    "dts-generator": "1.7.0",
+    "mocha": "2.4.5",
+    "sinon": "1.17.3",
+    "ts-loader": "0.8.1",
+    "ts-node": "0.7.0",
+    "tsify": "0.14.1",
+    "typescript": "1.8.9",
+    "webpack": "1.12.14"
+  },
+  "scripts": {
+    "test": "mocha --require ts-node/register test/**/*.ts",
+    "build:cleanup": "rm -rf ./dist ",
+    "build:dts": "./node_modules/dts-generator/bin/dts-generator --name kurve --project ./ --out dist/kurve.d.ts",
+    "build:bundle": "webpack",
+    "build:bundle-min": "MINIFIED=true webpack",
+    "build:copy-index": "cp ./login.html ./dist/login.html",
+    "build": "npm run build:cleanup && npm run build:dts  && npm run build:bundle && npm run build:bundle-min && npm run build:copy-index"
+  }
 }
