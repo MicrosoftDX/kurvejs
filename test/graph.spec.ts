@@ -1,4 +1,4 @@
-/// <reference path="../typings/tsd.d.ts" />
+/// <reference path="../typings/main.d.ts" />
 import { expect } from "chai";
 import { mock } from "sinon";
 import { Graph } from "../src/KurveGraph";
