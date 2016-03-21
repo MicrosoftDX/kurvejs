@@ -1,7 +1,7 @@
 /// <reference path="../typings/main.d.ts" />
 import { expect } from "chai";
 import { mock } from "sinon";
-import { Graph } from "../src/KurveGraph";
+import { Graph } from "../src/graph";
 
 describe("Graph", () => {
 

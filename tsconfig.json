@@ -2,10 +2,13 @@
   "compilerOptions": {
     "removeComments": true,
     "preserveConstEnums": true,
-    "target": "es5",
-    "sourceMap": true
+    "module": "commonjs",
+    "target": "es5"
   },
   "files": [
-      "src/**/*.ts"
+    "src/kurve.ts",
+    "src/graph.ts",
+    "src/identity.ts",
+    "src/promises.ts"
   ]
 }

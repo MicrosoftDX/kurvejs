@@ -1,5 +1,5 @@
-import { Graph } from "./KurveGraph";
-import { Identity } from "./KurveIdentity";
+import { Graph } from "./graph";
+import { Identity } from "./identity";
 
 export = {
     Graph,
