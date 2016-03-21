@@ -1,5 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
-module Kurve {
+
+import { Deferred, Promise, PromiseCallback } from "./promises";
+import { Identity, OAuthVersion, Error } from "./KurveIdentity";
+
     export module Scopes {
         class Util {
             static rootUrl = "https://graph.microsoft.com/";
@@ -162,7 +165,7 @@ module Kurve {
         public mailFoldersAsync(odataQuery?: string): Promise<MailFolders, Error> {
             return this.graph.mailFoldersForUserAsync(this._data.userPrincipalName, odataQuery);
         }
-        
+
         public message(messageId: string, callback: PromiseCallback<Message>, odataQuery?: string) {
             this.graph.messageForUser(this._data.userPrincipalName, messageId, callback, odataQuery);
         }
@@ -170,7 +173,7 @@ module Kurve {
         public messageAsync(messageId: string, odataQuery?: string): Promise<Message, Error> {
             return this.graph.messageForUserAsync(this._data.userPrincipalName, messageId, odataQuery);
         }
-        
+
         public event(eventId: string, callback: PromiseCallback<Message>, odataQuery?: string) {
             this.graph.eventForUser(this._data.userPrincipalName, eventId, callback, odataQuery);
         }
@@ -178,8 +181,8 @@ module Kurve {
         public eventAsync(eventId: string, odataQuery?: string): Promise<Event, Error> {
             return this.graph.eventForUserAsync(this._data.userPrincipalName, eventId, odataQuery);
         }
-        
-        
+
+
         public messageAttachment(messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string) {
             this.graph.messageAttachmentForUser(this._data.userPrincipalName, messageId, attachmentId, callback, odataQuery);
         }
@@ -308,7 +311,7 @@ module Kurve {
 
     export class Event extends DataModelWrapper<EventDataModel>{
     }
-      
+
     export class Events extends DataModelListWrapper<Event, Events>{
         constructor(protected graph: Graph, protected endpoint: EventsEndpoint, protected _data: Event[]) {
             super(graph, _data);
@@ -517,7 +520,7 @@ module Kurve {
         }
 
         // Events For User
-        
+
         public eventForUserAsync(userPrincipalName: string, eventId: string, odataQuery?: string): Promise<Event, Error> {
             var d = new Deferred<Event, Error>();
             this.eventForUser(userPrincipalName, eventId, (event, error) => error ? d.reject(error) : d.resolve(event), odataQuery);
@@ -956,7 +959,7 @@ module Kurve {
                 callback(result, null);
             }, "blob",scopes);
         }
-        
+
         private getMailFolders(urlString, callback: PromiseCallback<MailFolders>, scopes?: string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
@@ -1059,7 +1062,6 @@ module Kurve {
             return this.buildUrl("groups/", path, odataQuery);
         }
     }
-}
 
 //*********************************************************
 //

@@ -1,24 +1,31 @@
 {
-    "name": "kurveJS",
-    "version": "0.4.1",
-    "description": "Kurve JS library",
-    "main": "",
-    "license": "MIT",
-    "devDependencies": {
-        "gulp": "^3.9.0",
-        "gulp-changed": "~1.2.1",
-        "gulp-clean-ts-extends": "~0.1.1",
-        "gulp-concat": "~2.5.2",
-        "gulp-rename": "~1.2.2",
-        "gulp-replace": "~0.5.3",
-        "gulp-sourcemaps": "~1.5.2",
-        "gulp-typescript": "~2.9.0",
-        "gulp-uglify": "~1.2.0",
-        "gulp-util": "~3.0.4",
-        "gulp-webserver": "^0.9.1",
-        "merge2": "~0.3.5",
-        "run-sequence": "~1.1.0",
-        "through2": "~0.6.5",
-        "typescript": "~1.6.2"
-    }
+  "name": "kurve-js",
+  "version": "0.4.1",
+  "description": "Kurve JS library",
+  "main": "",
+  "license": "MIT",
+  "devDependencies": {
+    "chai": "3.5.0",
+    "gulp": "^3.9.0",
+    "gulp-changed": "~1.2.1",
+    "gulp-clean-ts-extends": "~0.1.1",
+    "gulp-concat": "~2.5.2",
+    "gulp-rename": "~1.2.2",
+    "gulp-replace": "~0.5.3",
+    "gulp-sourcemaps": "~1.5.2",
+    "gulp-typescript": "~2.9.0",
+    "gulp-uglify": "~1.2.0",
+    "gulp-util": "~3.0.4",
+    "gulp-webserver": "^0.9.1",
+    "merge2": "~0.3.5",
+    "mocha": "2.4.5",
+    "run-sequence": "~1.1.0",
+    "sinon": "1.17.3",
+    "through2": "~0.6.5",
+    "ts-node": "0.7.0",
+    "typescript": "~1.6.2"
+  },
+  "scripts": {
+    "test": "mocha --require ts-node/register test/*.spec.ts"
+  }
 }
