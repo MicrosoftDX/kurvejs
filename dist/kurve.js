@@ -55,12 +55,11 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var graph_1 = __webpack_require__(1);
-	var identity_1 = __webpack_require__(3);
-	module.exports = {
-	    Graph: graph_1.Graph,
-	    Identity: identity_1.Identity
-	};
+	function __export(m) {
+	    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+	}
+	__export(__webpack_require__(1));
+	__export(__webpack_require__(3));
 
 
 /***/ },
