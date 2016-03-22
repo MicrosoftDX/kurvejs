@@ -76,7 +76,7 @@ module Kurve {
         public height: Number;
         public width: Number;
     }
-
+    
     export class ProfilePhoto extends DataModelWrapper<ProfilePhotoDataModel> {
     }
 
@@ -171,7 +171,7 @@ module Kurve {
             return this.graph.messageForUserAsync(this._data.userPrincipalName, messageId, odataQuery);
         }
         
-        public event(eventId: string, callback: PromiseCallback<Message>, odataQuery?: string) {
+        public event(eventId: string, callback: PromiseCallback<Event>, odataQuery?: string) {
             this.graph.eventForUser(this._data.userPrincipalName, eventId, callback, odataQuery);
         }
 
@@ -387,6 +387,7 @@ module Kurve {
         }
     }
 
+
     export class Attachments extends DataModelListWrapper<Attachment, Attachments>{
     }
 
@@ -408,7 +409,7 @@ module Kurve {
         }
 
         //Only adds scopes when linked to a v2 Oauth of kurve identity
-        private scopesForV2(scopes: string[]): string[] {
+        public scopesForV2(scopes: string[]): string[] {
             if (!this.KurveIdentity)
                 return null;
             if (this.KurveIdentity.getCurrentOauthVersion() === OAuthVersion.v1)
@@ -1058,6 +1059,79 @@ module Kurve {
         private buildGroupsUrl(path: string = "", odataQuery?: string) {
             return this.buildUrl("groups/", path, odataQuery);
         }
+    }
+
+    export class GraphInfo<T> {
+        constructor (protected path: string, protected scopes: string[], protected odataQuery?:string) {
+        }
+    
+        public getAsync(graph:Graph):Promise<T, Error> {
+            var d = new Deferred<any, Error>();
+            this.get(graph, (result, error) => error ? d.reject(error) : d.resolve(result));
+            return d.promise;
+        }
+
+        public get(graph:Graph, callback: PromiseCallback<T>): void {
+            var url = "https://graph.microsoft.com/v1.0/" + this.path + (this.odataQuery ? "?" + this.odataQuery : ""); 
+            graph.get(url, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+                var ODATA = JSON.parse(result);
+                if (ODATA.error) {
+                    var ODATAError = new Error();
+                    ODATAError.other = ODATA.error;
+                    callback(null, ODATAError);
+                    return;
+                }
+                callback(ODATA as T, null);
+            }, null, graph.scopesForV2(this.scopes));
+        }
+    }
+    
+
+    export class ItemAttachmentDataModel {
+        public contentId: string;
+        public id: string;
+        public isInline: boolean;
+        public lastModifiedDateTime: Date;
+        public name: string;
+        public size: number;
+
+        // File Attachments
+        public contentBytes: string;
+        public contentLocation: string;
+        public contentType: string;
+    }
+    
+    export class ItemAttachment extends ItemAttachmentDataModel {
+        public static fromMessageForMe = (messageId:string, attachmentId: string, odataQuery?:string) =>
+            new GraphInfo<ItemAttachmentDataModel>(
+                    `/me/messages/${messageId}/attachments/${attachmentId}`,
+                    [Scopes.Mail.Read],
+                    odataQuery
+                    );
+
+        public static fromMessageForUser = (userId:string, messageId:string, attachmentId: string, odataQuery?:string) =>
+            new GraphInfo<ItemAttachmentDataModel>(
+                    `/users/#{userId}/messages/${messageId}/attachments/${attachmentId}`,
+                    [Scopes.Mail.Read],
+                    odataQuery
+                    );
+    /*
+        public static fromEventForMe = (eventId:string, attachmentId: string):GraphInfo => ({
+            path: `/me/events/${eventId}/attachments/${attachmentId}`,
+            scopes: [Scopes.Mail.Read]
+            })
+
+        public static fromEventForUser = (userId: string, eventId:string, attachmentId: string):GraphInfo => ({
+            path: `/users/${userId}/events/${eventId}/attachments/${attachmentId}`,
+            scopes: [Scopes.Mail.Read]
+            })
+            
+        public static collectionfromMessageForMe = (messageId:string, attachmentId: string, odataQuery?:string) =>
+    */
     }
 }
 

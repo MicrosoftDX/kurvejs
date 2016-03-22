@@ -10,7 +10,7 @@ module Kurve {
     enum PromiseState { Pending, ResolutionInProgress, Resolved, Rejected }
 
     export interface PromiseCallback<T> {
-        (T, Error): void;
+        (result:T, error:Error): void;
     }
 
     class Client {
