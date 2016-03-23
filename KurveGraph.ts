@@ -76,7 +76,7 @@ module Kurve {
         public height: Number;
         public width: Number;
     }
-    
+
     export class ProfilePhoto extends DataModelWrapper<ProfilePhotoDataModel> {
     }
 
@@ -162,7 +162,7 @@ module Kurve {
         public mailFoldersAsync(odataQuery?: string): Promise<MailFolders, Error> {
             return this.graph.mailFoldersForUserAsync(this._data.userPrincipalName, odataQuery);
         }
-        
+
         public message(messageId: string, callback: PromiseCallback<Message>, odataQuery?: string) {
             this.graph.messageForUser(this._data.userPrincipalName, messageId, callback, odataQuery);
         }
@@ -170,7 +170,7 @@ module Kurve {
         public messageAsync(messageId: string, odataQuery?: string): Promise<Message, Error> {
             return this.graph.messageForUserAsync(this._data.userPrincipalName, messageId, odataQuery);
         }
-        
+
         public event(eventId: string, callback: PromiseCallback<Event>, odataQuery?: string) {
             this.graph.eventForUser(this._data.userPrincipalName, eventId, callback, odataQuery);
         }
@@ -178,8 +178,8 @@ module Kurve {
         public eventAsync(eventId: string, odataQuery?: string): Promise<Event, Error> {
             return this.graph.eventForUserAsync(this._data.userPrincipalName, eventId, odataQuery);
         }
-        
-        
+
+
         public messageAttachment(messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string) {
             this.graph.messageAttachmentForUser(this._data.userPrincipalName, messageId, attachmentId, callback, odataQuery);
         }
@@ -308,7 +308,7 @@ module Kurve {
 
     export class Event extends DataModelWrapper<EventDataModel>{
     }
-      
+
     export class Events extends DataModelListWrapper<Event, Events>{
         constructor(protected graph: Graph, protected endpoint: EventsEndpoint, protected _data: Event[]) {
             super(graph, _data);
@@ -518,7 +518,7 @@ module Kurve {
         }
 
         // Events For User
-        
+
         public eventForUserAsync(userPrincipalName: string, eventId: string, odataQuery?: string): Promise<Event, Error> {
             var d = new Deferred<Event, Error>();
             this.eventForUser(userPrincipalName, eventId, (event, error) => error ? d.reject(error) : d.resolve(event), odataQuery);
@@ -957,7 +957,7 @@ module Kurve {
                 callback(result, null);
             }, "blob",scopes);
         }
-        
+
         private getMailFolders(urlString, callback: PromiseCallback<MailFolders>, scopes?: string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
@@ -1064,32 +1064,33 @@ module Kurve {
     export class GraphInfo<T> {
         constructor (protected path: string, protected scopes: string[], protected odataQuery?:string) {
         }
-    
-        public getAsync(graph:Graph):Promise<T, Error> {
-            var d = new Deferred<any, Error>();
-            this.get(graph, (result, error) => error ? d.reject(error) : d.resolve(result));
-            return d.promise;
-        }
 
-        public get(graph:Graph, callback: PromiseCallback<T>): void {
-            var url = "https://graph.microsoft.com/v1.0/" + this.path + (this.odataQuery ? "?" + this.odataQuery : ""); 
+        public get(graph:Graph): Promise<T, Error>;
+        public get(graph:Graph, callback: PromiseCallback<T>);
+        public get(graph:Graph, callback?: PromiseCallback<T>): Promise<T, Error> {
+            var d = new Deferred<T, Error>();
+
+            if (callback) {
+                d.then(r => callback(r, null), e => callback(null, e));
+            }
+
+            var url = "https://graph.microsoft.com/v1.0/" + this.path + (this.odataQuery ? "?" + this.odataQuery : "");
             graph.get(url, (result: string, errorGet: Error) => {
                 if (errorGet) {
-                    callback(null, errorGet);
-                    return;
+                    return d.reject(errorGet);
                 }
                 var ODATA = JSON.parse(result);
                 if (ODATA.error) {
                     var ODATAError = new Error();
                     ODATAError.other = ODATA.error;
-                    callback(null, ODATAError);
-                    return;
+                    return d.reject(ODATAError);
                 }
-                callback(ODATA as T, null);
+                return d.resolve(ODATA as T);
             }, null, graph.scopesForV2(this.scopes));
+
+            return d.promise;
         }
     }
-    
 
     export class ItemAttachmentDataModel {
         public contentId: string;
@@ -1104,7 +1105,7 @@ module Kurve {
         public contentLocation: string;
         public contentType: string;
     }
-    
+
     export class ItemAttachment extends ItemAttachmentDataModel {
         public static fromMessageForMe = (messageId:string, attachmentId: string, odataQuery?:string) =>
             new GraphInfo<ItemAttachmentDataModel>(
@@ -1129,7 +1130,7 @@ module Kurve {
             path: `/users/${userId}/events/${eventId}/attachments/${attachmentId}`,
             scopes: [Scopes.Mail.Read]
             })
-            
+
         public static collectionfromMessageForMe = (messageId:string, attachmentId: string, odataQuery?:string) =>
     */
     }

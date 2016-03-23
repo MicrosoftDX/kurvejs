@@ -456,8 +456,8 @@ declare module Kurve {
         protected scopes: string[];
         protected odataQuery: string;
         constructor(path: string, scopes: string[], odataQuery?: string);
-        getAsync(graph: Graph): Promise<T, Error>;
-        get(graph: Graph, callback: PromiseCallback<T>): void;
+        get(graph: Graph): Promise<T, Error>;
+        get(graph: Graph, callback: PromiseCallback<T>): any;
     }
     class ItemAttachmentDataModel {
         contentId: string;
