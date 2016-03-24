@@ -171,7 +171,7 @@ module Kurve {
             return this.graph.messageForUserAsync(this._data.userPrincipalName, messageId, odataQuery);
         }
         
-        public event(eventId: string, callback: PromiseCallback<Message>, odataQuery?: string) {
+        public event(eventId: string, callback: PromiseCallback<Event>, odataQuery?: string) {
             this.graph.eventForUser(this._data.userPrincipalName, eventId, callback, odataQuery);
         }
 
