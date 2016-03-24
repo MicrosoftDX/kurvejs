@@ -5,26 +5,28 @@ GraphBuilder allows you to discover and access the Microsoft Graph using Visual 
 
 Just start typing at the bottom of this file and see how intellisense helps you explore the graph:
     graph.                      me, path, users
-    graph.users(                two different options: with parameter returns a single user, without returns all users
-    graph.me().                 events, messages, path
+    graph.me                    event, events, message, messages, path
+    graph.me.event              event(eventId:string) => Event
     
 The API mirrors the structure of the Graph paths:
     to access:
         /users/billba@microsoft.com/messages/123-456-789/attachments
-    use:
-        graph.users("billba@microsoft.com").messages("123-456-789").attachments()
+    instead of the Kurve-y way of doing things:
+        graph.messageAttachmentsForUser("billba@microsoft.com", "123-456-789")
+    we do:
+        graph.user("billba@microsoft.com").message("123-456-789").attachments
 
 Different nodes surface appropriate functionality:
-    graph.users("bill").        delete, events, get, messages, path
-    graph.users().              get, path
+    graph.user("bill").         delete, event, events, get, message, messages, path
+    graph.users.                get, path
 
 Each node surfaces a path which can be passed to the channel of your choice to access the MS Graph: 
-    graph.users("billba@microsoft.com").messages("123-456-789").attachments().pathWithQuery("$select=id,inline")
+    graph.user("billba@microsoft.com").message("123-456-789").attachments.pathWithQuery("$select=id,inline")
     => '/users/billba@microsoft.com/messages/123-456-789/attachments?$select=id,inline'
 
 Or use the convenient built-in strongly-typed REST methods!
-    graph.users("bill").messages().get()        => Graph.MessageDataModel[]
-    graph.users("bill").event("123").get()      => Graph.EventDataModel
+    graph.user("bill").messages().get()        => Graph.MessageDataModel[]
+    graph.user("bill").event("123").get()      => Graph.EventDataModel
 
 Each REST method has available to it the appropriate path via "this.pathWithQuery".
 A similar approach would be used to convey scopes down the call chain.
@@ -39,7 +41,7 @@ However I have examined the 1.0 and Beta docs closely and I believe that this ap
 
 module GraphBuilder {
     
-    export class Node {
+    abstract class Node {
         constructor(public path: string) {}
         public pathWithQuery = (odataQuery?:string) => this.path + (odataQuery ? "?" + odataQuery : "");
     }  
@@ -85,13 +87,9 @@ module GraphBuilder {
         public get: GetObject<AttachmentDataModel[]> = getObject;
     }
 
-    function attachments(): Attachments;
-    function attachments(attachmentId:string): Attachment;
-    function attachments(arg?:any):any {
-        if (arg)
-            return new Attachment(this.path + "/attachments/" + arg);
-        else
-            return new Attachments(this.path + "/attachments");
+    abstract class HasAttachments extends Node {
+        public attachment = (attachmentId:string) => new Attachment(this.path + "/attachments/" + attachmentId);
+        public attachments = new Attachments(this.path + "/attachments");   
     }
 
     export class MessageDataModel {
@@ -99,65 +97,35 @@ module GraphBuilder {
         public bodyPreview: string = "Sample body text";
     }
 
-    export class Message extends Node {
+    export class Message extends HasAttachments {
         public get: GetObject<MessageDataModel> = getObject;
         public delete: DeleteObject<MessageDataModel> = deleteObject;
-        public attachments = attachments;
         }
 
     export class Messages extends Node {
         public get: GetObject<MessageDataModel[]> = getObject;
     }
-
-    function messages(): Messages;
-    function messages(messageId:string): Message;
-    function messages(arg?:any):any {
-        if (arg)
-            return new Message(this.path + "/messages/" + arg);
-        else
-            return new Messages(this.path + "/messages/");
-    }
-
+    
     export class EventDataModel {
         public id: string;
         public bodyPreview: string = "Sample body text";
     }
 
-    export class Event extends Node {
+    export class Event extends HasAttachments {
         public get: GetObject<EventDataModel> = getObject;
         public delete: DeleteObject<EventDataModel> = deleteObject;
-        public attachments = attachments;
         }
 
     export class Events extends Node {
         public get: GetObject<EventDataModel[]> = getObject;
     }
 
-    function events(): Events;
-    function events(eventId:string): Event;
-    function events(arg?:any):any {
-        if (arg)
-            return new Event(this.path + "/events/" + arg);
-        else
-            return new Events(this.path + "/events/");
-    }
-
-    function calendarView(): Events;
-    function calendarView(eventId:string): Event;
-    function calendarView(arg?:any):any {
-        if (arg)
-            return new Event(this.path + "/calendarView/" + arg);
-        else
-            return new Events(this.path + "/calendarView/");
-    }
-
     export class Me extends Node {
-        public messages = messages;
-        public events = events;
-    }
-
-    function me() {
-        return new Me("/me");
+        public message = (messageId: string) => new Message(this.path + "/messages/" + messageId);
+        public messages = new Messages(this.path + "/messages");
+        public event = (eventId: string) => new Event(this.path + "/events/" + eventId);
+        public events = new Events(this.path + "/events");
+        public calendarView = new Events(this.path + "/calendarView");
     }
 
     export class UserDataModel {
@@ -165,33 +133,22 @@ module GraphBuilder {
         public name: string = "Bill Barnes";
     }
 
-    export class User extends Node {
+    export class User extends Me {
         public get: GetObject<UserDataModel> = getObject;
         public delete: DeleteObject<UserDataModel> = deleteObject;
-        public messages = messages;
-        public events = events;
     }
 
     export class Users extends Node {
         public get: GetObject<UserDataModel[]> = getObject;
     }
 
-    function users(): Users;
-    function users(userId:string): User;
-    function users(arg?:any):any {
-        if (arg)
-            return new User("/users/" + arg);
-        else
-            return new Users("/users/");
-    }
-
     export class Root {
-        public me = me;
-        public users = users;
+        public me = new Me("/me");
+        public user = (userId:string) => new User("/users/" + userId);
+        public users = new Users("/users/");
     }
 }
 
 var graph = new GraphBuilder.Root();
 
 // Explore the graph by typing below here!
-
