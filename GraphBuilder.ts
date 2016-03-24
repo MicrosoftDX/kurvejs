@@ -1,12 +1,12 @@
 
 /*
 
-GraphBuilder allows you to discover and access the Microsoft Graph using Visual Studio Code intellisense.
+QueryBuilder allows you to discover and access the Microsoft Graph using Visual Studio Code intellisense.
 
 Just start typing at the bottom of this file and see how intellisense helps you explore the graph:
-    graph.                      me, path, users
-    graph.me                    event, events, message, messages, path
-    graph.me.event              event(eventId:string) => Event
+    root.                      me, path, users, endpoints
+    root.me                    event, events, message, messages, path
+    root.me.event              event(eventId:string) => Event
     
 The API mirrors the structure of the Graph paths:
     to access:
@@ -14,19 +14,19 @@ The API mirrors the structure of the Graph paths:
     instead of the Kurve-y way of doing things:
         graph.messageAttachmentsForUser("billba@microsoft.com", "123-456-789")
     we do:
-        graph.user("billba@microsoft.com").message("123-456-789").attachments
+        root.user("billba@microsoft.com").message("123-456-789").attachments
 
 Different nodes surface appropriate functionality:
-    graph.user("bill").         delete, event, events, get, message, messages, path
-    graph.users.                get, path
+    root.user("bill").         delete, event, events, get, message, messages, path
+    root.users.                get, path
 
 Each node surfaces a path which can be passed to the channel of your choice to access the MS Graph: 
-    graph.user("billba@microsoft.com").message("123-456-789").attachments.pathWithQuery("$select=id,inline")
+    root.user("billba@microsoft.com").message("123-456-789").attachments.pathWithQuery("$select=id,inline")
     => '/users/billba@microsoft.com/messages/123-456-789/attachments?$select=id,inline'
 
 Or use the convenient built-in strongly-typed REST methods!
-    graph.user("bill").messages().get()        => Graph.MessageDataModel[]
-    graph.user("bill").event("123").get()      => Graph.EventDataModel
+    root.user("bill").messages().get()        => Graph.MessageDataModel[]
+    root.user("bill").event("123").get()      => Graph.EventDataModel
 
 Each REST method has available to it the appropriate path via "this.pathWithQuery".
 A similar approach would be used to convey scopes down the call chain.
@@ -39,116 +39,122 @@ However I have examined the 1.0 and Beta docs closely and I believe that this ap
 
 */
 
-module GraphBuilder {
-    
-    abstract class Node {
-        constructor(public path: string) {}
-        public pathWithQuery = (odataQuery?:string) => this.path + (odataQuery ? "?" + odataQuery : "");
-    }  
 
-    interface GetObject<T> {
-        (odataQuery?:string): T;
+module QueryBuilder {
+        
+    export class Endpoint {
+        constructor(public path: string, public scopes: string[]){}
     }
 
-    function getObject<T>(odataQuery?:string): T {
-        console.log("path", this.pathWithQuery(odataQuery));
-        return {} as T;
-    }
+    export class Endpoints<T> {
+        get: Endpoint;
+        post: Endpoint;
+        patch: Endpoint;
+        delete: Endpoint;
 
-    interface DeleteObject<T> {
-        (odataQuery?:string);
-    }
-
-    function deleteObject<T>(odataQuery?:string) {
-        console.log("path", this.pathWithQuery(odataQuery));
-        return;
-    }
-
-    interface PostObject<T> {
-        (odataQuery?:string);
-    }
-
-    function postObject<T>(odataQuery?:string) {
-        console.log("path", this.pathWithQuery(odataQuery));
-        return;
-    }
-
-    export class AttachmentDataModel {
-        public id: string;
-        public isInline: boolean;
-    }
-
-    export class Attachment extends Node {
-        public get: GetObject<AttachmentDataModel> = getObject;
-        public delete: DeleteObject<AttachmentDataModel> = deleteObject;
-    }
-
-    export class Attachments extends Node {
-        public get: GetObject<AttachmentDataModel[]> = getObject;
-    }
-
-    abstract class HasAttachments extends Node {
-        public attachment = (attachmentId:string) => new Attachment(this.path + "/attachments/" + attachmentId);
-        public attachments = new Attachments(this.path + "/attachments");   
-    }
-
-    export class MessageDataModel {
-        public id: string;
-        public bodyPreview: string = "Sample body text";
-    }
-
-    export class Message extends HasAttachments {
-        public get: GetObject<MessageDataModel> = getObject;
-        public delete: DeleteObject<MessageDataModel> = deleteObject;
+        constructor(path:string, get_scopes?: string[], post_scopes?: string[], patch_scopes?: string[], delete_scopes?: string[]) {
+            if (get_scopes)
+                this.get = new Endpoint(path, get_scopes);
+            if (post_scopes)
+                this.post = new Endpoint(path, post_scopes);
+            if (patch_scopes)
+                this.patch = new Endpoint(path, patch_scopes);
+            if (delete_scopes)
+                this.delete = new Endpoint(path, delete_scopes);
         }
-
-    export class Messages extends Node {
-        public get: GetObject<MessageDataModel[]> = getObject;
     }
     
-    export class EventDataModel {
-        public id: string;
-        public bodyPreview: string = "Sample body text";
+    export class Get<Model> {
+        constructor (public path: string, type?: Model) {}
     }
 
-    export class Event extends HasAttachments {
-        public get: GetObject<EventDataModel> = getObject;
-        public delete: DeleteObject<EventDataModel> = deleteObject;
+    interface IGet<Model> {
+        (query?:string): Get<Model>;
+    }
+    
+    function get<Model>(query?:string) {
+        return new Get<Model>(this.pathWithQuery);
+    }
+    
+    export abstract class QueryNode<T> {
+        constructor(protected path: string = "", protected query?: string) {}
+        get pathWithQuery() { return this.path + (this.query ? "?" + this.query : ""); }
+        endpoints:Endpoints<T>;
+    }
+    
+    export class Attachment extends QueryNode<Kurve.AttachmentDataModel> {
+        endpoints = new Endpoints<Kurve.AttachmentDataModel>(this.path);
+    }
+
+    export class Attachments extends QueryNode<Kurve.AttachmentDataModel[]> {
+        endpoints = new Endpoints<Kurve.AttachmentDataModel[]>(this.path);
+    }
+    
+    abstract class HasAttachments<T> extends QueryNode<T> {
+        attachment = (attachmentId:string, query?:string) => new Attachment(this.path + "/attachments/" + attachmentId, query);
+        attachments = (query?:string) => new Attachments(this.path + "/attachments", query);   
+    }
+
+    export class Message extends QueryNode<Kurve.MessageDataModel> {
+        endpoints = new Endpoints<Kurve.MessageDataModel>(this.path);
+    }
+
+    export class Messages extends QueryNode<Kurve.MessageDataModel[]> {
+        endpoints = new Endpoints<Kurve.MessageDataModel[]>(this.path);
+    }
+    
+    export class Event extends QueryNode<Kurve.EventDataModel> {
+        attachment = (attachmentId:string, query?:string) => new Attachment(this.path + "/attachments/" + attachmentId, query);
+        attachments = (query?:string) => new Attachments(this.path + "/attachments", query);   
+        endpoints = new Endpoints<Kurve.EventDataModel>(this.path);
         }
 
-    export class Events extends Node {
-        public get: GetObject<EventDataModel[]> = getObject;
+    export class Events extends QueryNode<Kurve.EventDataModel[]> {
+        endpoints = new Endpoints<Kurve.EventDataModel[]>(this.path);
     }
 
-    export class Me extends Node {
+    export class User extends QueryNode<Kurve.UserDataModel> {
         public message = (messageId: string) => new Message(this.path + "/messages/" + messageId);
         public messages = new Messages(this.path + "/messages");
         public event = (eventId: string) => new Event(this.path + "/events/" + eventId);
         public events = new Events(this.path + "/events");
-        public calendarView = new Events(this.path + "/calendarView");
+        public calendarView = (startDate:Date, endDate:Date) => new Events(this.path + "/calendarView", ""); // REVIEW incorporate start & end dates
+        endpoints = new Endpoints<Kurve.UserDataModel>(this.path);
     }
 
-    export class UserDataModel {
-        public id: string;
-        public name: string = "Bill Barnes";
-    }
-
-    export class User extends Me {
-        public get: GetObject<UserDataModel> = getObject;
-        public delete: DeleteObject<UserDataModel> = deleteObject;
-    }
-
-    export class Users extends Node {
-        public get: GetObject<UserDataModel[]> = getObject;
+    export class Users extends QueryNode<Kurve.UserDataModel[]> {
+        endpoints = new Endpoints<Kurve.UserDataModel[]>(this.path);
     }
 
     export class Root {
-        public me = new Me("/me");
-        public user = (userId:string) => new User("/users/" + userId);
-        public users = new Users("/users/");
+        me = new User("/me");
+        user = (userId:string) => new User("/users/" + userId);
+        users = new Users("/users/");
     }
+
 }
 
-var graph = new GraphBuilder.Root();
 
-// Explore the graph by typing below here!
+class MockGraph {
+    get<T>(query:QueryBuilder.QueryNode<T>):T {
+        if (!query.endpoints.get) {
+            console.log("no GET endpoint, sorry!");
+            return;
+        }
+        console.log("path", query.endpoints.get.path);
+        return {} as T;
+    }    
+    post<T>(query:QueryBuilder.QueryNode<T>, request:T):void {
+        if (!query.endpoints.post) {
+            console.log("no POST endpoint, sorry!");
+            return;
+        }
+        console.log("path", query.endpoints.get.path);
+    }    
+}
+
+var root = new QueryBuilder.Root();
+var graph = new MockGraph();
+
+graph.get(root.me.message("123")).body.content
+graph.post(root.me.message("123"), new Kurve.MessageDataModel());
