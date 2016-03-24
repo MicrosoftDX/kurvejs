@@ -1,7 +1,7 @@
 
 /*
 
-QueryBuilder allows you to discover and access the Microsoft Graph using Visual Studio Code intellisense.
+RequestBuilder allows you to discover and access the Microsoft Graph using Visual Studio Code intellisense.
 
 Just start typing at the bottom of this file and see how intellisense helps you explore the graph:
     root.                      me, path, users, endpoints
@@ -40,7 +40,7 @@ However I have examined the 1.0 and Beta docs closely and I believe that this ap
 */
 
 
-module QueryBuilder {
+module RequestBuilder {
         
     export class Endpoint {
         constructor(public path: string, public scopes: string[]){}
@@ -95,7 +95,7 @@ module QueryBuilder {
         attachments = (query?:string) => new Attachments(this.path + "/attachments", query);   
     }
 
-    export class Message extends QueryNode<Kurve.MessageDataModel> {
+    export class Message extends HasAttachments<Kurve.MessageDataModel> {
         endpoints = new Endpoints<Kurve.MessageDataModel>(this.path);
     }
 
@@ -103,9 +103,7 @@ module QueryBuilder {
         endpoints = new Endpoints<Kurve.MessageDataModel[]>(this.path);
     }
     
-    export class Event extends QueryNode<Kurve.EventDataModel> {
-        attachment = (attachmentId:string, query?:string) => new Attachment(this.path + "/attachments/" + attachmentId, query);
-        attachments = (query?:string) => new Attachments(this.path + "/attachments", query);   
+    export class Event extends HasAttachments<Kurve.EventDataModel> {
         endpoints = new Endpoints<Kurve.EventDataModel>(this.path);
         }
 
@@ -114,11 +112,11 @@ module QueryBuilder {
     }
 
     export class User extends QueryNode<Kurve.UserDataModel> {
-        public message = (messageId: string) => new Message(this.path + "/messages/" + messageId);
-        public messages = new Messages(this.path + "/messages");
-        public event = (eventId: string) => new Event(this.path + "/events/" + eventId);
-        public events = new Events(this.path + "/events");
-        public calendarView = (startDate:Date, endDate:Date) => new Events(this.path + "/calendarView", ""); // REVIEW incorporate start & end dates
+        message = (messageId: string, query?:string) => new Message(this.path + "/messages/" + messageId, query);
+        messages = (query?:string) => new Messages(this.path + "/messages", query);
+        event = (eventId: string, query?:string) => new Event(this.path + "/events/" + eventId, query);
+        events = (query?:string) => new Events(this.path + "/events", query);
+        calendarView = (startDate:Date, endDate:Date, query?:string) => new Events(this.path + "/calendarView", ""); // REVIEW incorporate start & end dates
         endpoints = new Endpoints<Kurve.UserDataModel>(this.path);
     }
 
@@ -127,16 +125,14 @@ module QueryBuilder {
     }
 
     export class Root {
-        me = new User("/me");
-        user = (userId:string) => new User("/users/" + userId);
-        users = new Users("/users/");
+        me = (query?:string) => new User("/me", query);
+        user = (userId:string, query?:string) => new User("/users/" + userId, query);
+        users = (query?:string) => new Users("/users/", query);
     }
-
 }
 
-
 class MockGraph {
-    get<T>(query:QueryBuilder.QueryNode<T>):T {
+    get<T>(query:RequestBuilder.QueryNode<T>):T {
         if (!query.endpoints.get) {
             console.log("no GET endpoint, sorry!");
             return;
@@ -144,7 +140,7 @@ class MockGraph {
         console.log("path", query.endpoints.get.path);
         return {} as T;
     }    
-    post<T>(query:QueryBuilder.QueryNode<T>, request:T):void {
+    post<T>(query:RequestBuilder.QueryNode<T>, request:T):void {
         if (!query.endpoints.post) {
             console.log("no POST endpoint, sorry!");
             return;
@@ -153,8 +149,9 @@ class MockGraph {
     }    
 }
 
-var root = new QueryBuilder.Root();
+var root = new RequestBuilder.Root();
 var graph = new MockGraph();
 
-graph.get(root.me.message("123")).body.content
-graph.post(root.me.message("123"), new Kurve.MessageDataModel());
+//root.me().event("123").endpoints.get
+//graph.get(root.me().message("123")).body.content
+//graph.post(root.me().message("123"), new Kurve.MessageDataModel());
