@@ -138,12 +138,13 @@ class MockGraph {
     getCollection<Model>(query:RequestBuilder.Node<Model>):Collection<Model> {
         var endpoint = query.endpoints.GETCOLLECTION;
         if (!endpoint) {
-            console.log("no GET-COLLECTION endpoint, sorry!");
+            console.log("no GETCOLLECTION endpoint, sorry!");
         } else {
-            console.log("GET path", endpoint.pathWithQuery);
+            console.log("GETCOLLECTION path", endpoint.pathWithQuery);
             return {} as Collection<Model>;
         }
     }
+
     get<Model>(query:RequestBuilder.Node<Model>):Model {
         var endpoint = query.endpoints.GET;
         if (!endpoint) {
@@ -152,7 +153,8 @@ class MockGraph {
             console.log("GET path", endpoint.pathWithQuery);
             return {} as Model;
         }
-    }    
+    }
+    
     post<Model>(query:RequestBuilder.Node<Model>, request:Model):void {
         var endpoint = query.endpoints.POST;
         if (!endpoint) {
@@ -160,7 +162,26 @@ class MockGraph {
         } else {
             console.log("POST path", endpoint.pathWithQuery);
         }
-    }    
+    }
+
+    patch<Model>(query:RequestBuilder.Node<Model>, request:Model):void {
+        var endpoint = query.endpoints.PATCH;
+        if (!endpoint) {
+            console.log("no PATCH endpoint, sorry!");
+        } else {
+            console.log("PATCH path", endpoint.pathWithQuery);
+        }
+    }
+    
+    delete<Model>(query:RequestBuilder.Node<Model>, request:Model):void {
+        var endpoint = query.endpoints.DELETE;
+        if (!endpoint) {
+            console.log("no DELETE endpoint, sorry!");
+        } else {
+            console.log("DELETE path", endpoint.pathWithQuery);
+        }
+    }
+
 }
 
 var rb = new RequestBuilder.Root();
