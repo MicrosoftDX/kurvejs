@@ -40,7 +40,7 @@ However I have examined the 1.0 and Beta docs closely and I believe that this ap
 
 // A mock of Kurve for testing purposes.
 
-module Kurve {
+namespace Kurve {
     export class UserDataModel {
         id:string;
         userField = "I am a user.";
@@ -62,7 +62,7 @@ module Kurve {
     }
 }
 
-module RequestBuilder {
+namespace RequestBuilder {
 
     export class Action {
         constructor(public pathWithQuery:string, public scopes?:string[]){}
@@ -77,11 +77,8 @@ module RequestBuilder {
     }
 
     export abstract class Node<Model> {
-        private model:Model; // we need to reference Model somewhere to make type inference work 
-        actions:Actions;
-        constructor(protected path:string = "", protected query?:string) {
-        }
-        protected get pathWithQuery() { return this.path + (this.query ? "?" + this.query : "") }
+        private model:Model;                        // need to reference Model to make type inference work
+        constructor(public actions?:Actions) {}     // need this in the base class so that its available externally  
     }
 
     function queryUnion(query1?:string, query2?:string) {
@@ -91,70 +88,145 @@ module RequestBuilder {
             return query2; 
     }
 
+    var pathWithQuery = (path:string, query?:string) => path + (query ? "?" + query : "");
+
+   // Three types of nodes:
+   //   PossibleEndpoint        /me.messages                                    Endpoint without query. Might just be an intermediary node.
+   //   EndpointWithQuery       /me.calendarView?$startDate=X&endDate=Y         Endpoint with built-in query
+   //   AddQuery                /me.messages?$select=id,bodyPreview             Either of the above with added query
+   //                           /me.calendarView?$startDate=X&endDate=Y&r=1
+
     export class AddQuery<Model> extends Node<Model> {
-        constructor(protected path:string, protected query?:string, actions?:Actions) {
-            super(path, query);
-            if (actions) {
-                this.actions = actions;
+        constructor(path:string, public actions:Actions, query?:string) {
+            super(actions);
+            if (actions)
                 for (var verb in actions)
-                    actions[verb].pathWithQuery = this.pathWithQuery;
-            }
+                    actions[verb].pathWithQuery = pathWithQuery(path, query);
         }
     }
 
-    export abstract class NodeWithQuery<Model> extends Node<Model> {
-        addQuery = (query?:string) => new AddQuery<Model>(this.path, queryUnion(this.query, query), this.actions);
-    }
-
-    export class Attachment<Model> extends NodeWithQuery<Model> {
-    }
-
-    export class Attachments<Model> extends NodeWithQuery<Model> {
+    export abstract class PossibleEndpoint<Model> extends Node<Model> {
+        constructor(protected path:string, public actions:Actions) {
+            super(actions);
+        }
+        addQuery = (query?:string) => new AddQuery<Model>(this.path, this.actions, query);
     }
     
-    export abstract class NodeWithAttachments<Model> extends NodeWithQuery<Model> {
-        attachment = (attachmentId:string) => new Attachment<Kurve.AttachmentDataModel>(this.path + "/attachments/" + attachmentId);
-        attachments = new Attachments<Kurve.AttachmentDataModel>(this.path + "/attachments");
-    }
-
-    export class Message<Model> extends NodeWithAttachments<Model> {
-        actions:Actions = {
-            GET: new Action(this.pathWithQuery),
-            POST: new Action(this.pathWithQuery)
+    export abstract class EndpointWithQuery<Model> extends Node<Model> {
+        constructor(protected path:string, protected query:string, public actions:Actions) {
+            super(actions);
         }
+        addQuery = (query?:string) => new AddQuery<Model>(this.path, this.actions, queryUnion(this.query, query));
+        protected get pathWithQuery() {return pathWithQuery(this.path, this.query)}
     }
 
-    export class Messages<Model> extends NodeWithQuery<Model> {
-        actions:Actions = {
-            GETCOLLECTION: new Action(this.pathWithQuery),
-            POST: new Action(this.pathWithQuery)
+    export class Attachment<Model> extends PossibleEndpoint<Model> {
+        constructor(protected path:string) {
+            super(path, {
+                GET: new Action(path),
+            });
         }
     }
     
-    export class Event<Model> extends NodeWithAttachments<Model> {
+    var attachment = (path:string) => (attachmentId:string) => new Attachment<Kurve.AttachmentDataModel>(path + "/attachments/" + attachmentId);
+
+    export class Attachments<Model> extends PossibleEndpoint<Model> {
+        constructor(protected path:string) {
+            super(path, {
+                GETCOLLECTION: new Action(path),
+            });
+        }
     }
 
-    export class Events<Model> extends NodeWithQuery<Model> {
+    var attachments = (path:string) => (attachmentId:string) => new Attachments<Kurve.AttachmentDataModel>(path + "/attachments");
+
+    export class Message<Model> extends PossibleEndpoint<Model> {
+        constructor(protected path:string) {
+            super(path, {
+                GET: new Action(path),
+                POST: new Action(path)
+            });
+        }
+        attachment = attachment(this.path);
+        attachments = attachments(this.path);
     }
 
-    export class CalendarView<Model> extends NodeWithQuery<Model> {
+    var message = (path:string) => (messageId:string) => new Message<Kurve.MessageDataModel>(path + "/messages/" + messageId);
+
+    export class Messages<Model> extends PossibleEndpoint<Model> {
+        constructor(protected path:string) {
+            super(path, {
+                GETCOLLECTION: new Action(path),
+            });
+        }
     }
 
-    export class User<Model> extends NodeWithQuery<Model> {
-        message = (messageId:string) => new Message<Kurve.MessageDataModel>(this.path + "/messages/" + messageId);
-        messages = new Messages<Kurve.MessageDataModel>(this.path + "/messages");
-        event = (eventId:string) => new Event<Kurve.EventDataModel>(this.path + "/events/" + eventId);
-        events = new Events<Kurve.EventDataModel>(this.path + "/events");
-        calendarView = (startDate:Date, endDate:Date) => new CalendarView<Kurve.EventDataModel>(this.path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
+    var messages = (path:string) => new Messages<Kurve.MessageDataModel>(path + "/messages");
+    
+    export class Event<Model> extends PossibleEndpoint<Model> {
+        constructor(protected path:string) {
+            super(path, {
+                GET: new Action(path),
+            });
+        }
+        attachment = attachment(this.path);
+        attachments = attachments(this.path);
+    }
+    
+    var event = (path:string) => (eventId:string) => new Event<Kurve.EventDataModel>(path + "/events/" + eventId);
+
+    export class Events<Model> extends PossibleEndpoint<Model> {
+        constructor(protected path:string) {
+            super(path, {
+                GET: new Action(path),
+            });
+        }
+    }
+    
+    var events = (path:string) => new Events<Kurve.EventDataModel>(path + "/events");   
+
+    export class CalendarView<Model> extends EndpointWithQuery<Model> {
+        constructor(path:string, startDate:Date, endDate:Date) {
+            var query = "startDateTime=" + startDate.toString() + "&endDateTime=" + endDate.toString();
+//          REVIEW need to restore toISOString()
+            super(path, query, {
+                GETCOLLECTION: new Action(pathWithQuery(path, query))
+            });
+        }
+    }
+    
+    var calendarView = (path:string) => (startDate:Date, endDate:Date) => new CalendarView<Kurve.EventDataModel>(path + "/calendarView", startDate, endDate);
+
+    export class User<Model> extends PossibleEndpoint<Model> {
+        constructor(protected path:string) {
+            super(path, {
+                GET: new Action(path),
+            });
+        }
+        message = message(this.path);
+        messages = messages(this.path);
+        event = event(this.path);
+        events = events(this.path);
+        calendarView = calendarView(this.path);
     }
 
-    export class Users<Model> extends NodeWithQuery<Model> {
+    var me = new User<Kurve.UserDataModel>("/me");
+    var user = (userId:string) => new User<Kurve.UserDataModel>("/users/" + userId);
+
+    export class Users<Model> extends PossibleEndpoint<Model> {
+        constructor(protected path:string) {
+            super(path, {
+                GETCOLLECTION: new Action(path),
+            });
+        }
     }
+
+    var users = new Users<Kurve.UserDataModel>("/users/");
 
     export class Root {
-        me = new User<Kurve.UserDataModel>("/me");
-        user = (userId:string) => new User<Kurve.UserDataModel>("/users/" + userId);
-        users = new Users<Kurve.UserDataModel>("/users/");
+        me = me;
+        user = user;
+        users = users;
     }
 }
 
@@ -216,11 +288,11 @@ class MockGraph {
 var rb = new RequestBuilder.Root();
 var graph = new MockGraph();
 
-/*
-var foo = rb.me.message("123");
-var bar = rb.me.messages.addQuery("foo")
 
-graph.get(foo).messageField
+var foo = rb.me.message("123")//.attachment("123");
+var bar = rb.me.messages.addQuery("foo").actions.GET.pathWithQuery
+
+graph.get(foo)
 graph.getCollection(bar);
 graph.post(foo, {} as Kurve.MessageDataModel);
 graph.delete(foo);
