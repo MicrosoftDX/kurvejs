@@ -38,6 +38,29 @@ However I have examined the 1.0 and Beta docs closely and I believe that this ap
 
 */
 
+// A mock of Kurve for testing purposes.
+
+module Kurve {
+    export class UserDataModel {
+        id:string;
+        userField = "I am a user.";
+    }
+
+    export class MessageDataModel {
+        id:string;
+        messageField = "I am a message.";
+    }
+    
+    export class EventDataModel {
+        id:string;
+        eventField = "I am an event.";
+    }
+    
+    export class AttachmentDataModel {
+        id:string;
+        attachmentField = "I am an attachment.";
+    }
+}
 
 module RequestBuilder {
 
