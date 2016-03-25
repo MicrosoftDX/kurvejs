@@ -68,7 +68,7 @@ module RequestBuilder {
         constructor(public pathWithQuery:string, public scopes?:string[]){}
     }
     
-    interface Actions<Model> {
+    interface Actions {
         GET?:Action;
         GETCOLLECTION?:Action;
         POST?:Action;
@@ -77,8 +77,9 @@ module RequestBuilder {
     }
 
     export abstract class Node<Model> {
-        actions:Actions<Model>;
-        constructor(protected path: string = "", protected query?: string, actions?: Actions<Model>) {
+        foo:Model;
+        actions:Actions;
+        constructor(protected path: string = "", protected query?: string, actions?: Actions) {
         }
         protected get pathWithQuery() { return this.path + (this.query ? "?" + this.query : "") }
     }
@@ -91,7 +92,7 @@ module RequestBuilder {
     }
 
     export class AddQuery<Model> extends Node<Model> {
-        constructor(protected path: string = "", protected query?: string, actions?: Actions<Model>) {
+        constructor(protected path: string = "", protected query?: string, actions?: Actions) {
             super(path, query, actions);
             if (actions)
                 for (var verb in actions)
@@ -99,56 +100,56 @@ module RequestBuilder {
         }
     }
 
-    abstract class NodeWithQuery<Model> extends Node<Model> {
+    export abstract class NodeWithQuery<Model> extends Node<Model> {
         addQuery = (query?:string) => new AddQuery<Model>(this.path, queryUnion(this.query, query), this.actions);
     }
 
-    export class Attachment extends Node<Kurve.AttachmentDataModel> {
+    export class Attachment<Model> extends NodeWithQuery<Model> {
     }
 
-    export class Attachments extends Node<Kurve.AttachmentDataModel> {
+    export class Attachments<Model> extends NodeWithQuery<Model> {
     }
     
-    export abstract class NodeWithAttachments<T> extends NodeWithQuery<T> {
-        attachment = (attachmentId:string) => new Attachment(this.path + "/attachments/" + attachmentId);
-        attachments = new Attachments(this.path + "/attachments");
+    export abstract class NodeWithAttachments<Model> extends NodeWithQuery<Model> {
+        attachment = (attachmentId:string) => new Attachment<Kurve.AttachmentDataModel>(this.path + "/attachments/" + attachmentId);
+        attachments = new Attachments<Kurve.AttachmentDataModel>(this.path + "/attachments");
     }
 
-    export class Message extends NodeWithAttachments<Kurve.MessageDataModel> {
+    export class Message<Model> extends NodeWithAttachments<Model> {
         actions = {
             GET: new Action(this.pathWithQuery),
             POST: new Action(this.pathWithQuery)
         }
     }
 
-    export class Messages extends NodeWithQuery<Kurve.MessageDataModel> {
+    export class Messages<Model> extends NodeWithQuery<Model> {
         actions = {
             GETCOLLECTION: new Action(this.pathWithQuery),
             POST: new Action(this.pathWithQuery)
         }
     }
     
-    export class Event extends NodeWithAttachments<Kurve.EventDataModel> {
+    export class Event<Model> extends NodeWithAttachments<Model> {
     }
 
-    export class Events extends NodeWithQuery<Kurve.EventDataModel[]> {
+    export class Events<Model> extends NodeWithQuery<Model> {
     }
 
-    export class User extends NodeWithQuery<Kurve.UserDataModel> {
-        message = (messageId: string) => new Message(this.path + "/messages/" + messageId);
-        messages = new Messages(this.path + "/messages");
-        event = (eventId: string) => new Event(this.path + "/events/" + eventId);
-        events = new Events(this.path + "/events");
-        calendarView = (startDate:Date, endDate:Date) => new Events(this.path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
+    export class User<Model> extends NodeWithQuery<Model> {
+        message = (messageId: string) => new Message<Kurve.MessageDataModel>(this.path + "/messages/" + messageId);
+        messages = new Messages<Kurve.MessageDataModel>(this.path + "/messages");
+        event = (eventId: string) => new Event<Kurve.EventDataModel>(this.path + "/events/" + eventId);
+        events = new Events<Kurve.EventDataModel>(this.path + "/events");
+        calendarView = (startDate:Date, endDate:Date) => new Events<Kurve.EventDataModel>(this.path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
     }
 
-    export class Users extends NodeWithQuery<Kurve.UserDataModel> {
+    export class Users<Model> extends NodeWithQuery<Model> {
     }
 
     export class Root {
-        me = new User("/me");
-        user = (userId:string) => new User("/users/" + userId);
-        users = new Users("/users/");
+        me = new User<Kurve.UserDataModel>("/me");
+        user = (userId:string) => new User<Kurve.UserDataModel>("/users/" + userId);
+        users = new Users<Kurve.UserDataModel>("/users/");
     }
 }
 
@@ -158,8 +159,8 @@ interface Collection<Model> {
 }
 
 class MockGraph {
-    getCollection<Node extends RequestBuilder.Node<Model>, Model>(endpoint:Node):Collection<Model> {
-        var action = endpoint.actions.GETCOLLECTION;
+    getCollection<Model>(endpoint:RequestBuilder.Node<Model>):Collection<Model> {
+        var action = endpoint.actions && endpoint.actions.GETCOLLECTION;
         if (!action) {
             console.log("no GETCOLLECTION endpoint, sorry!");
         } else {
@@ -168,8 +169,8 @@ class MockGraph {
         }
     }
 
-    get<Node extends RequestBuilder.Node<Model>, Model>(endpoint:RequestBuilder.Node<Model>):Model {
-        var action = endpoint.actions.GET;
+    get<Model>(endpoint:RequestBuilder.Node<Model>):Model {
+        var action = endpoint.actions && endpoint.actions.GET;
         if (!action) {
             console.log("no GET endpoint, sorry!");
         } else {
@@ -178,8 +179,8 @@ class MockGraph {
         }
     }
     
-    post<Node extends RequestBuilder.Node<Model>, Model>(endpoint:RequestBuilder.Node<Model>, request:Model):void {
-        var action = endpoint.actions.POST;
+    post<Model>(endpoint:RequestBuilder.Node<Model>, request:Model):void {
+        var action = endpoint.actions && endpoint.actions.POST;
         if (!action) {
             console.log("no POST endpoint, sorry!");
         } else {
@@ -187,8 +188,8 @@ class MockGraph {
         }
     }
 
-    patch<Node extends RequestBuilder.Node<Model>, Model>(endpoint:RequestBuilder.Node<Model>, request:Model):void {
-        var action = endpoint.actions.PATCH;
+    patch<Model>(endpoint:RequestBuilder.Node<Model>, request:Model):void {
+        var action = endpoint.actions && endpoint.actions.PATCH;
         if (!action) {
             console.log("no PATCH endpoint, sorry!");
         } else {
@@ -196,7 +197,7 @@ class MockGraph {
         }
     }
     
-    delete<Node extends RequestBuilder.Node<Model>, Model>(endpoint:RequestBuilder.Node<Model>, request:Model):void {
+    delete<Model>(endpoint:RequestBuilder.Node<Model>):void {
         var action = endpoint.actions.DELETE;
         if (!action) {
             console.log("no DELETE endpoint, sorry!");
@@ -210,8 +211,13 @@ class MockGraph {
 var rb = new RequestBuilder.Root();
 var graph = new MockGraph();
 
-graph.get(rb.me.message("123"))
+/*
+var foo = rb.me.message("123");
+var bar = rb.me.messages;
 
-//root.me().event("123").endpoints.get
-//graph.get(root.me().message("123")).body.content
-//graph.post(root.me().message("123"), new Kurve.MessageDataModel());
+graph.get(foo).messageField
+graph.getCollection(bar);
+graph.post(foo, {} as Kurve.MessageDataModel);
+graph.delete(foo);
+graph.patch(foo, {} as Kurve.MessageDataModel);
+*/
