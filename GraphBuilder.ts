@@ -145,7 +145,7 @@ class MockGraph {
         }
     }
     get<Model>(query:RequestBuilder.Node<Model>):Model {
-        var endpoint = query.endpoints["GET"];
+        var endpoint = query.endpoints.GET;
         if (!endpoint) {
             console.log("no GET endpoint, sorry!");
         } else {
@@ -154,7 +154,7 @@ class MockGraph {
         }
     }    
     post<Model>(query:RequestBuilder.Node<Model>, request:Model):void {
-        var endpoint = query.endpoints["POST"];
+        var endpoint = query.endpoints.POST;
         if (!endpoint) {
             console.log("no POST endpoint, sorry!");
         } else {
