@@ -24,7 +24,7 @@ Each node surfaces a path which can be passed to the channel of your choice to a
     => '/users/billba@microsoft.com/messages/123-456-789/attachments?$select=id,inline'
 
 Or use the convenient built-in strongly-typed REST methods!
-    root.user("bill").messages().get()        => Graph.MessageDataModel[]
+    root.user("bill").messages().get()        => Graph.MessageDataModel
     root.user("bill").event("123").get()      => Graph.EventDataModel
 
 Each REST method has available to it the appropriate path via "this.pathWithQuery".
@@ -42,29 +42,21 @@ However I have examined the 1.0 and Beta docs closely and I believe that this ap
 module RequestBuilder {
 
     export class Endpoint {
-        constructor(public path: string, public scopes: string[]){}
+        constructor(public pathWithQuery:string, public scopes?:string[]){}
+    }
+    
+    interface EndpointDictionary {
+        [verb:string]:Endpoint;
+    }
+    
+    class Endpoints<Model> implements EndpointDictionary {
+        [verb:string]:Endpoint;
     }
 
-    var Verbs = ["GET", "POST", "PATCH", "DELETE"];
-
-    export class Endpoints<T> {
-        constructor(path:string, query?:string, getScopes?: string[], postScopes?: string[], patchScopes?: string[], deleteScopes?: string[]) {
-            if (query)
-                path = path + "?" + query;
-            if (getScopes)
-                this["GET"] = new Endpoint(path, getScopes);
-            if (postScopes)
-                this["POST"] = new Endpoint(path, postScopes);
-            if (patchScopes)
-                this["PATCH"] = new Endpoint(path, patchScopes);
-            if (deleteScopes)
-                this["DELETE"] = new Endpoint(path, deleteScopes);
+    export abstract class Node<Model> {
+        constructor(protected path: string = "", protected query?: string, public endpoints?: Endpoints<Model>) {
         }
-    }
-
-    export abstract class Node<T> {
-        constructor(protected path: string = "", protected query?: string, public endpoints?: Endpoints<T>) {
-        }
+        protected get pathWithQuery() { return this.path + (this.query ? "?" + this.query : "") }
     }
 
     function queryUnion(query1?:string, query2?:string) {
@@ -77,10 +69,9 @@ module RequestBuilder {
     export class AddQuery<Model> extends Node<Model> {
         constructor(protected path: string = "", protected query?: string, public endpoints?: Endpoints<Model>) {
             super(path, query, endpoints);
-            var path = this.path + (this.query ? "?" + this.query : "");
-            for (var verb in Verbs)
-                if (endpoints[verb])
-                    endpoints[verb] = path;
+            if (endpoints)
+                for (var verb in endpoints)
+                    endpoints[verb].pathWithQuery = this.pathWithQuery;
         }
     }
 
@@ -89,11 +80,9 @@ module RequestBuilder {
     }
 
     export class Attachment extends Node<Kurve.AttachmentDataModel> {
-        endpoints = new Endpoints<Kurve.AttachmentDataModel>(this.path, this.query);
     }
 
-    export class Attachments extends Node<Kurve.AttachmentDataModel[]> {
-        endpoints = new Endpoints<Kurve.AttachmentDataModel[]>(this.path);
+    export class Attachments extends Node<Kurve.AttachmentDataModel> {
     }
     
     abstract class NodeWithAttachments<T> extends NodeWithQuery<T> {
@@ -102,19 +91,23 @@ module RequestBuilder {
     }
 
     export class Message extends NodeWithAttachments<Kurve.MessageDataModel> {
-        endpoints = new Endpoints<Kurve.MessageDataModel>(this.path);
+        endpoints = {
+            "GET": new Endpoint(this.pathWithQuery),
+            "POST": new Endpoint(this.pathWithQuery)
+        } as Endpoints<Kurve.MessageDataModel> // NOTE: this cast is not necessary in TypeScript > 1.8
     }
 
-    export class Messages extends NodeWithQuery<Kurve.MessageDataModel[]> {
-        endpoints = new Endpoints<Kurve.MessageDataModel[]>(this.path);
+    export class Messages extends NodeWithQuery<Kurve.MessageDataModel> {
+        endpoints = {
+            "GET-COLLECTION": new Endpoint(this.pathWithQuery),
+            "POST": new Endpoint(this.pathWithQuery)
+        } as Endpoints<Kurve.MessageDataModel> // NOTE: this cast is not necessary in TypeScript > 1.8
     }
     
     export class Event extends NodeWithAttachments<Kurve.EventDataModel> {
-        endpoints = new Endpoints<Kurve.EventDataModel>(this.path);
     }
 
     export class Events extends NodeWithQuery<Kurve.EventDataModel[]> {
-        endpoints = new Endpoints<Kurve.EventDataModel[]>(this.path);
     }
 
     export class User extends NodeWithQuery<Kurve.UserDataModel> {
@@ -122,12 +115,10 @@ module RequestBuilder {
         messages = new Messages(this.path + "/messages");
         event = (eventId: string) => new Event(this.path + "/events/" + eventId);
         events = new Events(this.path + "/events");
-        calendarView = (startDate:Date, endDate:Date) => new Events(this.path + "/calendarView", ""); // REVIEW incorporate start & end dates
-        endpoints = new Endpoints<Kurve.UserDataModel>(this.path);
+        calendarView = (startDate:Date, endDate:Date) => new Events(this.path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
     }
 
-    export class Users extends NodeWithQuery<Kurve.UserDataModel[]> {
-        endpoints = new Endpoints<Kurve.UserDataModel[]>(this.path);
+    export class Users extends NodeWithQuery<Kurve.UserDataModel> {
     }
 
     export class Root {
@@ -137,29 +128,48 @@ module RequestBuilder {
     }
 }
 
+interface Collection<Model> {
+    collection:Model[];
+    //  nextLink callback will go here 
+}
+
 class MockGraph {
-    get<T>(query:RequestBuilder.Node<T>):T {
+    getCollection<Model>(query:RequestBuilder.Node<Model>):Collection<Model> {
+        var endpoint = query.endpoints["GET-COLLECTION"];
+        if (!endpoint) {
+            console.log("no GET-COLLECTION endpoint, sorry!");
+        } else {
+            console.log("GET path", endpoint.pathWithQuery);
+            return {} as Collection<Model>;
+        }
+    }
+    get<Model>(query:RequestBuilder.Node<Model>):Model {
         var endpoint = query.endpoints["GET"];
         if (!endpoint) {
             console.log("no GET endpoint, sorry!");
-            return;
+        } else {
+            console.log("GET path", endpoint.pathWithQuery);
+            return {} as Model;
         }
-        console.log("GET path", endpoint.path);
-        return {} as T;
     }    
-    post<T>(query:RequestBuilder.Node<T>, request:T):void {
+    post<Model>(query:RequestBuilder.Node<Model>, request:Model):void {
         var endpoint = query.endpoints["POST"];
         if (!endpoint) {
             console.log("no POST endpoint, sorry!");
-            return;
+        } else {
+            console.log("POST path", endpoint.pathWithQuery);
         }
-        console.log("POST path", endpoint.path);
     }    
 }
 
-var root = new RequestBuilder.Root();
+var rb = new RequestBuilder.Root();
 var graph = new MockGraph();
+
+rb.me.message("123").attachments.endpoints["GET"] = 
 
 //root.me().event("123").endpoints.get
 //graph.get(root.me().message("123")).body.content
 //graph.post(root.me().message("123"), new Kurve.MessageDataModel());
+
+
+graph.getCollection(rb.me.messages)[0].bodyPreview
