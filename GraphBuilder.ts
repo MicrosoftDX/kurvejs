@@ -137,12 +137,15 @@ module RequestBuilder {
     export class Events<Model> extends NodeWithQuery<Model> {
     }
 
+    export class CalendarView<Model> extends NodeWithQuery<Model> {
+    }
+
     export class User<Model> extends NodeWithQuery<Model> {
         message = (messageId:string) => new Message<Kurve.MessageDataModel>(this.path + "/messages/" + messageId);
         messages = new Messages<Kurve.MessageDataModel>(this.path + "/messages");
         event = (eventId:string) => new Event<Kurve.EventDataModel>(this.path + "/events/" + eventId);
         events = new Events<Kurve.EventDataModel>(this.path + "/events");
-        calendarView = (startDate:Date, endDate:Date) => new Events<Kurve.EventDataModel>(this.path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
+        calendarView = (startDate:Date, endDate:Date) => new CalendarView<Kurve.EventDataModel>(this.path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
     }
 
     export class Users<Model> extends NodeWithQuery<Model> {
