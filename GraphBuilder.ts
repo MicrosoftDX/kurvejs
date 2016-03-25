@@ -77,9 +77,9 @@ module RequestBuilder {
     }
 
     export abstract class Node<Model> {
-        foo:Model;
+        private model:Model; // we need to reference Model somewhere to make type inference work 
         actions:Actions;
-        constructor(protected path: string = "", protected query?: string, actions?: Actions) {
+        constructor(protected path: string = "", protected query?: string) {
         }
         protected get pathWithQuery() { return this.path + (this.query ? "?" + this.query : "") }
     }
@@ -93,10 +93,12 @@ module RequestBuilder {
 
     export class AddQuery<Model> extends Node<Model> {
         constructor(protected path: string = "", protected query?: string, actions?: Actions) {
-            super(path, query, actions);
-            if (actions)
+            super(path, query);
+            if (actions) {
+                this.actions = actions;
                 for (var verb in actions)
                     actions[verb].pathWithQuery = this.pathWithQuery;
+            }
         }
     }
 
@@ -116,14 +118,14 @@ module RequestBuilder {
     }
 
     export class Message<Model> extends NodeWithAttachments<Model> {
-        actions = {
+        actions:Actions = {
             GET: new Action(this.pathWithQuery),
             POST: new Action(this.pathWithQuery)
         }
     }
 
     export class Messages<Model> extends NodeWithQuery<Model> {
-        actions = {
+        actions:Actions = {
             GETCOLLECTION: new Action(this.pathWithQuery),
             POST: new Action(this.pathWithQuery)
         }
@@ -165,7 +167,7 @@ class MockGraph {
             console.log("no GETCOLLECTION endpoint, sorry!");
         } else {
             console.log("GETCOLLECTION path", action.pathWithQuery);
-            return {} as Collection<Model>;
+            return {collection:[]} as Collection<Model>;
         }
     }
 
@@ -213,7 +215,7 @@ var graph = new MockGraph();
 
 /*
 var foo = rb.me.message("123");
-var bar = rb.me.messages;
+var bar = rb.me.messages.addQuery("foo")
 
 graph.get(foo).messageField
 graph.getCollection(bar);
