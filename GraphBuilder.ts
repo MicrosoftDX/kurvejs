@@ -79,7 +79,7 @@ module RequestBuilder {
     export abstract class Node<Model> {
         private model:Model; // we need to reference Model somewhere to make type inference work 
         actions:Actions;
-        constructor(protected path: string = "", protected query?: string) {
+        constructor(protected path:string = "", protected query?:string) {
         }
         protected get pathWithQuery() { return this.path + (this.query ? "?" + this.query : "") }
     }
@@ -92,7 +92,7 @@ module RequestBuilder {
     }
 
     export class AddQuery<Model> extends Node<Model> {
-        constructor(protected path: string = "", protected query?: string, actions?: Actions) {
+        constructor(protected path:string, protected query?:string, actions?:Actions) {
             super(path, query);
             if (actions) {
                 this.actions = actions;
@@ -138,9 +138,9 @@ module RequestBuilder {
     }
 
     export class User<Model> extends NodeWithQuery<Model> {
-        message = (messageId: string) => new Message<Kurve.MessageDataModel>(this.path + "/messages/" + messageId);
+        message = (messageId:string) => new Message<Kurve.MessageDataModel>(this.path + "/messages/" + messageId);
         messages = new Messages<Kurve.MessageDataModel>(this.path + "/messages");
-        event = (eventId: string) => new Event<Kurve.EventDataModel>(this.path + "/events/" + eventId);
+        event = (eventId:string) => new Event<Kurve.EventDataModel>(this.path + "/events/" + eventId);
         events = new Events<Kurve.EventDataModel>(this.path + "/events");
         calendarView = (startDate:Date, endDate:Date) => new Events<Kurve.EventDataModel>(this.path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
     }
