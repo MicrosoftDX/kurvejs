@@ -1,4 +1,3 @@
-
 /*
 
 RequestBuilder allows you to discover and access the Microsoft Graph using Visual Studio Code intellisense.
@@ -41,111 +40,120 @@ However I have examined the 1.0 and Beta docs closely and I believe that this ap
 
 
 module RequestBuilder {
-        
+
     export class Endpoint {
         constructor(public path: string, public scopes: string[]){}
     }
 
-    export class Endpoints<T> {
-        get: Endpoint;
-        post: Endpoint;
-        patch: Endpoint;
-        delete: Endpoint;
+    var Verbs = ["GET", "POST", "PATCH", "DELETE"];
 
-        constructor(path:string, get_scopes?: string[], post_scopes?: string[], patch_scopes?: string[], delete_scopes?: string[]) {
-            if (get_scopes)
-                this.get = new Endpoint(path, get_scopes);
-            if (post_scopes)
-                this.post = new Endpoint(path, post_scopes);
-            if (patch_scopes)
-                this.patch = new Endpoint(path, patch_scopes);
-            if (delete_scopes)
-                this.delete = new Endpoint(path, delete_scopes);
+    export class Endpoints<T> {
+        constructor(path:string, query?:string, getScopes?: string[], postScopes?: string[], patchScopes?: string[], deleteScopes?: string[]) {
+            if (query)
+                path = path + "?" + query;
+            if (getScopes)
+                this["GET"] = new Endpoint(path, getScopes);
+            if (postScopes)
+                this["POST"] = new Endpoint(path, postScopes);
+            if (patchScopes)
+                this["PATCH"] = new Endpoint(path, patchScopes);
+            if (deleteScopes)
+                this["DELETE"] = new Endpoint(path, deleteScopes);
         }
     }
-    
-    export class Get<Model> {
-        constructor (public path: string, type?: Model) {}
+
+    export abstract class Node<T> {
+        constructor(protected path: string = "", protected query?: string, public endpoints?: Endpoints<T>) {
+        }
     }
 
-    interface IGet<Model> {
-        (query?:string): Get<Model>;
-    }
-    
-    function get<Model>(query?:string) {
-        return new Get<Model>(this.pathWithQuery);
-    }
-    
-    export abstract class QueryNode<T> {
-        constructor(protected path: string = "", protected query?: string) {}
-        get pathWithQuery() { return this.path + (this.query ? "?" + this.query : ""); }
-        endpoints:Endpoints<T>;
-    }
-    
-    export class Attachment extends QueryNode<Kurve.AttachmentDataModel> {
-        endpoints = new Endpoints<Kurve.AttachmentDataModel>(this.path);
+    function queryUnion(query1?:string, query2?:string) {
+        if (query1)
+            return query1 + (query2 ? "&" + query2 : "");
+        else
+            return query2; 
     }
 
-    export class Attachments extends QueryNode<Kurve.AttachmentDataModel[]> {
+    export class AddQuery<Model> extends Node<Model> {
+        constructor(protected path: string = "", protected query?: string, public endpoints?: Endpoints<Model>) {
+            super(path, query, endpoints);
+            var path = this.path + (this.query ? "?" + this.query : "");
+            for (var verb in Verbs)
+                if (endpoints[verb])
+                    endpoints[verb] = path;
+        }
+    }
+
+    abstract class NodeWithQuery<Model> extends Node<Model> {
+        addQuery = (query?:string) => new AddQuery<Model>(this.path, queryUnion(this.query, query), this.endpoints);
+    }
+
+    export class Attachment extends Node<Kurve.AttachmentDataModel> {
+        endpoints = new Endpoints<Kurve.AttachmentDataModel>(this.path, this.query);
+    }
+
+    export class Attachments extends Node<Kurve.AttachmentDataModel[]> {
         endpoints = new Endpoints<Kurve.AttachmentDataModel[]>(this.path);
     }
     
-    abstract class HasAttachments<T> extends QueryNode<T> {
-        attachment = (attachmentId:string, query?:string) => new Attachment(this.path + "/attachments/" + attachmentId, query);
-        attachments = (query?:string) => new Attachments(this.path + "/attachments", query);   
+    abstract class NodeWithAttachments<T> extends NodeWithQuery<T> {
+        attachment = (attachmentId:string) => new Attachment(this.path + "/attachments/" + attachmentId);
+        attachments = new Attachments(this.path + "/attachments");
     }
 
-    export class Message extends HasAttachments<Kurve.MessageDataModel> {
+    export class Message extends NodeWithAttachments<Kurve.MessageDataModel> {
         endpoints = new Endpoints<Kurve.MessageDataModel>(this.path);
     }
 
-    export class Messages extends QueryNode<Kurve.MessageDataModel[]> {
+    export class Messages extends NodeWithQuery<Kurve.MessageDataModel[]> {
         endpoints = new Endpoints<Kurve.MessageDataModel[]>(this.path);
     }
     
-    export class Event extends HasAttachments<Kurve.EventDataModel> {
+    export class Event extends NodeWithAttachments<Kurve.EventDataModel> {
         endpoints = new Endpoints<Kurve.EventDataModel>(this.path);
-        }
+    }
 
-    export class Events extends QueryNode<Kurve.EventDataModel[]> {
+    export class Events extends NodeWithQuery<Kurve.EventDataModel[]> {
         endpoints = new Endpoints<Kurve.EventDataModel[]>(this.path);
     }
 
-    export class User extends QueryNode<Kurve.UserDataModel> {
-        message = (messageId: string, query?:string) => new Message(this.path + "/messages/" + messageId, query);
-        messages = (query?:string) => new Messages(this.path + "/messages", query);
-        event = (eventId: string, query?:string) => new Event(this.path + "/events/" + eventId, query);
-        events = (query?:string) => new Events(this.path + "/events", query);
-        calendarView = (startDate:Date, endDate:Date, query?:string) => new Events(this.path + "/calendarView", ""); // REVIEW incorporate start & end dates
+    export class User extends NodeWithQuery<Kurve.UserDataModel> {
+        message = (messageId: string) => new Message(this.path + "/messages/" + messageId);
+        messages = new Messages(this.path + "/messages");
+        event = (eventId: string) => new Event(this.path + "/events/" + eventId);
+        events = new Events(this.path + "/events");
+        calendarView = (startDate:Date, endDate:Date) => new Events(this.path + "/calendarView", ""); // REVIEW incorporate start & end dates
         endpoints = new Endpoints<Kurve.UserDataModel>(this.path);
     }
 
-    export class Users extends QueryNode<Kurve.UserDataModel[]> {
+    export class Users extends NodeWithQuery<Kurve.UserDataModel[]> {
         endpoints = new Endpoints<Kurve.UserDataModel[]>(this.path);
     }
 
     export class Root {
-        me = (query?:string) => new User("/me", query);
-        user = (userId:string, query?:string) => new User("/users/" + userId, query);
-        users = (query?:string) => new Users("/users/", query);
+        me = new User("/me");
+        user = (userId:string) => new User("/users/" + userId);
+        users = new Users("/users/");
     }
 }
 
 class MockGraph {
-    get<T>(query:RequestBuilder.QueryNode<T>):T {
-        if (!query.endpoints.get) {
+    get<T>(query:RequestBuilder.Node<T>):T {
+        var endpoint = query.endpoints["GET"];
+        if (!endpoint) {
             console.log("no GET endpoint, sorry!");
             return;
         }
-        console.log("path", query.endpoints.get.path);
+        console.log("GET path", endpoint.path);
         return {} as T;
     }    
-    post<T>(query:RequestBuilder.QueryNode<T>, request:T):void {
-        if (!query.endpoints.post) {
+    post<T>(query:RequestBuilder.Node<T>, request:T):void {
+        var endpoint = query.endpoints["POST"];
+        if (!endpoint) {
             console.log("no POST endpoint, sorry!");
             return;
         }
-        console.log("path", query.endpoints.get.path);
+        console.log("POST path", endpoint.path);
     }    
 }
 
