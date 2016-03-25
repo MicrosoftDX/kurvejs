@@ -64,21 +64,21 @@ module Kurve {
 
 module RequestBuilder {
 
-    export class Endpoint {
+    export class Action {
         constructor(public pathWithQuery:string, public scopes?:string[]){}
     }
     
-    interface Endpoints<Model> {
-        GET?:Endpoint;
-        GETCOLLECTION?:Endpoint;
-        POST?:Endpoint;
-        DELETE?:Endpoint;
-        PATCH?:Endpoint;
+    interface Actions<Model> {
+        GET?:Action;
+        GETCOLLECTION?:Action;
+        POST?:Action;
+        DELETE?:Action;
+        PATCH?:Action;
     }
 
     export abstract class Node<Model> {
-        endpoints:Endpoints<Model>;
-        constructor(protected path: string = "", protected query?: string, endpoints?: Endpoints<Model>) {
+        actions:Actions<Model>;
+        constructor(protected path: string = "", protected query?: string, actions?: Actions<Model>) {
         }
         protected get pathWithQuery() { return this.path + (this.query ? "?" + this.query : "") }
     }
@@ -91,16 +91,16 @@ module RequestBuilder {
     }
 
     export class AddQuery<Model> extends Node<Model> {
-        constructor(protected path: string = "", protected query?: string, endpoints?: Endpoints<Model>) {
-            super(path, query, endpoints);
-            if (endpoints)
-                for (var verb in endpoints)
-                    endpoints[verb].pathWithQuery = this.pathWithQuery;
+        constructor(protected path: string = "", protected query?: string, actions?: Actions<Model>) {
+            super(path, query, actions);
+            if (actions)
+                for (var verb in actions)
+                    actions[verb].pathWithQuery = this.pathWithQuery;
         }
     }
 
     abstract class NodeWithQuery<Model> extends Node<Model> {
-        addQuery = (query?:string) => new AddQuery<Model>(this.path, queryUnion(this.query, query), this.endpoints);
+        addQuery = (query?:string) => new AddQuery<Model>(this.path, queryUnion(this.query, query), this.actions);
     }
 
     export class Attachment extends Node<Kurve.AttachmentDataModel> {
@@ -109,22 +109,22 @@ module RequestBuilder {
     export class Attachments extends Node<Kurve.AttachmentDataModel> {
     }
     
-    abstract class NodeWithAttachments<T> extends NodeWithQuery<T> {
+    export abstract class NodeWithAttachments<T> extends NodeWithQuery<T> {
         attachment = (attachmentId:string) => new Attachment(this.path + "/attachments/" + attachmentId);
         attachments = new Attachments(this.path + "/attachments");
     }
 
     export class Message extends NodeWithAttachments<Kurve.MessageDataModel> {
-        endpoints = {
-            GET: new Endpoint(this.pathWithQuery),
-            POST: new Endpoint(this.pathWithQuery)
+        actions = {
+            GET: new Action(this.pathWithQuery),
+            POST: new Action(this.pathWithQuery)
         }
     }
 
     export class Messages extends NodeWithQuery<Kurve.MessageDataModel> {
-        endpoints = {
-            GETCOLLECTION: new Endpoint(this.pathWithQuery),
-            POST: new Endpoint(this.pathWithQuery)
+        actions = {
+            GETCOLLECTION: new Action(this.pathWithQuery),
+            POST: new Action(this.pathWithQuery)
         }
     }
     
@@ -158,50 +158,50 @@ interface Collection<Model> {
 }
 
 class MockGraph {
-    getCollection<Model>(query:RequestBuilder.Node<Model>):Collection<Model> {
-        var endpoint = query.endpoints.GETCOLLECTION;
-        if (!endpoint) {
+    getCollection<Node extends RequestBuilder.Node<Model>, Model>(endpoint:Node):Collection<Model> {
+        var action = endpoint.actions.GETCOLLECTION;
+        if (!action) {
             console.log("no GETCOLLECTION endpoint, sorry!");
         } else {
-            console.log("GETCOLLECTION path", endpoint.pathWithQuery);
+            console.log("GETCOLLECTION path", action.pathWithQuery);
             return {} as Collection<Model>;
         }
     }
 
-    get<Model>(query:RequestBuilder.Node<Model>):Model {
-        var endpoint = query.endpoints.GET;
-        if (!endpoint) {
+    get<Node extends RequestBuilder.Node<Model>, Model>(endpoint:RequestBuilder.Node<Model>):Model {
+        var action = endpoint.actions.GET;
+        if (!action) {
             console.log("no GET endpoint, sorry!");
         } else {
-            console.log("GET path", endpoint.pathWithQuery);
+            console.log("GET path", action.pathWithQuery);
             return {} as Model;
         }
     }
     
-    post<Model>(query:RequestBuilder.Node<Model>, request:Model):void {
-        var endpoint = query.endpoints.POST;
-        if (!endpoint) {
+    post<Node extends RequestBuilder.Node<Model>, Model>(endpoint:RequestBuilder.Node<Model>, request:Model):void {
+        var action = endpoint.actions.POST;
+        if (!action) {
             console.log("no POST endpoint, sorry!");
         } else {
-            console.log("POST path", endpoint.pathWithQuery);
+            console.log("POST path", action.pathWithQuery);
         }
     }
 
-    patch<Model>(query:RequestBuilder.Node<Model>, request:Model):void {
-        var endpoint = query.endpoints.PATCH;
-        if (!endpoint) {
+    patch<Node extends RequestBuilder.Node<Model>, Model>(endpoint:RequestBuilder.Node<Model>, request:Model):void {
+        var action = endpoint.actions.PATCH;
+        if (!action) {
             console.log("no PATCH endpoint, sorry!");
         } else {
-            console.log("PATCH path", endpoint.pathWithQuery);
+            console.log("PATCH path", action.pathWithQuery);
         }
     }
     
-    delete<Model>(query:RequestBuilder.Node<Model>, request:Model):void {
-        var endpoint = query.endpoints.DELETE;
-        if (!endpoint) {
+    delete<Node extends RequestBuilder.Node<Model>, Model>(endpoint:RequestBuilder.Node<Model>, request:Model):void {
+        var action = endpoint.actions.DELETE;
+        if (!action) {
             console.log("no DELETE endpoint, sorry!");
         } else {
-            console.log("DELETE path", endpoint.pathWithQuery);
+            console.log("DELETE path", action.pathWithQuery);
         }
     }
 
@@ -209,6 +209,8 @@ class MockGraph {
 
 var rb = new RequestBuilder.Root();
 var graph = new MockGraph();
+
+graph.get(rb.me.message("123"))
 
 //root.me().event("123").endpoints.get
 //graph.get(root.me().message("123")).body.content
