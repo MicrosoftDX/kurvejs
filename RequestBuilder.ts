@@ -8,6 +8,16 @@ Just start typing at the bottom of this file and see how intellisense helps you 
     rb.me.event             event(eventId:string) => Event
     rb.me.event("123")      actions, attachment, attachments
     
+Certain endpoints with required query parameters are written as helpers:
+    rb.me.calendarView([startDate],[endDate])
+    -> /me/calendarView?startDate=[startDate]&endDate=[endDate]
+
+You can add ODATA queries to these or any other endpoint:
+    rb.me.messages("123").addQuery("$select=id,subject")
+    -> /me/messages/123?$select=id,subject
+    rb.me.calendarView([startDate],[endDate]).addQuery("$select=organizer")
+    -> /me/calendarView?startDate=[startDate]&endDate=[endDate]&$select=organizer
+
 Each endpoint in the graph surfaces an "actions" object
     rb.me.event("123").actions
 
