@@ -3,32 +3,31 @@
 RequestBuilder allows you to discover and access the Microsoft Graph using Visual Studio Code intellisense.
 
 Just start typing at the bottom of this file and see how intellisense helps you explore the graph:
-    root.                      me, path, users, endpoints
-    root.me                    event, events, message, messages, path
-    root.me.event              event(eventId:string) => Event
+    rb.                     actions, me, user, users
+    rb.me                   actions, event, events, message, messages, calendarView
+    rb.me.event             event(eventId:string) => Event
+    rb.me.event("123")      actions, attachment, attachments
+    
+Each endpoint in the graph surfaces an "actions" object
+    rb.me.event("123").actions
+
+The "actions" object contains metadata for each supported REST verb, e.g.
+    rb.me.event("123").actions.GET.pathWithQuery = '/me/event/123/'
+    (Soon this will include scope information as well)
+
+Simply pass this metadata to the REST channel of your choice, e.g.
+    MyRESTLibrary.get(rb.me.event("123").actions.restWithQuery)
+
+However if you provide an endpoint directly to our Graph implementation, it will infer the relevant types: 
+    graph.get(rb.me.event("123")).organizer.name
     
 The API mirrors the structure of the Graph paths:
     to access:
         /users/billba@microsoft.com/messages/123-456-789/attachments
-    instead of the Kurve-y way of doing things:
-        graph.messageAttachmentsForUser("billba@microsoft.com", "123-456-789")
     we do:
-        root.user("billba@microsoft.com").message("123-456-789").attachments
-
-Different nodes surface appropriate functionality:
-    root.user("bill").         delete, event, events, get, message, messages, path
-    root.users.                get, path
-
-Each node surfaces a path which can be passed to the channel of your choice to access the MS Graph: 
-    root.user("billba@microsoft.com").message("123-456-789").attachments.pathWithQuery("$select=id,inline")
-    => '/users/billba@microsoft.com/messages/123-456-789/attachments?$select=id,inline'
-
-Or use the convenient built-in strongly-typed REST methods!
-    root.user("bill").messages().get()        => Graph.MessageDataModel
-    root.user("bill").event("123").get()      => Graph.EventDataModel
-
-Each REST method has available to it the appropriate path via "this.pathWithQuery".
-A similar approach would be used to convey scopes down the call chain.
+        rb.user("billba@microsoft.com").message("1234").attachments("6789")
+    compare to the old Kurve-y way of doing things:
+        graph.messageAttachmentForUser("billba@microsoft.com", "12345", "6789")
 
 In this proof-of-concept the path building works, but the REST methods are stubs, and greatly simplified ones at that.
 In a real version we'd add Async versions and incorporate identity handling.
@@ -171,7 +170,7 @@ namespace RequestBuilder {
     export class Events<Model> extends Endpoint<Model> {
         constructor(protected path:string) {
             super(path, {
-                GET: new Action(path),
+                GETCOLLECTION: new Action(path),
             });
         }
     }
@@ -282,7 +281,7 @@ var rb = new RequestBuilder.Root();
 var graph = new MockGraph();
 
 /*
-var foo = rb.me.message("123")//.attachment("123");
+var foo = rb.me.message("123").actions
 var bar = rb.me.calendarView(new Date(), new Date()).addQuery("123")
 
 graph.get(foo).messageField
