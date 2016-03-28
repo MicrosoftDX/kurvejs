@@ -1,31 +1,24 @@
 {
-  "name": "kurve-js",
+  "name": "Kurve",
   "version": "0.5.0",
   "description": "Kurve JS library",
   "license": "MIT",
   "main": "./dist/kurve.js",
-  "typings": "./dist/kurve.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/MicrosoftDX/kurvejs"
   },
   "devDependencies": {
-    "chai": "3.5.0",
     "dts-generator": "1.7.0",
-    "mocha": "2.4.5",
-    "sinon": "1.17.3",
     "ts-loader": "0.8.1",
-    "ts-node": "0.7.0",
-    "tsify": "0.14.1",
     "typescript": "1.8.9",
     "webpack": "1.12.14"
   },
   "scripts": {
-    "test": "mocha --require ts-node/register test/**/*.ts",
     "build:cleanup": "rm -rf ./dist ",
-    "build:dts": "./node_modules/dts-generator/bin/dts-generator --name kurve --project ./ --out dist/kurve.d.ts",
-    "build:bundle": "webpack",
-    "build:bundle-min": "MINIFIED=true webpack",
+    "build:dts": "dts-generator --name Kurve --main Kurve/src/kurve --project ./ --out dist/kurve.d.ts",
+    "build:bundle": "webpack --config ./webpack.config.js",
+    "build:bundle-min": "webpack --config ./webpack.config-min.js",
     "build:copy-index": "cp ./login.html ./dist/login.html",
     "build": "npm run build:cleanup && npm run build:dts  && npm run build:bundle && npm run build:bundle-min && npm run build:copy-index"
   }

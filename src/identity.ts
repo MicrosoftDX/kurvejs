@@ -312,7 +312,7 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
         public getAccessTokenAsync(resource: string): Promise<string,Error> {
 
             var d = new Deferred<string,Error>();
-            this.getAccessToken(resource, ((token, error) => {
+            this.getAccessToken(resource, ((error, token) => {
                 if (error) {
                     d.reject(error);
                 } else {
@@ -326,13 +326,13 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
             if (this.version !== OAuthVersion.v1) {
                 var e = new Error();
                 e.statusText = "Currently this identity class is using v2 OAuth mode. You need to use getAccessTokenForScopes() method";
-                callback(null, e);
+                callback(e);
                 return;
             }
 
             var token = this.tokenCache.getForResource(resource);
             if (token) {
-                return callback(token.token, null);
+                return callback(null, token.token);
             }
 
             //If we got this far, we need to go get this token
@@ -340,11 +340,11 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
             //Need to create the iFrame to invoke the acquire token
             this.getTokenCallback = ((token: string, error: Error) => {
                 if (error) {
-                    callback(null, error);
+                    callback(error);
                 }
                 else {
                     this.decodeAccessToken(token, resource);
-                    callback(token, null);
+                    callback(null, token);
                 }
             });
 

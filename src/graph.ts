@@ -174,7 +174,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
             return this.graph.messageForUserAsync(this._data.userPrincipalName, messageId, odataQuery);
         }
 
-        public event(eventId: string, callback: PromiseCallback<Message>, odataQuery?: string) {
+        public event(eventId: string, callback: PromiseCallback<Event>, odataQuery?: string) {
             this.graph.eventForUser(this._data.userPrincipalName, eventId, callback, odataQuery);
         }
 
@@ -422,7 +422,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
         //Users
         public meAsync(odataQuery?: string): Promise<User, Error> {
             var d = new Deferred<User,Error>();
-            this.me((user, error) => error ? d.reject(error) : d.resolve(user), odataQuery);
+            this.me((error, user) => error ? d.reject(error) : d.resolve(user), odataQuery);
             return d.promise;
         }
 
@@ -434,7 +434,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
 
         public userAsync(userId: string, odataQuery?: string, basicProfileOnly = true): Promise<User, Error> {
             var d = new Deferred<User,Error>();
-            this.user(userId, (user, error) => error ? d.reject(error) : d.resolve(user), odataQuery, basicProfileOnly);
+            this.user(userId, (error, user) => error ? d.reject(error) : d.resolve(user), odataQuery, basicProfileOnly);
             return d.promise;
         }
 
@@ -446,7 +446,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
 
         public usersAsync(odataQuery?: string, basicProfileOnly = true): Promise<Users, Error> {
             var d = new Deferred<Users,Error>();
-            this.users((users, error) => error ? d.reject(error) : d.resolve(users), odataQuery, basicProfileOnly);
+            this.users((error, users) => error ? d.reject(error) : d.resolve(users), odataQuery, basicProfileOnly);
             return d.promise;
         }
 
@@ -459,7 +459,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
         //Groups
         public groupAsync(groupId: string, odataQuery?: string): Promise<Group,Error> {
             var d = new Deferred<Group,Error>();
-            this.group(groupId, (group, error) => error ? d.reject(error) : d.resolve(group), odataQuery);
+            this.group(groupId, (error, group) => error ? d.reject(error) : d.resolve(group), odataQuery);
             return d.promise;
         }
 
@@ -471,7 +471,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
 
         public groupsAsync(odataQuery?: string): Promise<Groups, Error> {
             var d = new Deferred<Groups, Error>();
-            this.groups((groups, error) => error ? d.reject(error) : d.resolve(groups), odataQuery);
+            this.groups((error, groups) => error ? d.reject(error) : d.resolve(groups), odataQuery);
             return d.promise;
         }
 
@@ -484,71 +484,71 @@ import { Identity, OAuthVersion, Error } from "./identity";
         // Messages For User
         public messageForUserAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Message, Error> {
             var d = new Deferred<Message, Error>();
-            this.messageForUser(userPrincipalName, messageId, (message, error) => error ? d.reject(error) : d.resolve(message), odataQuery);
+            this.messageForUser(userPrincipalName, messageId, (error, message) => error ? d.reject(error) : d.resolve(message), odataQuery);
             return d.promise;
         }
 
         public messageForUser(userPrincipalName: string, messageId: string, callback: PromiseCallback<Message>, odataQuery?: string): void {
             var scopes = [Scopes.Mail.Read];
             var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId, odataQuery);
-            this.getMessage(urlString, messageId, (result, error) => callback(result, error), this.scopesForV2(scopes));
+            this.getMessage(urlString, messageId, (error, result) => callback(error, result), this.scopesForV2(scopes));
         }
 
         public messagesForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error> {
             var d = new Deferred<Messages, Error>();
-            this.messagesForUser(userPrincipalName, (messages, error) => error ? d.reject(error) : d.resolve(messages), odataQuery);
+            this.messagesForUser(userPrincipalName, (error, messages) => error ? d.reject(error) : d.resolve(messages), odataQuery);
             return d.promise;
         }
 
         public messagesForUser(userPrincipalName: string, callback: PromiseCallback<Messages>, odataQuery?: string): void {
             var scopes = [Scopes.Mail.Read];
             var urlString = this.buildUsersUrl(userPrincipalName + "/messages", odataQuery);
-            this.getMessages(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
+            this.getMessages(urlString, (error, result) => callback(error, result), this.scopesForV2(scopes));
         }
 
         // MailFolders For User
         public mailFoldersForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<MailFolders, Error> {
             var d = new Deferred<MailFolders, Error>();
-            this.mailFoldersForUser(userPrincipalName, (messages, error) => error ? d.reject(error) : d.resolve(messages), odataQuery);
+            this.mailFoldersForUser(userPrincipalName, (error, messages) => error ? d.reject(error) : d.resolve(messages), odataQuery);
             return d.promise;
         }
 
         public mailFoldersForUser(userPrincipalName: string, callback: PromiseCallback<MailFolders>, odataQuery?: string): void {
             var scopes = [Scopes.Mail.Read];
             var urlString = this.buildUsersUrl(userPrincipalName + "/mailFolders", odataQuery);
-            this.getMailFolders(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
+            this.getMailFolders(urlString, (error, result) => callback(error, result), this.scopesForV2(scopes));
         }
 
         // Events For User
 
         public eventForUserAsync(userPrincipalName: string, eventId: string, odataQuery?: string): Promise<Event, Error> {
             var d = new Deferred<Event, Error>();
-            this.eventForUser(userPrincipalName, eventId, (event, error) => error ? d.reject(error) : d.resolve(event), odataQuery);
+            this.eventForUser(userPrincipalName, eventId, (error, event) => error ? d.reject(error) : d.resolve(event), odataQuery);
             return d.promise;
         }
 
         public eventForUser(userPrincipalName: string, eventId: string, callback: PromiseCallback<Event>, odataQuery?: string): void {
             var scopes = [Scopes.Calendars.Read];
             var urlString = this.buildUsersUrl(userPrincipalName + "/events/" + eventId, odataQuery);
-            this.getEvent(urlString, eventId, (result, error) => callback(result, error), this.scopesForV2(scopes));
+            this.getEvent(urlString, eventId, (error, result) => callback(error, result), this.scopesForV2(scopes));
         }
 
         public eventsForUserAsync(userPrincipalName: string, endpoint: EventsEndpoint, odataQuery?: string): Promise<Events, Error> {
             var d = new Deferred<Events, Error>();
-            this.eventsForUser(userPrincipalName, endpoint, (events, error) => error ? d.reject(error) : d.resolve(events), odataQuery);
+            this.eventsForUser(userPrincipalName, endpoint, (error, events) => error ? d.reject(error) : d.resolve(events), odataQuery);
             return d.promise;
         }
 
-        public eventsForUser(userPrincipalName: string, endpoint: EventsEndpoint, callback: (messages: Events, error: Error) => void, odataQuery?: string): void {
+        public eventsForUser(userPrincipalName: string, endpoint: EventsEndpoint, callback: (error: Error, messages: Events) => void, odataQuery?: string): void {
             var scopes = [Scopes.Calendars.Read];
             var urlString = this.buildUsersUrl(userPrincipalName + "/" + EventsEndpoint[endpoint], odataQuery);
-            this.getEvents(urlString, endpoint, (result, error) => callback(result, error), this.scopesForV2(scopes));
+            this.getEvents(urlString, endpoint, (error, result) => callback(error, result), this.scopesForV2(scopes));
         }
 
         // Groups/Relationships For User
         public memberOfForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Groups, Error> {
             var d = new Deferred<Groups, Error>();
-            this.memberOfForUser(userPrincipalName, (groups, error) => error ? d.reject(error) : d.resolve(groups), odataQuery);
+            this.memberOfForUser(userPrincipalName, (error, groups) => error ? d.reject(error) : d.resolve(groups), odataQuery);
             return d.promise;
         }
 
@@ -560,7 +560,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
 
         public managerForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<User, Error> {
             var d = new Deferred<User, Error>();
-            this.managerForUser(userPrincipalName, (user, error) => error ? d.reject(error) : d.resolve(user), odataQuery);
+            this.managerForUser(userPrincipalName, (error, user) => error ? d.reject(error) : d.resolve(user), odataQuery);
             return d.promise;
         }
 
@@ -572,7 +572,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
 
         public directReportsForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Users, Error> {
             var d = new Deferred<Users, Error>();
-            this.directReportsForUser(userPrincipalName, (users, error) => error ? d.reject(error) : d.resolve(users), odataQuery);
+            this.directReportsForUser(userPrincipalName, (error, users) => error ? d.reject(error) : d.resolve(users), odataQuery);
             return d.promise;
         }
 
@@ -584,7 +584,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
 
         public profilePhotoForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<ProfilePhoto, Error> {
             var d = new Deferred<ProfilePhoto, Error>();
-            this.profilePhotoForUser(userPrincipalName, (profilePhoto, error) => error ? d.reject(error) : d.resolve(profilePhoto), odataQuery);
+            this.profilePhotoForUser(userPrincipalName, (error, profilePhoto) => error ? d.reject(error) : d.resolve(profilePhoto), odataQuery);
             return d.promise;
         }
 
@@ -596,7 +596,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
 
         public profilePhotoValueForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<any, Error> {
             var d = new Deferred<any, Error>();
-            this.profilePhotoValueForUser(userPrincipalName, (result, error) => error ? d.reject(error) : d.resolve(result), odataQuery);
+            this.profilePhotoValueForUser(userPrincipalName, (error, result) => error ? d.reject(error) : d.resolve(result), odataQuery);
             return d.promise;
         }
 
@@ -609,7 +609,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
         // Message Attachments
         public messageAttachmentsForUserAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Attachments, Error> {
             var d = new Deferred<any, Error>();
-            this.messageAttachmentsForUser(userPrincipalName, messageId, (result, error) => error ? d.reject(error) : d.resolve(result), odataQuery);
+            this.messageAttachmentsForUser(userPrincipalName, messageId, (error, result) => error ? d.reject(error) : d.resolve(result), odataQuery);
             return d.promise;
         }
 
@@ -621,7 +621,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
 
         public messageAttachmentForUserAsync(userPrincipalName: string, messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error> {
             var d = new Deferred<Attachment,Error>();
-            this.messageAttachmentForUser(userPrincipalName, messageId, attachmentId, (attachment, error) => error ? d.reject(error) : d.resolve(attachment), odataQuery);
+            this.messageAttachmentForUser(userPrincipalName, messageId, attachmentId, (error, attachment) => error ? d.reject(error) : d.resolve(attachment), odataQuery);
             return d.promise;
         }
 
@@ -634,7 +634,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
         //http verbs
         public getAsync(url: string): Promise<string, Error> {
             var d = new Deferred<string,Error>();
-            this.get(url, (response, error) => error ? d.reject(error) : d.resolve(response))
+            this.get(url, (error, response) => error ? d.reject(error) : d.resolve(response))
             return d.promise;
         }
 
@@ -645,15 +645,15 @@ import { Identity, OAuthVersion, Error } from "./identity";
             xhr.onreadystatechange = () => {
                 if (xhr.readyState === 4)
                     if (xhr.status === 200)
-                        callback(responseType ? xhr.response : xhr.responseText, null);
+                        callback(null, responseType ? xhr.response : xhr.responseText);
                     else
-                        callback(null, this.generateError(xhr));
+                        callback(this.generateError(xhr));
             }
 
             xhr.open("GET", url);
             this.addAccessTokenAndSend(xhr, (addTokenError: Error) => {
                 if (addTokenError) {
-                    callback(null, addTokenError);
+                    callback(addTokenError);
                 }
             }, scopes);
         }
@@ -673,9 +673,9 @@ import { Identity, OAuthVersion, Error } from "./identity";
         //Private methods
 
         private getUsers(urlString, callback: PromiseCallback<Users>, scopes?: string[], basicProfileOnly = true): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
 
@@ -683,7 +683,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
                 if (usersODATA.error) {
                     var errorODATA = new Error();
                     errorODATA.other = usersODATA.error;
-                    callback(null, errorODATA);
+                    callback(errorODATA);
                     return;
                 }
 
@@ -694,9 +694,9 @@ import { Identity, OAuthVersion, Error } from "./identity";
                     users.nextLink = (callback?: PromiseCallback<Users>) => {
                         var scopes = basicProfileOnly ? [Scopes.User.ReadBasicAll] : [Scopes.User.ReadAll];
                         var d = new Deferred<Users,Error>();
-                        this.getUsers(nextLink, (result: Users, error: Error) => {
+                        this.getUsers(nextLink, (error: Error, result: Users) => {
                             if (callback)
-                                callback(result, error);
+                                callback(error, result);
                             else
                                 error ? d.reject(error) : d.resolve(result);
                         }, this.scopesForV2(scopes), basicProfileOnly);
@@ -704,26 +704,26 @@ import { Identity, OAuthVersion, Error } from "./identity";
                     }
                 }
 
-                callback(users, null);
+                callback(null, users);
             },null,scopes);
         }
 
         private getUser(urlString, callback: PromiseCallback<User>, scopes?:string[]): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
                 var userODATA = JSON.parse(result) ;
                 if (userODATA.error) {
                     var errorODATA = new Error();
                     errorODATA.other = userODATA.error;
-                    callback(null, errorODATA);
+                    callback(errorODATA);
                     return;
                 }
 
                 var user = new User(this, userODATA);
-                callback(user, null);
+                callback(null, user);
             },null,scopes);
 
         }
@@ -751,7 +751,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
                 }
                 else {
                     //v1 resource based tokens
-                    this.KurveIdentity.getAccessToken(this.defaultResourceID, ((token: string, error: Error) => {
+                    this.KurveIdentity.getAccessToken(this.defaultResourceID, ((error: Error, token: string) => {
                         if (error)
                             callback(error);
                         else {
@@ -765,29 +765,29 @@ import { Identity, OAuthVersion, Error } from "./identity";
         }
 
         private getMessage(urlString: string, messageId: string, callback: PromiseCallback<Message>, scopes?:string[]): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
                 var ODATA = JSON.parse(result);
                 if (ODATA.error) {
                     var ODATAError = new Error();
                     ODATAError.other = ODATA.error;
-                    callback(null, ODATAError);
+                    callback(ODATAError);
                     return;
                 }
                 var message = new Message(this, ODATA);
 
-                callback(message, null);
+                callback(null, message);
             }, null, scopes);
 
         }
 
         private getMessages(urlString: string, callback: PromiseCallback<Messages>, scopes?:string[]): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
 
@@ -795,7 +795,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
                 if (messagesODATA.error) {
                     var errorODATA = new Error();
                     errorODATA.other = messagesODATA.error;
-                    callback(null, errorODATA);
+                    callback(errorODATA);
                     return;
                 }
 
@@ -806,43 +806,43 @@ import { Identity, OAuthVersion, Error } from "./identity";
                     messages.nextLink = (callback?: PromiseCallback<Messages>) => {
                         var scopes = [Scopes.Mail.Read];
                         var d = new Deferred<Messages,Error>();
-                        this.getMessages(nextLink, (messages: Messages, error: Error) => {
+                        this.getMessages(nextLink, (error: Error, messages: Messages) => {
                             if (callback)
-                                callback(messages, error);
+                                callback(error, messages);
                             else
                                 error ? d.reject(error) : d.resolve(messages);
                         }, this.scopesForV2(scopes));
                         return d.promise;
                     }
                 }
-                callback(messages,  null);
+                callback(null, messages);
             },null,scopes);
         }
 
         private getEvent(urlString: string, EventId: string, callback: PromiseCallback<Event>, scopes?:string[]): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
                 var ODATA = JSON.parse(result);
                 if (ODATA.error) {
                     var ODATAError = new Error();
                     ODATAError.other = ODATA.error;
-                    callback(null, ODATAError);
+                    callback(ODATAError);
                     return;
                 }
                 var event = new Event(this, ODATA);
 
-                callback(event, null);
+                callback(null, event);
             }, null, scopes);
 
         }
 
         private getEvents(urlString: string, endpoint: EventsEndpoint, callback: PromiseCallback<Events>, scopes?: string[]): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
 
@@ -850,7 +850,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
                 if (odata.error) {
                     var errorODATA = new Error();
                     errorODATA.other = odata.error;
-                    callback(null, errorODATA);
+                    callback(errorODATA);
                     return;
                 }
 
@@ -861,24 +861,24 @@ import { Identity, OAuthVersion, Error } from "./identity";
                     events.nextLink = (callback?: PromiseCallback<Events>) => {
                         var scopes = [Scopes.Mail.Read];
                         var d = new Deferred<Events, Error>();
-                        this.getEvents(nextLink, endpoint, (result: Events, error: Error) => {
+                        this.getEvents(nextLink, endpoint, (error: Error, result: Events) => {
                             if (callback)
-                                callback(result, error);
+                                callback(error, result);
                             else
                                 error ? d.reject(error) : d.resolve(result);
                         }, this.scopesForV2(scopes));
                         return d.promise;
                     }
                 }
-                callback(events, null);
+                callback(null, events);
             }, null, scopes);
         }
 
 
         private getGroups(urlString: string, callback: PromiseCallback<Groups>, scopes?:string[]): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
 
@@ -886,7 +886,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
                 if (groupsODATA.error) {
                     var errorODATA = new Error();
                     errorODATA.other = groupsODATA.error;
-                    callback(null, errorODATA);
+                    callback(errorODATA);
                     return;
                 }
 
@@ -897,9 +897,9 @@ import { Identity, OAuthVersion, Error } from "./identity";
                     groups.nextLink = (callback: PromiseCallback<Groups>) => {
                         var scopes = [Scopes.Group.ReadAll];
                         var d = new Deferred<Groups,Error>();
-                        this.getGroups(nextLink, (result: Groups, error: Error) => {
+                        this.getGroups(nextLink, (error: Error, result: Groups) => {
                             if (callback)
-                                callback(result, error);
+                                callback(error, result);
                             else
                                 error ? d.reject(error) : d.resolve(result);
                         }, this.scopesForV2(scopes));
@@ -907,63 +907,63 @@ import { Identity, OAuthVersion, Error } from "./identity";
                     }
                 }
 
-                callback(groups, null);
+                callback(null, groups);
             },null,scopes);
         }
 
         private getGroup(urlString: string, callback: PromiseCallback<Group>, scopes?:string[]): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
                 var ODATA = JSON.parse(result);
                 if (ODATA.error) {
                     var ODATAError = new Error();
                     ODATAError.other = ODATA.error;
-                    callback(null, ODATAError);
+                    callback(ODATAError);
                     return;
                 }
                 var group = new Group(this, ODATA);
 
-                callback(group, null);
+                callback(null, group);
             },null,scopes);
 
         }
 
         private getPhoto(urlString, callback: PromiseCallback<ProfilePhoto>, scopes?:string[]): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
                 var ODATA = JSON.parse(result);
                 if (ODATA.error) {
                     var errorODATA = new Error();
                     errorODATA.other = ODATA.error;
-                    callback(null, errorODATA);
+                    callback(errorODATA);
                     return;
                 }
                 var photo = new ProfilePhoto(this, ODATA);
 
-                callback(photo, null);
+                callback(null, photo);
             },null,scopes);
         }
 
         private getPhotoValue(urlString, callback: PromiseCallback<any>, scopes?:string[]): void {
-            this.get(urlString, (result: any, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: any) => {
                 if (errorGet) {
                     callback(null, errorGet);
                     return;
                 }
-                callback(result, null);
+                callback(result);
             }, "blob",scopes);
         }
 
         private getMailFolders(urlString, callback: PromiseCallback<MailFolders>, scopes?: string[]): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
 
@@ -971,7 +971,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
                 if (odata.error) {
                     var errorODATA = new Error();
                     errorODATA.other = odata.error;
-                    callback(null, errorODATA);
+                    callback(errorODATA);
                 }
 
                 var resultsArray:MailFolderDataModel[] = (odata.value ? odata.value : [odata]);
@@ -981,24 +981,24 @@ import { Identity, OAuthVersion, Error } from "./identity";
                     mailFolders.nextLink = (callback?: PromiseCallback<MailFolders>) => {
                         var scopes = [Scopes.User.ReadAll];
                         var d = new Deferred<MailFolders,Error>();
-                        this.getMailFolders(nextLink, (result: MailFolders, error: Error) => {
+                        this.getMailFolders(nextLink, (error: Error, result: MailFolders) => {
                             if (callback)
-                                callback(result, error);
+                                callback(error, result);
                             else
                                 error ? d.reject(error) : d.resolve(result);
                         }, this.scopesForV2(scopes));
                         return d.promise;
                     }
                 }
-                callback(mailFolders, null);
+                callback(null, mailFolders);
             },null,scopes);
         }
 
 
         private getMessageAttachments(urlString: string, callback: PromiseCallback<Attachments>, scopes?:string[]): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
 
@@ -1006,7 +1006,7 @@ import { Identity, OAuthVersion, Error } from "./identity";
                 if (attachmentsODATA.error) {
                     var errorODATA = new Error();
                     errorODATA.other = attachmentsODATA.error;
-                    callback(null, errorODATA);
+                    callback(errorODATA);
                     return;
                 }
                 var resultsArray = (attachmentsODATA.value ? attachmentsODATA.value : [attachmentsODATA]) as any[];
@@ -1016,9 +1016,9 @@ import { Identity, OAuthVersion, Error } from "./identity";
                     attachments.nextLink = (callback?: PromiseCallback<Attachments>) => {
                         var scopes = [Scopes.Mail.Read];
                         var d = new Deferred<Attachments,Error>();
-                        this.getMessageAttachments(nextLink, (attachments: Attachments, error: Error) => {
+                        this.getMessageAttachments(nextLink, (error: Error, attachments: Attachments) => {
                             if (callback)
-                                callback(attachments, error);
+                                callback(error, attachments);
                             else
                                 error ? d.reject(error) : d.resolve(attachments);
                         }, this.scopesForV2(scopes));
@@ -1026,26 +1026,26 @@ import { Identity, OAuthVersion, Error } from "./identity";
                     }
                 }
 
-                callback(attachments,  null);
+                callback(null, attachments);
             },null,scopes);
         }
 
         private getMessageAttachment(urlString, callback: PromiseCallback<Attachment>, scopes?:string[]): void {
-            this.get(urlString, (result: string, errorGet: Error) => {
+            this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
-                    callback(null, errorGet);
+                    callback(errorGet);
                     return;
                 }
                 var ODATA = JSON.parse(result);
                 if (ODATA.error) {
                     var ODATAError = new Error();
                     ODATAError.other = ODATA.error;
-                    callback(null, ODATAError);
+                    callback(ODATAError);
                     return;
                 }
                 var attachment = new Attachment(this, ODATA);
 
-                callback(attachment, null);
+                callback(null, attachment);
             },null,scopes);
         }
 
