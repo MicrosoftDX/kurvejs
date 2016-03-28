@@ -69,6 +69,19 @@ At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optio
 
 # Release Notes
 
+## 0.5.0
+ * Refactored source tree
+ * Changed modularization to allow node to access Kurve 
+ * Build using npm instead of Gulp
+ * Bundle using webpack instead of browserify
+ * Create .d.ts using dts-generator
+
+## 0.4.2:
+ * Cached tokens can now be persisted to a local store
+ * Expanded Graph support including event, mailFolders, messageAttachments
+ * Simplified code
+ * Bug fixes
+
 ## 0.4.1:
  * Added support for /calendarView calendar events
  * Simplified code with inheritance and generics
