@@ -79,8 +79,9 @@ declare module 'Kurve/src/identity' {
 
 }
 declare module 'Kurve/src/promises' {
+	import { Error } from 'Kurve/src/identity';
 	export interface PromiseCallback<T> {
-	    (T: any, Error: any): void;
+	    (error: Error, result?: T): void;
 	}
 	export class Deferred<T, E> {
 	    private _dispatcher;
@@ -219,7 +220,7 @@ declare module 'Kurve/src/graph' {
 	    mailFoldersAsync(odataQuery?: string): Promise<MailFolders, Error>;
 	    message(messageId: string, callback: PromiseCallback<Message>, odataQuery?: string): void;
 	    messageAsync(messageId: string, odataQuery?: string): Promise<Message, Error>;
-	    event(eventId: string, callback: PromiseCallback<Message>, odataQuery?: string): void;
+	    event(eventId: string, callback: PromiseCallback<Event>, odataQuery?: string): void;
 	    eventAsync(eventId: string, odataQuery?: string): Promise<Event, Error>;
 	    messageAttachment(messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string): void;
 	    messageAttachmentAsync(messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error>;
@@ -419,7 +420,7 @@ declare module 'Kurve/src/graph' {
 	    eventForUserAsync(userPrincipalName: string, eventId: string, odataQuery?: string): Promise<Event, Error>;
 	    eventForUser(userPrincipalName: string, eventId: string, callback: PromiseCallback<Event>, odataQuery?: string): void;
 	    eventsForUserAsync(userPrincipalName: string, endpoint: EventsEndpoint, odataQuery?: string): Promise<Events, Error>;
-	    eventsForUser(userPrincipalName: string, endpoint: EventsEndpoint, callback: (messages: Events, error: Error) => void, odataQuery?: string): void;
+	    eventsForUser(userPrincipalName: string, endpoint: EventsEndpoint, callback: (error: Error, messages: Events) => void, odataQuery?: string): void;
 	    memberOfForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Groups, Error>;
 	    memberOfForUser(userPrincipalName: string, callback: PromiseCallback<Groups>, odataQuery?: string): void;
 	    managerForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<User, Error>;

@@ -469,7 +469,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.meAsync = function (odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.me(function (user, error) { return error ? d.reject(error) : d.resolve(user); }, odataQuery);
+	        this.me(function (error, user) { return error ? d.reject(error) : d.resolve(user); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.me = function (callback, odataQuery) {
@@ -480,7 +480,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Graph.prototype.userAsync = function (userId, odataQuery, basicProfileOnly) {
 	        if (basicProfileOnly === void 0) { basicProfileOnly = true; }
 	        var d = new promises_1.Deferred();
-	        this.user(userId, function (user, error) { return error ? d.reject(error) : d.resolve(user); }, odataQuery, basicProfileOnly);
+	        this.user(userId, function (error, user) { return error ? d.reject(error) : d.resolve(user); }, odataQuery, basicProfileOnly);
 	        return d.promise;
 	    };
 	    Graph.prototype.user = function (userId, callback, odataQuery, basicProfileOnly) {
@@ -492,7 +492,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Graph.prototype.usersAsync = function (odataQuery, basicProfileOnly) {
 	        if (basicProfileOnly === void 0) { basicProfileOnly = true; }
 	        var d = new promises_1.Deferred();
-	        this.users(function (users, error) { return error ? d.reject(error) : d.resolve(users); }, odataQuery, basicProfileOnly);
+	        this.users(function (error, users) { return error ? d.reject(error) : d.resolve(users); }, odataQuery, basicProfileOnly);
 	        return d.promise;
 	    };
 	    Graph.prototype.users = function (callback, odataQuery, basicProfileOnly) {
@@ -503,7 +503,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.groupAsync = function (groupId, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.group(groupId, function (group, error) { return error ? d.reject(error) : d.resolve(group); }, odataQuery);
+	        this.group(groupId, function (error, group) { return error ? d.reject(error) : d.resolve(group); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.group = function (groupId, callback, odataQuery) {
@@ -513,7 +513,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.groupsAsync = function (odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.groups(function (groups, error) { return error ? d.reject(error) : d.resolve(groups); }, odataQuery);
+	        this.groups(function (error, groups) { return error ? d.reject(error) : d.resolve(groups); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.groups = function (callback, odataQuery) {
@@ -523,57 +523,57 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.messageForUserAsync = function (userPrincipalName, messageId, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.messageForUser(userPrincipalName, messageId, function (message, error) { return error ? d.reject(error) : d.resolve(message); }, odataQuery);
+	        this.messageForUser(userPrincipalName, messageId, function (error, message) { return error ? d.reject(error) : d.resolve(message); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.messageForUser = function (userPrincipalName, messageId, callback, odataQuery) {
 	        var scopes = [Scopes.Mail.Read];
 	        var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId, odataQuery);
-	        this.getMessage(urlString, messageId, function (result, error) { return callback(result, error); }, this.scopesForV2(scopes));
+	        this.getMessage(urlString, messageId, function (error, result) { return callback(error, result); }, this.scopesForV2(scopes));
 	    };
 	    Graph.prototype.messagesForUserAsync = function (userPrincipalName, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.messagesForUser(userPrincipalName, function (messages, error) { return error ? d.reject(error) : d.resolve(messages); }, odataQuery);
+	        this.messagesForUser(userPrincipalName, function (error, messages) { return error ? d.reject(error) : d.resolve(messages); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.messagesForUser = function (userPrincipalName, callback, odataQuery) {
 	        var scopes = [Scopes.Mail.Read];
 	        var urlString = this.buildUsersUrl(userPrincipalName + "/messages", odataQuery);
-	        this.getMessages(urlString, function (result, error) { return callback(result, error); }, this.scopesForV2(scopes));
+	        this.getMessages(urlString, function (error, result) { return callback(error, result); }, this.scopesForV2(scopes));
 	    };
 	    Graph.prototype.mailFoldersForUserAsync = function (userPrincipalName, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.mailFoldersForUser(userPrincipalName, function (messages, error) { return error ? d.reject(error) : d.resolve(messages); }, odataQuery);
+	        this.mailFoldersForUser(userPrincipalName, function (error, messages) { return error ? d.reject(error) : d.resolve(messages); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.mailFoldersForUser = function (userPrincipalName, callback, odataQuery) {
 	        var scopes = [Scopes.Mail.Read];
 	        var urlString = this.buildUsersUrl(userPrincipalName + "/mailFolders", odataQuery);
-	        this.getMailFolders(urlString, function (result, error) { return callback(result, error); }, this.scopesForV2(scopes));
+	        this.getMailFolders(urlString, function (error, result) { return callback(error, result); }, this.scopesForV2(scopes));
 	    };
 	    Graph.prototype.eventForUserAsync = function (userPrincipalName, eventId, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.eventForUser(userPrincipalName, eventId, function (event, error) { return error ? d.reject(error) : d.resolve(event); }, odataQuery);
+	        this.eventForUser(userPrincipalName, eventId, function (error, event) { return error ? d.reject(error) : d.resolve(event); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.eventForUser = function (userPrincipalName, eventId, callback, odataQuery) {
 	        var scopes = [Scopes.Calendars.Read];
 	        var urlString = this.buildUsersUrl(userPrincipalName + "/events/" + eventId, odataQuery);
-	        this.getEvent(urlString, eventId, function (result, error) { return callback(result, error); }, this.scopesForV2(scopes));
+	        this.getEvent(urlString, eventId, function (error, result) { return callback(error, result); }, this.scopesForV2(scopes));
 	    };
 	    Graph.prototype.eventsForUserAsync = function (userPrincipalName, endpoint, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.eventsForUser(userPrincipalName, endpoint, function (events, error) { return error ? d.reject(error) : d.resolve(events); }, odataQuery);
+	        this.eventsForUser(userPrincipalName, endpoint, function (error, events) { return error ? d.reject(error) : d.resolve(events); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.eventsForUser = function (userPrincipalName, endpoint, callback, odataQuery) {
 	        var scopes = [Scopes.Calendars.Read];
 	        var urlString = this.buildUsersUrl(userPrincipalName + "/" + EventsEndpoint[endpoint], odataQuery);
-	        this.getEvents(urlString, endpoint, function (result, error) { return callback(result, error); }, this.scopesForV2(scopes));
+	        this.getEvents(urlString, endpoint, function (error, result) { return callback(error, result); }, this.scopesForV2(scopes));
 	    };
 	    Graph.prototype.memberOfForUserAsync = function (userPrincipalName, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.memberOfForUser(userPrincipalName, function (groups, error) { return error ? d.reject(error) : d.resolve(groups); }, odataQuery);
+	        this.memberOfForUser(userPrincipalName, function (error, groups) { return error ? d.reject(error) : d.resolve(groups); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.memberOfForUser = function (userPrincipalName, callback, odataQuery) {
@@ -583,7 +583,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.managerForUserAsync = function (userPrincipalName, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.managerForUser(userPrincipalName, function (user, error) { return error ? d.reject(error) : d.resolve(user); }, odataQuery);
+	        this.managerForUser(userPrincipalName, function (error, user) { return error ? d.reject(error) : d.resolve(user); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.managerForUser = function (userPrincipalName, callback, odataQuery) {
@@ -593,7 +593,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.directReportsForUserAsync = function (userPrincipalName, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.directReportsForUser(userPrincipalName, function (users, error) { return error ? d.reject(error) : d.resolve(users); }, odataQuery);
+	        this.directReportsForUser(userPrincipalName, function (error, users) { return error ? d.reject(error) : d.resolve(users); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.directReportsForUser = function (userPrincipalName, callback, odataQuery) {
@@ -603,7 +603,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.profilePhotoForUserAsync = function (userPrincipalName, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.profilePhotoForUser(userPrincipalName, function (profilePhoto, error) { return error ? d.reject(error) : d.resolve(profilePhoto); }, odataQuery);
+	        this.profilePhotoForUser(userPrincipalName, function (error, profilePhoto) { return error ? d.reject(error) : d.resolve(profilePhoto); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.profilePhotoForUser = function (userPrincipalName, callback, odataQuery) {
@@ -613,7 +613,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.profilePhotoValueForUserAsync = function (userPrincipalName, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.profilePhotoValueForUser(userPrincipalName, function (result, error) { return error ? d.reject(error) : d.resolve(result); }, odataQuery);
+	        this.profilePhotoValueForUser(userPrincipalName, function (error, result) { return error ? d.reject(error) : d.resolve(result); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.profilePhotoValueForUser = function (userPrincipalName, callback, odataQuery) {
@@ -623,7 +623,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.messageAttachmentsForUserAsync = function (userPrincipalName, messageId, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.messageAttachmentsForUser(userPrincipalName, messageId, function (result, error) { return error ? d.reject(error) : d.resolve(result); }, odataQuery);
+	        this.messageAttachmentsForUser(userPrincipalName, messageId, function (error, result) { return error ? d.reject(error) : d.resolve(result); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.messageAttachmentsForUser = function (userPrincipalName, messageId, callback, odataQuery) {
@@ -633,7 +633,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.messageAttachmentForUserAsync = function (userPrincipalName, messageId, attachmentId, odataQuery) {
 	        var d = new promises_1.Deferred();
-	        this.messageAttachmentForUser(userPrincipalName, messageId, attachmentId, function (attachment, error) { return error ? d.reject(error) : d.resolve(attachment); }, odataQuery);
+	        this.messageAttachmentForUser(userPrincipalName, messageId, attachmentId, function (error, attachment) { return error ? d.reject(error) : d.resolve(attachment); }, odataQuery);
 	        return d.promise;
 	    };
 	    Graph.prototype.messageAttachmentForUser = function (userPrincipalName, messageId, attachmentId, callback, odataQuery) {
@@ -643,7 +643,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.getAsync = function (url) {
 	        var d = new promises_1.Deferred();
-	        this.get(url, function (response, error) { return error ? d.reject(error) : d.resolve(response); });
+	        this.get(url, function (error, response) { return error ? d.reject(error) : d.resolve(response); });
 	        return d.promise;
 	    };
 	    Graph.prototype.get = function (url, callback, responseType, scopes) {
@@ -654,14 +654,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        xhr.onreadystatechange = function () {
 	            if (xhr.readyState === 4)
 	                if (xhr.status === 200)
-	                    callback(responseType ? xhr.response : xhr.responseText, null);
+	                    callback(null, responseType ? xhr.response : xhr.responseText);
 	                else
-	                    callback(null, _this.generateError(xhr));
+	                    callback(_this.generateError(xhr));
 	        };
 	        xhr.open("GET", url);
 	        this.addAccessTokenAndSend(xhr, function (addTokenError) {
 	            if (addTokenError) {
-	                callback(null, addTokenError);
+	                callback(addTokenError);
 	            }
 	        }, scopes);
 	    };
@@ -678,16 +678,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Graph.prototype.getUsers = function (urlString, callback, scopes, basicProfileOnly) {
 	        var _this = this;
 	        if (basicProfileOnly === void 0) { basicProfileOnly = true; }
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var usersODATA = JSON.parse(result);
 	            if (usersODATA.error) {
 	                var errorODATA = new identity_1.Error();
 	                errorODATA.other = usersODATA.error;
-	                callback(null, errorODATA);
+	                callback(errorODATA);
 	                return;
 	            }
 	            var resultsArray = (usersODATA.value ? usersODATA.value : [usersODATA]);
@@ -697,34 +697,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	                users.nextLink = function (callback) {
 	                    var scopes = basicProfileOnly ? [Scopes.User.ReadBasicAll] : [Scopes.User.ReadAll];
 	                    var d = new promises_1.Deferred();
-	                    _this.getUsers(nextLink, function (result, error) {
+	                    _this.getUsers(nextLink, function (error, result) {
 	                        if (callback)
-	                            callback(result, error);
+	                            callback(error, result);
 	                        else
 	                            error ? d.reject(error) : d.resolve(result);
 	                    }, _this.scopesForV2(scopes), basicProfileOnly);
 	                    return d.promise;
 	                };
 	            }
-	            callback(users, null);
+	            callback(null, users);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.getUser = function (urlString, callback, scopes) {
 	        var _this = this;
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var userODATA = JSON.parse(result);
 	            if (userODATA.error) {
 	                var errorODATA = new identity_1.Error();
 	                errorODATA.other = userODATA.error;
-	                callback(null, errorODATA);
+	                callback(errorODATA);
 	                return;
 	            }
 	            var user = new User(_this, userODATA);
-	            callback(user, null);
+	            callback(null, user);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.addAccessTokenAndSend = function (xhr, callback, scopes) {
@@ -745,7 +745,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }));
 	            }
 	            else {
-	                this.KurveIdentity.getAccessToken(this.defaultResourceID, (function (token, error) {
+	                this.KurveIdentity.getAccessToken(this.defaultResourceID, (function (error, token) {
 	                    if (error)
 	                        callback(error);
 	                    else {
@@ -759,34 +759,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.getMessage = function (urlString, messageId, callback, scopes) {
 	        var _this = this;
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var ODATA = JSON.parse(result);
 	            if (ODATA.error) {
 	                var ODATAError = new identity_1.Error();
 	                ODATAError.other = ODATA.error;
-	                callback(null, ODATAError);
+	                callback(ODATAError);
 	                return;
 	            }
 	            var message = new Message(_this, ODATA);
-	            callback(message, null);
+	            callback(null, message);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.getMessages = function (urlString, callback, scopes) {
 	        var _this = this;
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var messagesODATA = JSON.parse(result);
 	            if (messagesODATA.error) {
 	                var errorODATA = new identity_1.Error();
 	                errorODATA.other = messagesODATA.error;
-	                callback(null, errorODATA);
+	                callback(errorODATA);
 	                return;
 	            }
 	            var resultsArray = (messagesODATA.value ? messagesODATA.value : [messagesODATA]);
@@ -796,48 +796,48 @@ return /******/ (function(modules) { // webpackBootstrap
 	                messages.nextLink = function (callback) {
 	                    var scopes = [Scopes.Mail.Read];
 	                    var d = new promises_1.Deferred();
-	                    _this.getMessages(nextLink, function (messages, error) {
+	                    _this.getMessages(nextLink, function (error, messages) {
 	                        if (callback)
-	                            callback(messages, error);
+	                            callback(error, messages);
 	                        else
 	                            error ? d.reject(error) : d.resolve(messages);
 	                    }, _this.scopesForV2(scopes));
 	                    return d.promise;
 	                };
 	            }
-	            callback(messages, null);
+	            callback(null, messages);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.getEvent = function (urlString, EventId, callback, scopes) {
 	        var _this = this;
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var ODATA = JSON.parse(result);
 	            if (ODATA.error) {
 	                var ODATAError = new identity_1.Error();
 	                ODATAError.other = ODATA.error;
-	                callback(null, ODATAError);
+	                callback(ODATAError);
 	                return;
 	            }
 	            var event = new Event(_this, ODATA);
-	            callback(event, null);
+	            callback(null, event);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.getEvents = function (urlString, endpoint, callback, scopes) {
 	        var _this = this;
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var odata = JSON.parse(result);
 	            if (odata.error) {
 	                var errorODATA = new identity_1.Error();
 	                errorODATA.other = odata.error;
-	                callback(null, errorODATA);
+	                callback(errorODATA);
 	                return;
 	            }
 	            var resultsArray = (odata.value ? odata.value : [odata]);
@@ -847,30 +847,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	                events.nextLink = function (callback) {
 	                    var scopes = [Scopes.Mail.Read];
 	                    var d = new promises_1.Deferred();
-	                    _this.getEvents(nextLink, endpoint, function (result, error) {
+	                    _this.getEvents(nextLink, endpoint, function (error, result) {
 	                        if (callback)
-	                            callback(result, error);
+	                            callback(error, result);
 	                        else
 	                            error ? d.reject(error) : d.resolve(result);
 	                    }, _this.scopesForV2(scopes));
 	                    return d.promise;
 	                };
 	            }
-	            callback(events, null);
+	            callback(null, events);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.getGroups = function (urlString, callback, scopes) {
 	        var _this = this;
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var groupsODATA = JSON.parse(result);
 	            if (groupsODATA.error) {
 	                var errorODATA = new identity_1.Error();
 	                errorODATA.other = groupsODATA.error;
-	                callback(null, errorODATA);
+	                callback(errorODATA);
 	                return;
 	            }
 	            var resultsArray = (groupsODATA.value ? groupsODATA.value : [groupsODATA]);
@@ -880,75 +880,75 @@ return /******/ (function(modules) { // webpackBootstrap
 	                groups.nextLink = function (callback) {
 	                    var scopes = [Scopes.Group.ReadAll];
 	                    var d = new promises_1.Deferred();
-	                    _this.getGroups(nextLink, function (result, error) {
+	                    _this.getGroups(nextLink, function (error, result) {
 	                        if (callback)
-	                            callback(result, error);
+	                            callback(error, result);
 	                        else
 	                            error ? d.reject(error) : d.resolve(result);
 	                    }, _this.scopesForV2(scopes));
 	                    return d.promise;
 	                };
 	            }
-	            callback(groups, null);
+	            callback(null, groups);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.getGroup = function (urlString, callback, scopes) {
 	        var _this = this;
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var ODATA = JSON.parse(result);
 	            if (ODATA.error) {
 	                var ODATAError = new identity_1.Error();
 	                ODATAError.other = ODATA.error;
-	                callback(null, ODATAError);
+	                callback(ODATAError);
 	                return;
 	            }
 	            var group = new Group(_this, ODATA);
-	            callback(group, null);
+	            callback(null, group);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.getPhoto = function (urlString, callback, scopes) {
 	        var _this = this;
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var ODATA = JSON.parse(result);
 	            if (ODATA.error) {
 	                var errorODATA = new identity_1.Error();
 	                errorODATA.other = ODATA.error;
-	                callback(null, errorODATA);
+	                callback(errorODATA);
 	                return;
 	            }
 	            var photo = new ProfilePhoto(_this, ODATA);
-	            callback(photo, null);
+	            callback(null, photo);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.getPhotoValue = function (urlString, callback, scopes) {
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
 	                callback(null, errorGet);
 	                return;
 	            }
-	            callback(result, null);
+	            callback(result);
 	        }, "blob", scopes);
 	    };
 	    Graph.prototype.getMailFolders = function (urlString, callback, scopes) {
 	        var _this = this;
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var odata = JSON.parse(result);
 	            if (odata.error) {
 	                var errorODATA = new identity_1.Error();
 	                errorODATA.other = odata.error;
-	                callback(null, errorODATA);
+	                callback(errorODATA);
 	            }
 	            var resultsArray = (odata.value ? odata.value : [odata]);
 	            var mailFolders = new MailFolders(_this, resultsArray.map(function (o) { return new MailFolder(_this, o); }));
@@ -957,30 +957,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	                mailFolders.nextLink = function (callback) {
 	                    var scopes = [Scopes.User.ReadAll];
 	                    var d = new promises_1.Deferred();
-	                    _this.getMailFolders(nextLink, function (result, error) {
+	                    _this.getMailFolders(nextLink, function (error, result) {
 	                        if (callback)
-	                            callback(result, error);
+	                            callback(error, result);
 	                        else
 	                            error ? d.reject(error) : d.resolve(result);
 	                    }, _this.scopesForV2(scopes));
 	                    return d.promise;
 	                };
 	            }
-	            callback(mailFolders, null);
+	            callback(null, mailFolders);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.getMessageAttachments = function (urlString, callback, scopes) {
 	        var _this = this;
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var attachmentsODATA = JSON.parse(result);
 	            if (attachmentsODATA.error) {
 	                var errorODATA = new identity_1.Error();
 	                errorODATA.other = attachmentsODATA.error;
-	                callback(null, errorODATA);
+	                callback(errorODATA);
 	                return;
 	            }
 	            var resultsArray = (attachmentsODATA.value ? attachmentsODATA.value : [attachmentsODATA]);
@@ -990,34 +990,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	                attachments.nextLink = function (callback) {
 	                    var scopes = [Scopes.Mail.Read];
 	                    var d = new promises_1.Deferred();
-	                    _this.getMessageAttachments(nextLink, function (attachments, error) {
+	                    _this.getMessageAttachments(nextLink, function (error, attachments) {
 	                        if (callback)
-	                            callback(attachments, error);
+	                            callback(error, attachments);
 	                        else
 	                            error ? d.reject(error) : d.resolve(attachments);
 	                    }, _this.scopesForV2(scopes));
 	                    return d.promise;
 	                };
 	            }
-	            callback(attachments, null);
+	            callback(null, attachments);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.getMessageAttachment = function (urlString, callback, scopes) {
 	        var _this = this;
-	        this.get(urlString, function (result, errorGet) {
+	        this.get(urlString, function (errorGet, result) {
 	            if (errorGet) {
-	                callback(null, errorGet);
+	                callback(errorGet);
 	                return;
 	            }
 	            var ODATA = JSON.parse(result);
 	            if (ODATA.error) {
 	                var ODATAError = new identity_1.Error();
 	                ODATAError.other = ODATA.error;
-	                callback(null, ODATAError);
+	                callback(ODATAError);
 	                return;
 	            }
 	            var attachment = new Attachment(_this, ODATA);
-	            callback(attachment, null);
+	            callback(null, attachment);
 	        }, null, scopes);
 	    };
 	    Graph.prototype.buildUrl = function (root, path, odataQuery) {
@@ -1467,7 +1467,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Identity.prototype.getAccessTokenAsync = function (resource) {
 	        var d = new promises_1.Deferred();
-	        this.getAccessToken(resource, (function (token, error) {
+	        this.getAccessToken(resource, (function (error, token) {
 	            if (error) {
 	                d.reject(error);
 	            }
@@ -1482,20 +1482,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (this.version !== OAuthVersion.v1) {
 	            var e = new Error();
 	            e.statusText = "Currently this identity class is using v2 OAuth mode. You need to use getAccessTokenForScopes() method";
-	            callback(null, e);
+	            callback(e);
 	            return;
 	        }
 	        var token = this.tokenCache.getForResource(resource);
 	        if (token) {
-	            return callback(token.token, null);
+	            return callback(null, token.token);
 	        }
 	        this.getTokenCallback = (function (token, error) {
 	            if (error) {
-	                callback(null, error);
+	                callback(error);
 	            }
 	            else {
 	                _this.decodeAccessToken(token, resource);
-	                callback(token, null);
+	                callback(null, token);
 	            }
 	        });
 	        this.nonce = "token" + this.generateNonce();

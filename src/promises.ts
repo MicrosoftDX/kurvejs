@@ -10,7 +10,7 @@ import { Error } from "./identity";
     enum PromiseState { Pending, ResolutionInProgress, Resolved, Rejected }
 
     export interface PromiseCallback<T> {
-        (T, Error): void;
+        (error: Error, result?: T): void;
     }
 
     class Client {
