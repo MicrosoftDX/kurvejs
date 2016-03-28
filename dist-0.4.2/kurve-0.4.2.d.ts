@@ -1,6 +1,6 @@
 declare module Kurve {
     interface PromiseCallback<T> {
-        (T: any, Error: any): void;
+        (result: T, error: Error): void;
     }
     class Deferred<T, E> {
         private _dispatcher;
@@ -37,6 +37,12 @@ declare module Kurve {
         text: string;
         other: any;
     }
+    interface TokenStorage {
+        add(key: string, token: any): any;
+        remove(key: string): any;
+        getAll(): any[];
+        clear(): any;
+    }
     class IdToken {
         Token: string;
         IssuerIdentifier: string;
@@ -55,26 +61,20 @@ declare module Kurve {
         clientId: string;
         tokenProcessingUri: string;
         version: OAuthVersion;
+        tokenStorage?: TokenStorage;
     }
     class Identity {
-        authContext: any;
-        config: any;
-        isCallback: boolean;
         clientId: string;
-        private req;
         private state;
         private version;
         private nonce;
         private idToken;
         private loginCallback;
-        private accessTokenCallback;
         private getTokenCallback;
         private tokenProcessorUrl;
         private tokenCache;
-        private logonUser;
         private refreshTimer;
         private policy;
-        private tenant;
         constructor(identitySettings: IdentitySettings);
         checkForIdentityRedirect(): boolean;
         private decodeIdToken(idToken);
@@ -168,7 +168,7 @@ declare module Kurve {
         constructor(graph: Graph, _data: T);
         data: T;
     }
-    class DataModelWrapperWithNextLink<T, S> extends DataModelWrapper<T> {
+    class DataModelListWrapper<T, S> extends DataModelWrapper<T[]> {
         nextLink: NextLink<S>;
     }
     class ProfilePhotoDataModel {
@@ -210,11 +210,19 @@ declare module Kurve {
         profilePhotoValueAsync(odataQuery?: string): Promise<any, Error>;
         calendarView(callback: PromiseCallback<Events>, odataQuery?: string): void;
         calendarViewAsync(odataQuery?: string): Promise<Events, Error>;
+        mailFolders(callback: PromiseCallback<MailFolders>, odataQuery?: string): void;
+        mailFoldersAsync(odataQuery?: string): Promise<MailFolders, Error>;
+        message(messageId: string, callback: PromiseCallback<Message>, odataQuery?: string): void;
+        messageAsync(messageId: string, odataQuery?: string): Promise<Message, Error>;
+        event(eventId: string, callback: PromiseCallback<Event>, odataQuery?: string): void;
+        eventAsync(eventId: string, odataQuery?: string): Promise<Event, Error>;
+        messageAttachment(messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string): void;
+        messageAttachmentAsync(messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error>;
     }
     interface NextLink<T> {
         (callback?: PromiseCallback<T>): Promise<T, Error>;
     }
-    class Users extends DataModelWrapperWithNextLink<User[], Users> {
+    class Users extends DataModelListWrapper<User, Users> {
     }
     interface ItemBody {
         contentType: string;
@@ -228,6 +236,7 @@ declare module Kurve {
         emailAddress: EmailAddress;
     }
     class MessageDataModel {
+        attachments: AttachmentDataModel[];
         bccRecipients: Recipient[];
         body: ItemBody;
         bodyPreview: string;
@@ -257,7 +266,7 @@ declare module Kurve {
     }
     class Message extends DataModelWrapper<MessageDataModel> {
     }
-    class Messages extends DataModelWrapperWithNextLink<Message[], Messages> {
+    class Messages extends DataModelListWrapper<Message, Messages> {
     }
     interface Attendee {
         status: ResponseStatus;
@@ -314,7 +323,7 @@ declare module Kurve {
     }
     class Event extends DataModelWrapper<EventDataModel> {
     }
-    class Events extends DataModelWrapperWithNextLink<Event[], Events> {
+    class Events extends DataModelListWrapper<Event, Events> {
         protected graph: Graph;
         protected endpoint: EventsEndpoint;
         protected _data: Event[];
@@ -339,7 +348,39 @@ declare module Kurve {
     }
     class Group extends DataModelWrapper<GroupDataModel> {
     }
-    class Groups extends DataModelWrapperWithNextLink<Group[], Groups> {
+    class Groups extends DataModelListWrapper<Group, Groups> {
+    }
+    class MailFolderDataModel {
+        id: string;
+        displayName: string;
+        childFolderCount: number;
+        unreadItemCount: number;
+        totalItemCount: number;
+    }
+    class MailFolder extends DataModelWrapper<MailFolderDataModel> {
+    }
+    class MailFolders extends DataModelListWrapper<MailFolder, MailFolders> {
+    }
+    enum AttachmentType {
+        fileAttachment = 0,
+        itemAttachment = 1,
+        referenceAttachment = 2,
+    }
+    class AttachmentDataModel {
+        contentId: string;
+        id: string;
+        isInline: boolean;
+        lastModifiedDateTime: Date;
+        name: string;
+        size: number;
+        contentBytes: string;
+        contentLocation: string;
+        contentType: string;
+    }
+    class Attachment extends DataModelWrapper<AttachmentDataModel> {
+        getType(): AttachmentType;
+    }
+    class Attachments extends DataModelListWrapper<Attachment, Attachments> {
     }
     class Graph {
         private req;
@@ -364,8 +405,14 @@ declare module Kurve {
         group(groupId: string, callback: PromiseCallback<Group>, odataQuery?: string): void;
         groupsAsync(odataQuery?: string): Promise<Groups, Error>;
         groups(callback: PromiseCallback<Groups>, odataQuery?: string): void;
+        messageForUserAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Message, Error>;
+        messageForUser(userPrincipalName: string, messageId: string, callback: PromiseCallback<Message>, odataQuery?: string): void;
         messagesForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error>;
         messagesForUser(userPrincipalName: string, callback: PromiseCallback<Messages>, odataQuery?: string): void;
+        mailFoldersForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<MailFolders, Error>;
+        mailFoldersForUser(userPrincipalName: string, callback: PromiseCallback<MailFolders>, odataQuery?: string): void;
+        eventForUserAsync(userPrincipalName: string, eventId: string, odataQuery?: string): Promise<Event, Error>;
+        eventForUser(userPrincipalName: string, eventId: string, callback: PromiseCallback<Event>, odataQuery?: string): void;
         eventsForUserAsync(userPrincipalName: string, endpoint: EventsEndpoint, odataQuery?: string): Promise<Events, Error>;
         eventsForUser(userPrincipalName: string, endpoint: EventsEndpoint, callback: (messages: Events, error: Error) => void, odataQuery?: string): void;
         memberOfForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Groups, Error>;
@@ -378,18 +425,27 @@ declare module Kurve {
         profilePhotoForUser(userPrincipalName: string, callback: PromiseCallback<ProfilePhoto>, odataQuery?: string): void;
         profilePhotoValueForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<any, Error>;
         profilePhotoValueForUser(userPrincipalName: string, callback: PromiseCallback<any>, odataQuery?: string): void;
+        messageAttachmentsForUserAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Attachments, Error>;
+        messageAttachmentsForUser(userPrincipalName: string, messageId: string, callback: PromiseCallback<Attachments>, odataQuery?: string): void;
+        messageAttachmentForUserAsync(userPrincipalName: string, messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error>;
+        messageAttachmentForUser(userPrincipalName: string, messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string): void;
         getAsync(url: string): Promise<string, Error>;
         get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
         private generateError(xhr);
         private getUsers(urlString, callback, scopes?, basicProfileOnly?);
         private getUser(urlString, callback, scopes?);
         private addAccessTokenAndSend(xhr, callback, scopes?);
+        private getMessage(urlString, messageId, callback, scopes?);
         private getMessages(urlString, callback, scopes?);
+        private getEvent(urlString, EventId, callback, scopes?);
         private getEvents(urlString, endpoint, callback, scopes?);
         private getGroups(urlString, callback, scopes?);
         private getGroup(urlString, callback, scopes?);
         private getPhoto(urlString, callback, scopes?);
         private getPhotoValue(urlString, callback, scopes?);
+        private getMailFolders(urlString, callback, scopes?);
+        private getMessageAttachments(urlString, callback, scopes?);
+        private getMessageAttachment(urlString, callback, scopes?);
         private buildUrl(root, path, odataQuery?);
         private buildMeUrl(path?, odataQuery?);
         private buildUsersUrl(path?, odataQuery?);

@@ -65,14 +65,10 @@ module Kurve {
         constructor(protected graph: Graph, protected _data: T) {
         }
         get data() { return this._data; }
-    } 
-
-    export class DataModelWrapperWithNextLink<T,S> extends DataModelWrapper<T>{
-        public nextLink: NextLink<S>;
     }
-    
-    export interface PromiseCallback<T> {
-        (T, Error): void;
+
+    export class DataModelListWrapper<T,S> extends DataModelWrapper<T[]>{
+        public nextLink: NextLink<S>;
     }
 
     export class ProfilePhotoDataModel {
@@ -99,7 +95,7 @@ module Kurve {
     }
 
     export enum EventsEndpoint { events, calendarView }
-  
+
     export class User extends DataModelWrapper<UserDataModel> {
         // These are all passthroughs to the graph
 
@@ -159,13 +155,47 @@ module Kurve {
             return this.graph.eventsForUserAsync(this._data.userPrincipalName, EventsEndpoint.calendarView, odataQuery);
         }
 
+        public mailFolders(callback: PromiseCallback<MailFolders>, odataQuery?: string) {
+            this.graph.mailFoldersForUser(this._data.userPrincipalName, callback, odataQuery);
+        }
+
+        public mailFoldersAsync(odataQuery?: string): Promise<MailFolders, Error> {
+            return this.graph.mailFoldersForUserAsync(this._data.userPrincipalName, odataQuery);
+        }
+        
+        public message(messageId: string, callback: PromiseCallback<Message>, odataQuery?: string) {
+            this.graph.messageForUser(this._data.userPrincipalName, messageId, callback, odataQuery);
+        }
+
+        public messageAsync(messageId: string, odataQuery?: string): Promise<Message, Error> {
+            return this.graph.messageForUserAsync(this._data.userPrincipalName, messageId, odataQuery);
+        }
+        
+        public event(eventId: string, callback: PromiseCallback<Event>, odataQuery?: string) {
+            this.graph.eventForUser(this._data.userPrincipalName, eventId, callback, odataQuery);
+        }
+
+        public eventAsync(eventId: string, odataQuery?: string): Promise<Event, Error> {
+            return this.graph.eventForUserAsync(this._data.userPrincipalName, eventId, odataQuery);
+        }
+        
+        
+        public messageAttachment(messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string) {
+            this.graph.messageAttachmentForUser(this._data.userPrincipalName, messageId, attachmentId, callback, odataQuery);
+        }
+
+        public messageAttachmentAsync(messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error> {
+            return this.graph.messageAttachmentForUserAsync(this._data.userPrincipalName, messageId, attachmentId, odataQuery);
+        }
+
+
     }
-    
+
     export interface NextLink<T> {
         (callback? : PromiseCallback<T>): Promise<T, Error>;
     }
 
-    export class Users extends DataModelWrapperWithNextLink<User[], Users>{
+    export class Users extends DataModelListWrapper<User, Users>{
     }
 
     export interface ItemBody {
@@ -180,9 +210,10 @@ module Kurve {
 
     export interface Recipient {
         emailAddress: EmailAddress;
-    }     
+    }
 
     export class MessageDataModel {
+        attachments: AttachmentDataModel[];
         bccRecipients: Recipient[];
         body: ItemBody;
         bodyPreview: string;
@@ -214,7 +245,7 @@ module Kurve {
     export class Message extends DataModelWrapper<MessageDataModel>{
     }
 
-    export class Messages extends DataModelWrapperWithNextLink<Message[], Messages>{
+    export class Messages extends DataModelListWrapper<Message, Messages>{
     }
 
     export interface Attendee {
@@ -278,7 +309,7 @@ module Kurve {
     export class Event extends DataModelWrapper<EventDataModel>{
     }
       
-    export class Events extends DataModelWrapperWithNextLink<Event[], Events>{
+    export class Events extends DataModelListWrapper<Event, Events>{
         constructor(protected graph: Graph, protected endpoint: EventsEndpoint, protected _data: Event[]) {
             super(graph, _data);
         }
@@ -300,13 +331,63 @@ module Kurve {
         public onPremisesSyncEnabled: Boolean;
         public proxyAddresses: string[];
         public securityEnabled: Boolean;
-        public visibility: string;      
+        public visibility: string;
     }
 
     export class Group extends DataModelWrapper<GroupDataModel>{
     }
 
-    export class Groups extends DataModelWrapperWithNextLink<Group[], Groups>{
+    export class Groups extends DataModelListWrapper<Group, Groups>{
+    }
+
+    export class MailFolderDataModel {
+        public id: string;
+        public displayName: string;
+        public childFolderCount: number;
+        public unreadItemCount: number;
+        public totalItemCount: number;
+    }
+
+    export class MailFolder extends DataModelWrapper<MailFolderDataModel>{
+    }
+
+    export class MailFolders extends DataModelListWrapper<MailFolder, MailFolders>{
+    }
+
+	export enum AttachmentType {
+		fileAttachment,
+		itemAttachment,
+		referenceAttachment
+	}
+
+    export class AttachmentDataModel {
+        public contentId: string;
+        public id: string;
+        public isInline: boolean;
+        public lastModifiedDateTime: Date;
+        public name: string;
+        public size: number;
+
+        /* File Attachments */
+        public contentBytes: string;
+        public contentLocation: string;
+        public contentType: string;
+    }
+
+    export class Attachment extends DataModelWrapper<AttachmentDataModel>{
+        public getType() : AttachmentType {
+            switch (this._data['@odata.type']) {
+                case "#microsoft.graph.fileAttachment":
+                    return AttachmentType.fileAttachment;
+                case "#microsoft.graph.itemAttachment":
+                    return AttachmentType.itemAttachment;
+                case "#microsoft.graph.referenceAttachment":
+                    return AttachmentType.referenceAttachment;
+            }
+        }
+    }
+
+    export class Attachments extends DataModelListWrapper<Attachment, Attachments>{
     }
 
     export class Graph {
@@ -325,7 +406,7 @@ module Kurve {
                 this.KurveIdentity = identityInfo.identity;
             }
         }
-      
+
         //Only adds scopes when linked to a v2 Oauth of kurve identity
         private scopesForV2(scopes: string[]): string[] {
             if (!this.KurveIdentity)
@@ -395,9 +476,21 @@ module Kurve {
             var scopes = [Scopes.Group.ReadAll];
             var urlString = this.buildGroupsUrl("", odataQuery);
             this.getGroups(urlString, callback, this.scopesForV2(scopes));
-        }      
+        }
 
         // Messages For User
+        public messageForUserAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Message, Error> {
+            var d = new Deferred<Message, Error>();
+            this.messageForUser(userPrincipalName, messageId, (message, error) => error ? d.reject(error) : d.resolve(message), odataQuery);
+            return d.promise;
+        }
+
+        public messageForUser(userPrincipalName: string, messageId: string, callback: PromiseCallback<Message>, odataQuery?: string): void {
+            var scopes = [Scopes.Mail.Read];
+            var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId, odataQuery);
+            this.getMessage(urlString, messageId, (result, error) => callback(result, error), this.scopesForV2(scopes));
+        }
+
         public messagesForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error> {
             var d = new Deferred<Messages, Error>();
             this.messagesForUser(userPrincipalName, (messages, error) => error ? d.reject(error) : d.resolve(messages), odataQuery);
@@ -410,8 +503,33 @@ module Kurve {
             this.getMessages(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
         }
 
+        // MailFolders For User
+        public mailFoldersForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<MailFolders, Error> {
+            var d = new Deferred<MailFolders, Error>();
+            this.mailFoldersForUser(userPrincipalName, (messages, error) => error ? d.reject(error) : d.resolve(messages), odataQuery);
+            return d.promise;
+        }
+
+        public mailFoldersForUser(userPrincipalName: string, callback: PromiseCallback<MailFolders>, odataQuery?: string): void {
+            var scopes = [Scopes.Mail.Read];
+            var urlString = this.buildUsersUrl(userPrincipalName + "/mailFolders", odataQuery);
+            this.getMailFolders(urlString, (result, error) => callback(result, error), this.scopesForV2(scopes));
+        }
 
         // Events For User
+        
+        public eventForUserAsync(userPrincipalName: string, eventId: string, odataQuery?: string): Promise<Event, Error> {
+            var d = new Deferred<Event, Error>();
+            this.eventForUser(userPrincipalName, eventId, (event, error) => error ? d.reject(error) : d.resolve(event), odataQuery);
+            return d.promise;
+        }
+
+        public eventForUser(userPrincipalName: string, eventId: string, callback: PromiseCallback<Event>, odataQuery?: string): void {
+            var scopes = [Scopes.Calendars.Read];
+            var urlString = this.buildUsersUrl(userPrincipalName + "/events/" + eventId, odataQuery);
+            this.getEvent(urlString, eventId, (result, error) => callback(result, error), this.scopesForV2(scopes));
+        }
+
         public eventsForUserAsync(userPrincipalName: string, endpoint: EventsEndpoint, odataQuery?: string): Promise<Events, Error> {
             var d = new Deferred<Events, Error>();
             this.eventsForUser(userPrincipalName, endpoint, (events, error) => error ? d.reject(error) : d.resolve(events), odataQuery);
@@ -484,7 +602,32 @@ module Kurve {
             var urlString = this.buildUsersUrl(userPrincipalName + "/photo/$value", odataQuery);
             this.getPhotoValue(urlString, callback, this.scopesForV2(scopes));
         }
-    
+
+        // Message Attachments
+        public messageAttachmentsForUserAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Attachments, Error> {
+            var d = new Deferred<any, Error>();
+            this.messageAttachmentsForUser(userPrincipalName, messageId, (result, error) => error ? d.reject(error) : d.resolve(result), odataQuery);
+            return d.promise;
+        }
+
+        public messageAttachmentsForUser(userPrincipalName: string, messageId: string, callback: PromiseCallback<Attachments>, odataQuery?: string): void {
+            var scopes = [Scopes.Mail.Read];
+            var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId + "/attachments", odataQuery);
+            this.getMessageAttachments(urlString, callback, this.scopesForV2(scopes));
+        }
+
+        public messageAttachmentForUserAsync(userPrincipalName: string, messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error> {
+            var d = new Deferred<Attachment,Error>();
+            this.messageAttachmentForUser(userPrincipalName, messageId, attachmentId, (attachment, error) => error ? d.reject(error) : d.resolve(attachment), odataQuery);
+            return d.promise;
+        }
+
+        public messageAttachmentForUser(userPrincipalName: string, messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string): void {
+            var scopes = [Scopes.Mail.Read];
+            var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId + "/attachments/" + attachmentId, odataQuery);
+            this.getMessageAttachment(urlString, callback, this.scopesForV2(scopes));
+        }
+
         //http verbs
         public getAsync(url: string): Promise<string, Error> {
             var d = new Deferred<string,Error>();
@@ -592,7 +735,7 @@ module Kurve {
 
                 if (scopes) {
                     //v2 scope based tokens
-                    this.KurveIdentity.getAccessTokenForScopes(scopes,false, ((token: string, error: Error) => {                   
+                    this.KurveIdentity.getAccessTokenForScopes(scopes,false, ((token: string, error: Error) => {
                         if (error)
                             callback(error);
                         else {
@@ -605,7 +748,7 @@ module Kurve {
                 }
                 else {
                     //v1 resource based tokens
-                    this.KurveIdentity.getAccessToken(this.defaultResourceID, ((token: string, error: Error) => {                  
+                    this.KurveIdentity.getAccessToken(this.defaultResourceID, ((token: string, error: Error) => {
                         if (error)
                             callback(error);
                         else {
@@ -616,6 +759,26 @@ module Kurve {
                     }));
                 }
             }
+        }
+
+        private getMessage(urlString: string, messageId: string, callback: PromiseCallback<Message>, scopes?:string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+                var ODATA = JSON.parse(result);
+                if (ODATA.error) {
+                    var ODATAError = new Error();
+                    ODATAError.other = ODATA.error;
+                    callback(null, ODATAError);
+                    return;
+                }
+                var message = new Message(this, ODATA);
+
+                callback(message, null);
+            }, null, scopes);
+
         }
 
         private getMessages(urlString: string, callback: PromiseCallback<Messages>, scopes?:string[]): void {
@@ -651,6 +814,26 @@ module Kurve {
                 }
                 callback(messages,  null);
             },null,scopes);
+        }
+
+        private getEvent(urlString: string, EventId: string, callback: PromiseCallback<Event>, scopes?:string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+                var ODATA = JSON.parse(result);
+                if (ODATA.error) {
+                    var ODATAError = new Error();
+                    ODATAError.other = ODATA.error;
+                    callback(null, ODATAError);
+                    return;
+                }
+                var event = new Event(this, ODATA);
+
+                callback(event, null);
+            }, null, scopes);
+
         }
 
         private getEvents(urlString: string, endpoint: EventsEndpoint, callback: PromiseCallback<Events>, scopes?: string[]): void {
@@ -725,7 +908,7 @@ module Kurve {
             },null,scopes);
         }
 
-        private getGroup(urlString, callback: PromiseCallback<Group>, scopes?:string[]): void {
+        private getGroup(urlString: string, callback: PromiseCallback<Group>, scopes?:string[]): void {
             this.get(urlString, (result: string, errorGet: Error) => {
                 if (errorGet) {
                     callback(null, errorGet);
@@ -774,6 +957,95 @@ module Kurve {
             }, "blob",scopes);
         }
         
+        private getMailFolders(urlString, callback: PromiseCallback<MailFolders>, scopes?: string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+
+                var odata = JSON.parse(result);
+                if (odata.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = odata.error;
+                    callback(null, errorODATA);
+                }
+
+                var resultsArray:MailFolderDataModel[] = (odata.value ? odata.value : [odata]);
+                var mailFolders = new MailFolders(this, resultsArray.map(o => new MailFolder(this, o)));
+                var nextLink = odata['@odata.nextLink'];
+                if (nextLink) {
+                    mailFolders.nextLink = (callback?: PromiseCallback<MailFolders>) => {
+                        var scopes = [Scopes.User.ReadAll];
+                        var d = new Deferred<MailFolders,Error>();
+                        this.getMailFolders(nextLink, (result: MailFolders, error: Error) => {
+                            if (callback)
+                                callback(result, error);
+                            else
+                                error ? d.reject(error) : d.resolve(result);
+                        }, this.scopesForV2(scopes));
+                        return d.promise;
+                    }
+                }
+                callback(mailFolders, null);
+            },null,scopes);
+        }
+
+
+        private getMessageAttachments(urlString: string, callback: PromiseCallback<Attachments>, scopes?:string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+
+                var attachmentsODATA = JSON.parse(result);
+                if (attachmentsODATA.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = attachmentsODATA.error;
+                    callback(null, errorODATA);
+                    return;
+                }
+                var resultsArray = (attachmentsODATA.value ? attachmentsODATA.value : [attachmentsODATA]) as any[];
+                var attachments = new Attachments(this, resultsArray.map(o => new Attachment(this, o)));
+                var nextLink = attachmentsODATA['@odata.nextLink'];
+                if (nextLink) {
+                    attachments.nextLink = (callback?: PromiseCallback<Attachments>) => {
+                        var scopes = [Scopes.Mail.Read];
+                        var d = new Deferred<Attachments,Error>();
+                        this.getMessageAttachments(nextLink, (attachments: Attachments, error: Error) => {
+                            if (callback)
+                                callback(attachments, error);
+                            else
+                                error ? d.reject(error) : d.resolve(attachments);
+                        }, this.scopesForV2(scopes));
+                        return d.promise;
+                    }
+                }
+
+                callback(attachments,  null);
+            },null,scopes);
+        }
+
+        private getMessageAttachment(urlString, callback: PromiseCallback<Attachment>, scopes?:string[]): void {
+            this.get(urlString, (result: string, errorGet: Error) => {
+                if (errorGet) {
+                    callback(null, errorGet);
+                    return;
+                }
+                var ODATA = JSON.parse(result);
+                if (ODATA.error) {
+                    var ODATAError = new Error();
+                    ODATAError.other = ODATA.error;
+                    callback(null, ODATAError);
+                    return;
+                }
+                var attachment = new Attachment(this, ODATA);
+
+                callback(attachment, null);
+            },null,scopes);
+        }
+
         private buildUrl(root:string, path: string, odataQuery?: string) {
             return this.baseUrl + root + path + (odataQuery ? "?" + odataQuery : "");
         }
@@ -789,37 +1061,37 @@ module Kurve {
     }
 }
 
-//*********************************************************   
-//   
+//*********************************************************
+//
 //Kurve js, https://github.com/microsoftdx/kurvejs
-//  
-//Copyright (c) Microsoft Corporation  
-//All rights reserved.   
-//  
-// MIT License:  
-// Permission is hereby granted, free of charge, to any person obtaining  
-// a copy of this software and associated documentation files (the  
-// ""Software""), to deal in the Software without restriction, including  
-// without limitation the rights to use, copy, modify, merge, publish,  
-// distribute, sublicense, and/or sell copies of the Software, and to  
-// permit persons to whom the Software is furnished to do so, subject to  
-// the following conditions:  
+//
+//Copyright (c) Microsoft Corporation
+//All rights reserved.
+//
+// MIT License:
+// Permission is hereby granted, free of charge, to any person obtaining
+// a copy of this software and associated documentation files (the
+// ""Software""), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to
+// permit persons to whom the Software is furnished to do so, subject to
+// the following conditions:
 
 
 
 
-// The above copyright notice and this permission notice shall be  
-// included in all copies or substantial portions of the Software.  
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
 
 
 
 
-// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,  
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF  
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND  
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE  
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION  
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION  
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
-//   
-//*********************************************************   
+// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//*********************************************************
