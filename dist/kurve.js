@@ -60,6 +60,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	__export(__webpack_require__(1));
 	__export(__webpack_require__(3));
+	__export(__webpack_require__(4));
 
 
 /***/ },
@@ -1652,6 +1653,55 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Identity;
 	}());
 	exports.Identity = Identity;
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	"use strict";
+	var UserDataModel = (function () {
+	    function UserDataModel() {
+	    }
+	    return UserDataModel;
+	}());
+	exports.UserDataModel = UserDataModel;
+	var ProfilePhotoDataModel = (function () {
+	    function ProfilePhotoDataModel() {
+	    }
+	    return ProfilePhotoDataModel;
+	}());
+	exports.ProfilePhotoDataModel = ProfilePhotoDataModel;
+	var MessageDataModel = (function () {
+	    function MessageDataModel() {
+	    }
+	    return MessageDataModel;
+	}());
+	exports.MessageDataModel = MessageDataModel;
+	var EventDataModel = (function () {
+	    function EventDataModel() {
+	    }
+	    return EventDataModel;
+	}());
+	exports.EventDataModel = EventDataModel;
+	var GroupDataModel = (function () {
+	    function GroupDataModel() {
+	    }
+	    return GroupDataModel;
+	}());
+	exports.GroupDataModel = GroupDataModel;
+	var MailFolderDataModel = (function () {
+	    function MailFolderDataModel() {
+	    }
+	    return MailFolderDataModel;
+	}());
+	exports.MailFolderDataModel = MailFolderDataModel;
+	var AttachmentDataModel = (function () {
+	    function AttachmentDataModel() {
+	    }
+	    return AttachmentDataModel;
+	}());
+	exports.AttachmentDataModel = AttachmentDataModel;
 
 
 /***/ }

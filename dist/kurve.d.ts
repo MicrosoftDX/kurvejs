@@ -466,6 +466,7 @@ declare module 'Kurve/src/graph' {
 declare module 'Kurve/src/kurve' {
 	export * from 'Kurve/src/graph';
 	export * from 'Kurve/src/identity';
+	export * from 'Kurve/src/models';
 
 }
 declare module 'Kurve' {
