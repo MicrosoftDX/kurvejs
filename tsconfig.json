@@ -9,6 +9,7 @@
     "src/kurve.ts",
     "src/graph.ts",
     "src/identity.ts",
-    "src/promises.ts"
+    "src/promises.ts",
+    "src/models.ts"
   ]
 }

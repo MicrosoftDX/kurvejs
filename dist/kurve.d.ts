@@ -108,9 +108,157 @@ declare module 'Kurve/src/promises' {
 	}
 
 }
+declare module 'Kurve/src/models' {
+	export interface ItemBody {
+	    contentType: string;
+	    content: string;
+	}
+	export interface EmailAddress {
+	    name: string;
+	    address: string;
+	}
+	export interface Recipient {
+	    emailAddress: EmailAddress;
+	}
+	export class UserDataModel {
+	    businessPhones: string;
+	    displayName: string;
+	    givenName: string;
+	    jobTitle: string;
+	    mail: string;
+	    mobilePhone: string;
+	    officeLocation: string;
+	    preferredLanguage: string;
+	    surname: string;
+	    userPrincipalName: string;
+	    id: string;
+	}
+	export class ProfilePhotoDataModel {
+	    id: string;
+	    height: Number;
+	    width: Number;
+	}
+	export class MessageDataModel {
+	    attachments: AttachmentDataModel[];
+	    bccRecipients: Recipient[];
+	    body: ItemBody;
+	    bodyPreview: string;
+	    categories: string[];
+	    ccRecipients: Recipient[];
+	    changeKey: string;
+	    conversationId: string;
+	    createdDateTime: string;
+	    from: Recipient;
+	    graph: any;
+	    hasAttachments: boolean;
+	    id: string;
+	    importance: string;
+	    isDeliveryReceiptRequested: boolean;
+	    isDraft: boolean;
+	    isRead: boolean;
+	    isReadReceiptRequested: boolean;
+	    lastModifiedDateTime: string;
+	    parentFolderId: string;
+	    receivedDateTime: string;
+	    replyTo: Recipient[];
+	    sender: Recipient;
+	    sentDateTime: string;
+	    subject: string;
+	    toRecipients: Recipient[];
+	    webLink: string;
+	}
+	export interface Attendee {
+	    status: ResponseStatus;
+	    type: string;
+	    emailAddress: EmailAddress;
+	}
+	export interface DateTimeTimeZone {
+	    dateTime: string;
+	    timeZone: string;
+	}
+	export interface PatternedRecurrence {
+	}
+	export interface ResponseStatus {
+	    response: string;
+	    time: string;
+	}
+	export interface Location {
+	    displayName: string;
+	    address: any;
+	}
+	export class EventDataModel {
+	    attendees: Attendee[];
+	    body: ItemBody;
+	    bodyPreview: string;
+	    categories: string[];
+	    changeKey: string;
+	    createdDateTime: string;
+	    end: DateTimeTimeZone;
+	    hasAttachments: boolean;
+	    iCalUId: string;
+	    id: string;
+	    IDBCursor: string;
+	    importance: string;
+	    isAllDay: boolean;
+	    isCancelled: boolean;
+	    isOrganizer: boolean;
+	    isReminderOn: boolean;
+	    lastModifiedDateTime: string;
+	    location: Location;
+	    organizer: Recipient;
+	    originalEndTimeZone: string;
+	    originalStartTimeZone: string;
+	    recurrence: PatternedRecurrence;
+	    reminderMinutesBeforeStart: number;
+	    responseRequested: boolean;
+	    responseStatus: ResponseStatus;
+	    sensitivity: string;
+	    seriesMasterId: string;
+	    showAs: string;
+	    start: DateTimeTimeZone;
+	    subject: string;
+	    type: string;
+	    webLink: string;
+	}
+	export class GroupDataModel {
+	    id: string;
+	    description: string;
+	    displayName: string;
+	    groupTypes: string[];
+	    mail: string;
+	    mailEnabled: Boolean;
+	    mailNickname: string;
+	    onPremisesLastSyncDateTime: Date;
+	    onPremisesSecurityIdentifier: string;
+	    onPremisesSyncEnabled: Boolean;
+	    proxyAddresses: string[];
+	    securityEnabled: Boolean;
+	    visibility: string;
+	}
+	export class MailFolderDataModel {
+	    id: string;
+	    displayName: string;
+	    childFolderCount: number;
+	    unreadItemCount: number;
+	    totalItemCount: number;
+	}
+	export class AttachmentDataModel {
+	    contentId: string;
+	    id: string;
+	    isInline: boolean;
+	    lastModifiedDateTime: Date;
+	    name: string;
+	    size: number;
+	    contentBytes: string;
+	    contentLocation: string;
+	    contentType: string;
+	}
+
+}
 declare module 'Kurve/src/graph' {
 	import { Promise, PromiseCallback } from 'Kurve/src/promises';
 	import { Identity, Error } from 'Kurve/src/identity';
+	import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from 'Kurve/src/models';
 	export module Scopes {
 	    class General {
 	        static OpenId: string;
@@ -177,25 +325,7 @@ declare module 'Kurve/src/graph' {
 	export class DataModelListWrapper<T, S> extends DataModelWrapper<T[]> {
 	    nextLink: NextLink<S>;
 	}
-	export class ProfilePhotoDataModel {
-	    id: string;
-	    height: Number;
-	    width: Number;
-	}
 	export class ProfilePhoto extends DataModelWrapper<ProfilePhotoDataModel> {
-	}
-	export class UserDataModel {
-	    businessPhones: string;
-	    displayName: string;
-	    givenName: string;
-	    jobTitle: string;
-	    mail: string;
-	    mobilePhone: string;
-	    officeLocation: string;
-	    preferredLanguage: string;
-	    surname: string;
-	    userPrincipalName: string;
-	    id: string;
 	}
 	export enum EventsEndpoint {
 	    events = 0,
@@ -230,102 +360,9 @@ declare module 'Kurve/src/graph' {
 	}
 	export class Users extends DataModelListWrapper<User, Users> {
 	}
-	export interface ItemBody {
-	    contentType: string;
-	    content: string;
-	}
-	export interface EmailAddress {
-	    name: string;
-	    address: string;
-	}
-	export interface Recipient {
-	    emailAddress: EmailAddress;
-	}
-	export class MessageDataModel {
-	    attachments: AttachmentDataModel[];
-	    bccRecipients: Recipient[];
-	    body: ItemBody;
-	    bodyPreview: string;
-	    categories: string[];
-	    ccRecipients: Recipient[];
-	    changeKey: string;
-	    conversationId: string;
-	    createdDateTime: string;
-	    from: Recipient;
-	    graph: any;
-	    hasAttachments: boolean;
-	    id: string;
-	    importance: string;
-	    isDeliveryReceiptRequested: boolean;
-	    isDraft: boolean;
-	    isRead: boolean;
-	    isReadReceiptRequested: boolean;
-	    lastModifiedDateTime: string;
-	    parentFolderId: string;
-	    receivedDateTime: string;
-	    replyTo: Recipient[];
-	    sender: Recipient;
-	    sentDateTime: string;
-	    subject: string;
-	    toRecipients: Recipient[];
-	    webLink: string;
-	}
 	export class Message extends DataModelWrapper<MessageDataModel> {
 	}
 	export class Messages extends DataModelListWrapper<Message, Messages> {
-	}
-	export interface Attendee {
-	    status: ResponseStatus;
-	    type: string;
-	    emailAddress: EmailAddress;
-	}
-	export interface DateTimeTimeZone {
-	    dateTime: string;
-	    timeZone: string;
-	}
-	export interface PatternedRecurrence {
-	}
-	export interface ResponseStatus {
-	    response: string;
-	    time: string;
-	}
-	export interface Location {
-	    displayName: string;
-	    address: any;
-	}
-	export class EventDataModel {
-	    attendees: Attendee[];
-	    body: ItemBody;
-	    bodyPreview: string;
-	    categories: string[];
-	    changeKey: string;
-	    createdDateTime: string;
-	    end: DateTimeTimeZone;
-	    hasAttachments: boolean;
-	    iCalUId: string;
-	    id: string;
-	    IDBCursor: string;
-	    importance: string;
-	    isAllDay: boolean;
-	    isCancelled: boolean;
-	    isOrganizer: boolean;
-	    isReminderOn: boolean;
-	    lastModifiedDateTime: string;
-	    location: Location;
-	    organizer: Recipient;
-	    originalEndTimeZone: string;
-	    originalStartTimeZone: string;
-	    recurrence: PatternedRecurrence;
-	    reminderMinutesBeforeStart: number;
-	    responseRequested: boolean;
-	    responseStatus: ResponseStatus;
-	    sensitivity: string;
-	    seriesMasterId: string;
-	    showAs: string;
-	    start: DateTimeTimeZone;
-	    subject: string;
-	    type: string;
-	    webLink: string;
 	}
 	export class Event extends DataModelWrapper<EventDataModel> {
 	}
@@ -337,31 +374,9 @@ declare module 'Kurve/src/graph' {
 	}
 	export class Contact {
 	}
-	export class GroupDataModel {
-	    id: string;
-	    description: string;
-	    displayName: string;
-	    groupTypes: string[];
-	    mail: string;
-	    mailEnabled: Boolean;
-	    mailNickname: string;
-	    onPremisesLastSyncDateTime: Date;
-	    onPremisesSecurityIdentifier: string;
-	    onPremisesSyncEnabled: Boolean;
-	    proxyAddresses: string[];
-	    securityEnabled: Boolean;
-	    visibility: string;
-	}
 	export class Group extends DataModelWrapper<GroupDataModel> {
 	}
 	export class Groups extends DataModelListWrapper<Group, Groups> {
-	}
-	export class MailFolderDataModel {
-	    id: string;
-	    displayName: string;
-	    childFolderCount: number;
-	    unreadItemCount: number;
-	    totalItemCount: number;
 	}
 	export class MailFolder extends DataModelWrapper<MailFolderDataModel> {
 	}
@@ -371,17 +386,6 @@ declare module 'Kurve/src/graph' {
 	    fileAttachment = 0,
 	    itemAttachment = 1,
 	    referenceAttachment = 2,
-	}
-	export class AttachmentDataModel {
-	    contentId: string;
-	    id: string;
-	    isInline: boolean;
-	    lastModifiedDateTime: Date;
-	    name: string;
-	    size: number;
-	    contentBytes: string;
-	    contentLocation: string;
-	    contentType: string;
 	}
 	export class Attachment extends DataModelWrapper<AttachmentDataModel> {
 	    getType(): AttachmentType;

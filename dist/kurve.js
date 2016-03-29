@@ -203,12 +203,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return DataModelListWrapper;
 	}(DataModelWrapper));
 	exports.DataModelListWrapper = DataModelListWrapper;
-	var ProfilePhotoDataModel = (function () {
-	    function ProfilePhotoDataModel() {
-	    }
-	    return ProfilePhotoDataModel;
-	}());
-	exports.ProfilePhotoDataModel = ProfilePhotoDataModel;
 	var ProfilePhoto = (function (_super) {
 	    __extends(ProfilePhoto, _super);
 	    function ProfilePhoto() {
@@ -217,12 +211,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return ProfilePhoto;
 	}(DataModelWrapper));
 	exports.ProfilePhoto = ProfilePhoto;
-	var UserDataModel = (function () {
-	    function UserDataModel() {
-	    }
-	    return UserDataModel;
-	}());
-	exports.UserDataModel = UserDataModel;
 	(function (EventsEndpoint) {
 	    EventsEndpoint[EventsEndpoint["events"] = 0] = "events";
 	    EventsEndpoint[EventsEndpoint["calendarView"] = 1] = "calendarView";
@@ -310,12 +298,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Users;
 	}(DataModelListWrapper));
 	exports.Users = Users;
-	var MessageDataModel = (function () {
-	    function MessageDataModel() {
-	    }
-	    return MessageDataModel;
-	}());
-	exports.MessageDataModel = MessageDataModel;
 	var Message = (function (_super) {
 	    __extends(Message, _super);
 	    function Message() {
@@ -332,12 +314,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Messages;
 	}(DataModelListWrapper));
 	exports.Messages = Messages;
-	var EventDataModel = (function () {
-	    function EventDataModel() {
-	    }
-	    return EventDataModel;
-	}());
-	exports.EventDataModel = EventDataModel;
 	var Event = (function (_super) {
 	    __extends(Event, _super);
 	    function Event() {
@@ -363,12 +339,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Contact;
 	}());
 	exports.Contact = Contact;
-	var GroupDataModel = (function () {
-	    function GroupDataModel() {
-	    }
-	    return GroupDataModel;
-	}());
-	exports.GroupDataModel = GroupDataModel;
 	var Group = (function (_super) {
 	    __extends(Group, _super);
 	    function Group() {
@@ -385,12 +355,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Groups;
 	}(DataModelListWrapper));
 	exports.Groups = Groups;
-	var MailFolderDataModel = (function () {
-	    function MailFolderDataModel() {
-	    }
-	    return MailFolderDataModel;
-	}());
-	exports.MailFolderDataModel = MailFolderDataModel;
 	var MailFolder = (function (_super) {
 	    __extends(MailFolder, _super);
 	    function MailFolder() {
@@ -413,12 +377,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    AttachmentType[AttachmentType["referenceAttachment"] = 2] = "referenceAttachment";
 	})(exports.AttachmentType || (exports.AttachmentType = {}));
 	var AttachmentType = exports.AttachmentType;
-	var AttachmentDataModel = (function () {
-	    function AttachmentDataModel() {
-	    }
-	    return AttachmentDataModel;
-	}());
-	exports.AttachmentDataModel = AttachmentDataModel;
 	var Attachment = (function (_super) {
 	    __extends(Attachment, _super);
 	    function Attachment() {
