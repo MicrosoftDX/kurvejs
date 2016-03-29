@@ -120,7 +120,7 @@ declare module 'Kurve/src/models' {
 	export interface Recipient {
 	    emailAddress: EmailAddress;
 	}
-	export class UserDataModel {
+	export interface UserDataModel {
 	    businessPhones: string;
 	    displayName: string;
 	    givenName: string;
@@ -133,12 +133,12 @@ declare module 'Kurve/src/models' {
 	    userPrincipalName: string;
 	    id: string;
 	}
-	export class ProfilePhotoDataModel {
+	export interface ProfilePhotoDataModel {
 	    id: string;
 	    height: Number;
 	    width: Number;
 	}
-	export class MessageDataModel {
+	export interface MessageDataModel {
 	    attachments: AttachmentDataModel[];
 	    bccRecipients: Recipient[];
 	    body: ItemBody;
@@ -186,7 +186,7 @@ declare module 'Kurve/src/models' {
 	    displayName: string;
 	    address: any;
 	}
-	export class EventDataModel {
+	export interface EventDataModel {
 	    attendees: Attendee[];
 	    body: ItemBody;
 	    bodyPreview: string;
@@ -220,7 +220,7 @@ declare module 'Kurve/src/models' {
 	    type: string;
 	    webLink: string;
 	}
-	export class GroupDataModel {
+	export interface GroupDataModel {
 	    id: string;
 	    description: string;
 	    displayName: string;
@@ -235,14 +235,14 @@ declare module 'Kurve/src/models' {
 	    securityEnabled: Boolean;
 	    visibility: string;
 	}
-	export class MailFolderDataModel {
+	export interface MailFolderDataModel {
 	    id: string;
 	    displayName: string;
 	    childFolderCount: number;
 	    unreadItemCount: number;
 	    totalItemCount: number;
 	}
-	export class AttachmentDataModel {
+	export interface AttachmentDataModel {
 	    contentId: string;
 	    id: string;
 	    isInline: boolean;

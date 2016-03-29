@@ -12,27 +12,27 @@ export interface Recipient {
     emailAddress: EmailAddress;
 }
 
-export class UserDataModel {
-    public businessPhones: string;
-    public displayName: string;
-    public givenName: string;
-    public jobTitle: string;
-    public mail: string;
-    public mobilePhone: string;
-    public officeLocation: string;
-    public preferredLanguage: string;
-    public surname: string;
-    public userPrincipalName: string;
-    public id: string;
+export interface UserDataModel {
+    businessPhones: string;
+    displayName: string;
+    givenName: string;
+    jobTitle: string;
+    mail: string;
+    mobilePhone: string;
+    officeLocation: string;
+    preferredLanguage: string;
+    surname: string;
+    userPrincipalName: string;
+    id: string;
 }
 
-export class ProfilePhotoDataModel {
-    public id: string;
-    public height: Number;
-    public width: Number;
+export interface ProfilePhotoDataModel {
+    id: string;
+    height: Number;
+    width: Number;
 }
 
-export class MessageDataModel {
+export interface MessageDataModel {
     attachments: AttachmentDataModel[];
     bccRecipients: Recipient[];
     body: ItemBody;
@@ -85,7 +85,7 @@ export interface Location {
     address: any;
 }
 
-export class EventDataModel {
+export interface EventDataModel {
     attendees: Attendee[];
     body: ItemBody;
     bodyPreview: string;
@@ -120,41 +120,40 @@ export class EventDataModel {
     webLink: string;
 }
 
-export class GroupDataModel {
-    public id: string;
-    public description: string;
-    public displayName: string;
-    public groupTypes: string[];
-    public mail: string;
-    public mailEnabled: Boolean;
-    public mailNickname: string;
-    public onPremisesLastSyncDateTime: Date;
-    public onPremisesSecurityIdentifier: string;
-    public onPremisesSyncEnabled: Boolean;
-    public proxyAddresses: string[];
-    public securityEnabled: Boolean;
-    public visibility: string;
+export interface GroupDataModel {
+    id: string;
+    description: string;
+    displayName: string;
+    groupTypes: string[];
+    mail: string;
+    mailEnabled: Boolean;
+    mailNickname: string;
+    onPremisesLastSyncDateTime: Date;
+    onPremisesSecurityIdentifier: string;
+    onPremisesSyncEnabled: Boolean;
+    proxyAddresses: string[];
+    securityEnabled: Boolean;
+    visibility: string;
 }
 
-export class MailFolderDataModel {
-    public id: string;
-    public displayName: string;
-    public childFolderCount: number;
-    public unreadItemCount: number;
-    public totalItemCount: number;
+export interface MailFolderDataModel {
+    id: string;
+    displayName: string;
+    childFolderCount: number;
+    unreadItemCount: number;
+    totalItemCount: number;
 }
 
-
-export class AttachmentDataModel {
-    public contentId: string;
-    public id: string;
-    public isInline: boolean;
-    public lastModifiedDateTime: Date;
-    public name: string;
-    public size: number;
+export interface AttachmentDataModel {
+    contentId: string;
+    id: string;
+    isInline: boolean;
+    lastModifiedDateTime: Date;
+    name: string;
+    size: number;
 
     /* File Attachments */
-    public contentBytes: string;
-    public contentLocation: string;
-    public contentType: string;
+    contentBytes: string;
+    contentLocation: string;
+    contentType: string;
 }
