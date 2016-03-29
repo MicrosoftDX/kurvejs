@@ -122,17 +122,17 @@ namespace RequestBuilder {
         protected get pathWithQuery() {return pathWithQuery(this.path, this.query)}
     }
     
-    export class Attachment<Model> extends Endpoint<Model> {
+    export class Attachment extends Endpoint<Kurve.AttachmentDataModel> {
         constructor(protected path:string) {
             super(path, {
                 GET: new Action(path),
             });
         }
     }
-    
-    var attachment = (path:string) => (attachmentId:string) => new Attachment<Kurve.AttachmentDataModel>(path + "/attachments/" + attachmentId);
 
-    export class Attachments<Model> extends Endpoint<Model> {
+    var attachment = (path:string) => (attachmentId:string) => new Attachment(path + "/attachments/" + attachmentId);
+
+    export class Attachments extends Endpoint<Kurve.AttachmentDataModel> {
         constructor(protected path:string) {
             super(path, {
                 GETCOLLECTION: new Action(path),
@@ -140,9 +140,9 @@ namespace RequestBuilder {
         }
     }
 
-    var attachments = (path:string) => new Attachments<Kurve.AttachmentDataModel>(path + "/attachments");
+    var attachments = (path:string) => new Attachments(path + "/attachments");
 
-    export class Message<Model> extends Endpoint<Model> {
+    export class Message extends Endpoint<Kurve.MessageDataModel> {
         constructor(protected path:string) {
             super(path, {
                 GET: new Action(path),
@@ -153,9 +153,9 @@ namespace RequestBuilder {
         attachments = attachments(this.path);
     }
 
-    var message = (path:string) => (messageId:string) => new Message<Kurve.MessageDataModel>(path + "/messages/" + messageId);
+    var message = (path:string) => (messageId:string) => new Message(path + "/messages/" + messageId);
 
-    export class Messages<Model> extends Endpoint<Model> {
+    export class Messages extends Endpoint<Kurve.MessageDataModel> {
         constructor(protected path:string) {
             super(path, {
                 GETCOLLECTION: new Action(path),
@@ -163,9 +163,9 @@ namespace RequestBuilder {
         }
     }
 
-    var messages = (path:string) => new Messages<Kurve.MessageDataModel>(path + "/messages");
+    var messages = (path:string) => new Messages(path + "/messages");
     
-    export class Event<Model> extends Endpoint<Model> {
+    export class Event extends Endpoint<Kurve.EventDataModel> {
         constructor(protected path:string) {
             super(path, {
                 GET: new Action(path),
@@ -175,9 +175,9 @@ namespace RequestBuilder {
         attachments = attachments(this.path);
     }
     
-    var event = (path:string) => (eventId:string) => new Event<Kurve.EventDataModel>(path + "/events/" + eventId);
+    var event = (path:string) => (eventId:string) => new Event(path + "/events/" + eventId);
 
-    export class Events<Model> extends Endpoint<Model> {
+    export class Events extends Endpoint<Kurve.EventDataModel> {
         constructor(protected path:string) {
             super(path, {
                 GETCOLLECTION: new Action(path),
@@ -185,9 +185,9 @@ namespace RequestBuilder {
         }
     }
     
-    var events = (path:string) => new Events<Kurve.EventDataModel>(path + "/events");   
+    var events = (path:string) => new Events(path + "/events");   
 
-    export class CalendarView<Model> extends Endpoint<Model> {
+    export class CalendarView extends Endpoint<Kurve.EventDataModel> {
         constructor(path:string, startDate:Date, endDate:Date) {
             var query = "startDateTime=" + startDate.toString() + "&endDateTime=" + endDate.toString();
 //          REVIEW need to restore toISOString()
@@ -197,9 +197,9 @@ namespace RequestBuilder {
         }
     }
     
-    var calendarView = (path:string) => (startDate:Date, endDate:Date) => new CalendarView<Kurve.EventDataModel>(path + "/calendarView", startDate, endDate);
+    var calendarView = (path:string) => (startDate:Date, endDate:Date) => new CalendarView(path + "/calendarView", startDate, endDate);
 
-    export class User<Model> extends Endpoint<Model> {
+    export class User extends Endpoint<Kurve.UserDataModel> {
         constructor(protected path:string) {
             super(path, {
                 GET: new Action(path),
@@ -212,10 +212,10 @@ namespace RequestBuilder {
         calendarView = calendarView(this.path);
     }
 
-    var me = new User<Kurve.UserDataModel>("/me");
-    var user = (userId:string) => new User<Kurve.UserDataModel>("/users/" + userId);
+    var me = new User("/me");
+    var user = (userId:string) => new User("/users/" + userId);
 
-    export class Users<Model> extends Endpoint<Model> {
+    export class Users extends Endpoint<Kurve.UserDataModel> {
         constructor(protected path:string) {
             super(path, {
                 GETCOLLECTION: new Action(path),
@@ -223,7 +223,7 @@ namespace RequestBuilder {
         }
     }
 
-    var users = new Users<Kurve.UserDataModel>("/users/");
+    var users = new Users("/users/");
 
     export class Root {
         me = me;
@@ -238,14 +238,30 @@ interface Collection<Model> {
 }
 
 class MockGraph {
+    getUntypedCollection(path:string, scopes:string[]):any {
+        return {};
+    }
+    
+    getTypedCollection<Model>(path:string, scopes:string[]):Collection<Model> {
+        return this.getUntyped(path, scopes) as Collection<Model>;
+    }
+
     getCollection<Model>(endpoint:RequestBuilder.Node<Model>):Collection<Model> {
         var action = endpoint.actions && endpoint.actions.GETCOLLECTION;
         if (!action) {
             console.log("no GETCOLLECTION endpoint, sorry!");
         } else {
             console.log("GETCOLLECTION path", action.pathWithQuery);
-            return {collection:[]} as Collection<Model>;
+            return this.getTypedCollection<Model>(action.pathWithQuery, action.scopes);
         }
+    }
+
+    getUntyped(path:string, scopes:string[]):any {
+        return {};
+    }
+
+    getTyped<Model>(path:string, scopes:string[]):Model {
+        return {} as Model;
     }
 
     get<Model>(endpoint:RequestBuilder.Node<Model>):Model {
@@ -254,26 +270,50 @@ class MockGraph {
             console.log("no GET endpoint, sorry!");
         } else {
             console.log("GET path", action.pathWithQuery);
-            return {} as Model;
+            return this.getTyped<Model>(action.pathWithQuery, action.scopes);
         }
     }
     
-    post<Model>(endpoint:RequestBuilder.Node<Model>, request:Model):void {
+    postUntyped(path:string, scopes:string[], request:any):any {
+        return {};
+    }
+
+    postTyped<Model>(path:string, scopes:string[], request:Model):Model {
+        return this.postUntyped(path, scopes, request) as Model;
+    }
+
+    post<Model>(endpoint:RequestBuilder.Node<Model>, request:Model):Model {
         var action = endpoint.actions && endpoint.actions.POST;
         if (!action) {
             console.log("no POST endpoint, sorry!");
         } else {
             console.log("POST path", action.pathWithQuery);
+            return this.postTyped<Model>(action.pathWithQuery, action.scopes, request);
         }
     }
 
-    patch<Model>(endpoint:RequestBuilder.Node<Model>, request:Model):void {
+    patchUntyped(path:string, scopes:string[], request:any):any {
+        return {};
+    }
+
+    patchTyped<Model>(path:string, scopes:string[], request:Model):Model {
+        return this.patchUntyped(path, scopes, request) as Model;
+    }
+
+    patch<Model>(endpoint:RequestBuilder.Node<Model>, request:Model):Model {
         var action = endpoint.actions && endpoint.actions.PATCH;
         if (!action) {
             console.log("no PATCH endpoint, sorry!");
         } else {
             console.log("PATCH path", action.pathWithQuery);
+            return this.patchTyped<Model>(action.pathWithQuery, action.scopes, request);
         }
+    }
+    
+    deleteUntyped(path:string, scopes:string[]):void {
+    }
+
+    deleteTyped<Model>(path:string, scopes:string[]):void {
     }
     
     delete<Model>(endpoint:RequestBuilder.Node<Model>):void {
@@ -282,6 +322,7 @@ class MockGraph {
             console.log("no DELETE endpoint, sorry!");
         } else {
             console.log("DELETE path", action.pathWithQuery);
+            this.getTyped<Model>(action.pathWithQuery, action.scopes);
         }
     }
 
@@ -289,14 +330,3 @@ class MockGraph {
 
 var rb = new RequestBuilder.Root();
 var graph = new MockGraph();
-
-/*
-var foo = rb.me.message("123").actions
-var bar = rb.me.calendarView(new Date(), new Date()).addQuery("123")
-
-graph.get(foo).messageField
-graph.getCollection(bar).collection
-graph.post(foo, {} as Kurve.MessageDataModel);
-graph.delete(foo);
-graph.patch(foo, {} as Kurve.MessageDataModel);
-*/
