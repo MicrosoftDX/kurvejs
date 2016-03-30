@@ -6,9 +6,23 @@ Just start typing at the bottom of this file and see how intellisense helps you 
     rb.                     actions, me, user, users
     rb.me                   actions, event, events, message, messages, calendarView
     rb.me.event             event(eventId:string) => Event
-    rb.me.event("123")      actions, attachment, attachments
+    rb.me.event("123")      action, attachment, attachments,
     
-Certain endpoints with required query parameters are written as helpers:
+Each endpoint exposes the set of available actions, along with the necessary metadata for each action  
+    rb.me.event("123").actions
+    -> GET, POST, PATCH, DELETE 
+    rb.me.event("123").actions.GET.pathWithQuery = '/me/event/123/'
+    (Soon this will include scope information as well)
+
+Simply pass this metadata to the REST channel of your choice, e.g.
+    MyRESTLibrary.get(rb.me.event("123").actions.pathWithQuery)
+
+However if you provide an endpoint directly to our Graph implementation, it will infer the relevant types: 
+    graph.get(rb.me.event("123")).organizer.name
+
+Certain endpoints have parameters that are encoded into the request either on the path or the querystring:
+    rb.me.event("123")
+    -> /me/events/123      
     rb.me.calendarView([startDate],[endDate])
     -> /me/calendarView?startDate=[startDate]&endDate=[endDate]
 
@@ -17,19 +31,6 @@ You can add ODATA queries to these or any other endpoint:
     -> /me/messages/123?$select=id,subject
     rb.me.calendarView([startDate],[endDate]).addQuery("$select=organizer")
     -> /me/calendarView?startDate=[startDate]&endDate=[endDate]&$select=organizer
-
-Each endpoint in the graph surfaces an "actions" object
-    rb.me.event("123").actions
-
-The "actions" object contains metadata for each supported REST verb, e.g.
-    rb.me.event("123").actions.GET.pathWithQuery = '/me/event/123/'
-    (Soon this will include scope information as well)
-
-Simply pass this metadata to the REST channel of your choice, e.g.
-    MyRESTLibrary.get(rb.me.event("123").actions.restWithQuery)
-
-However if you provide an endpoint directly to our Graph implementation, it will infer the relevant types: 
-    graph.get(rb.me.event("123")).organizer.name
     
 The API mirrors the structure of the Graph paths:
     to access:
@@ -85,11 +86,6 @@ namespace RequestBuilder {
         PATCH?:Action;
     }
 
-    export abstract class Node<Model> {
-        private model:Model;                        // need to reference Model to make type inference work
-        constructor(public actions?:Actions) {}     // need this in the base class so that its available externally  
-    }
-
     function queryUnion(query1?:string, query2?:string) {
         if (query1)
             return query1 + (query2 ? "&" + query2 : "");
@@ -99,112 +95,117 @@ namespace RequestBuilder {
 
     var pathWithQuery = (path:string, query?:string) => path + (query ? "?" + query : "");
 
-   // Three types of nodes:
-   //   PossibleEndpoint        /me.messages                                    Endpoint without query. Might just be an intermediary node.
-   //   EndpointWithQuery       /me.calendarView?$startDate=X&endDate=Y         Endpoint with built-in query
-   //   AddQuery                /me.messages?$select=id,bodyPreview             Either of the above with added query
-   //                           /me.calendarView?$startDate=X&endDate=Y&r=1
-
-    export class AddQuery<Model> extends Node<Model> {
-        constructor(path:string, public actions:Actions, query?:string) {
-            super(actions);
-            if (actions)
-                for (var verb in actions)
-                    actions[verb].pathWithQuery = pathWithQuery(path, query);
+    export class Endpoint<Model> {
+        public actions: Actions;
+        private model:Model;                        // need to reference Model to make type inference work
+        constructor(protected path:string, protected query?:string) {
+            this.path = path;
+            this.query = query;
         }
+        addQuery = (query?:string) => new AddQuery<Model>(this.path, queryUnion(this.query, query), this.actions);
+        pathWithQuery = pathWithQuery(this.path, this.query);
     }
 
-    export abstract class Endpoint<Model> extends Node<Model> {
-        constructor(protected path:string, public actions:Actions, protected query?:string) {
-            super(actions);
+    export class AddQuery<Model> extends Endpoint<Model> {
+        constructor(path:string, query:string, actions:Actions) {
+            super(path, query);
+            if (actions) {
+                for (var verb in actions)
+                    actions[verb].pathWithQuery = pathWithQuery(path, query);
+                this.actions = actions;
+            }
         }
-        addQuery = (query?:string) => new AddQuery<Model>(this.path, this.actions, queryUnion(this.query, query));
-        protected get pathWithQuery() {return pathWithQuery(this.path, this.query)}
     }
     
     export class Attachment extends Endpoint<Kurve.AttachmentDataModel> {
-        constructor(protected path:string) {
-            super(path, {
-                GET: new Action(path),
-            });
+        constructor(path:string, attachmentId:string) {
+            super(path + "/attachments/" + attachmentId);
         }
+        actions = {
+            GET: new Action(this.path)
+        };
     }
 
-    var attachment = (path:string) => (attachmentId:string) => new Attachment(path + "/attachments/" + attachmentId);
+    var attachment = (path:string) => (attachmentId:string) => new Attachment(path, attachmentId);
 
     export class Attachments extends Endpoint<Kurve.AttachmentDataModel> {
-        constructor(protected path:string) {
-            super(path, {
-                GETCOLLECTION: new Action(path),
-            });
+        constructor(path:string) {
+            super(path + "/attachments");
         }
+        actions = {
+            GETCOLLECTION: new Action(this.path),
+        };
     }
 
-    var attachments = (path:string) => new Attachments(path + "/attachments");
+    var attachments = (path:string) => new Attachments(path);
 
     export class Message extends Endpoint<Kurve.MessageDataModel> {
-        constructor(protected path:string) {
-            super(path, {
-                GET: new Action(path),
-                POST: new Action(path)
-            });
+        constructor(path:string, messageId:string) {
+            super(path + "/messages/" + messageId);
         }
+        actions = {
+            GET: new Action(this.path),
+            POST: new Action(this.path)
+        };
         attachment = attachment(this.path);
         attachments = attachments(this.path);
     }
 
-    var message = (path:string) => (messageId:string) => new Message(path + "/messages/" + messageId);
+    var message = (path:string) => (messageId:string) => new Message(path, messageId);
 
     export class Messages extends Endpoint<Kurve.MessageDataModel> {
-        constructor(protected path:string) {
-            super(path, {
-                GETCOLLECTION: new Action(path),
-            });
+        constructor(path:string) {
+            super(path + "/messages/");
         }
+        actions = {
+            GETCOLLECTION: new Action(this.path),
+        };
     }
 
-    var messages = (path:string) => new Messages(path + "/messages");
+    var messages = (path:string) => new Messages(path);
     
     export class Event extends Endpoint<Kurve.EventDataModel> {
-        constructor(protected path:string) {
-            super(path, {
-                GET: new Action(path),
-            });
+        constructor(path:string, eventId:string) {
+            super(path + "/events/");
         }
+        actions = {
+            GET: new Action(this.path),
+        };
         attachment = attachment(this.path);
         attachments = attachments(this.path);
     }
     
-    var event = (path:string) => (eventId:string) => new Event(path + "/events/" + eventId);
+    var event = (path:string) => (eventId:string) => new Event(path, eventId);
 
     export class Events extends Endpoint<Kurve.EventDataModel> {
-        constructor(protected path:string) {
-            super(path, {
-                GETCOLLECTION: new Action(path),
-            });
+        constructor(path:string) {
+            super(path + "/events/");
         }
+        actions = {
+            GETCOLLECTION: new Action(this.path),
+        };
     }
     
-    var events = (path:string) => new Events(path + "/events");   
+    var events = (path:string) => new Events(path);   
 
     export class CalendarView extends Endpoint<Kurve.EventDataModel> {
         constructor(path:string, startDate:Date, endDate:Date) {
-            var query = "startDateTime=" + startDate.toString() + "&endDateTime=" + endDate.toString();
-//          REVIEW need to restore toISOString()
-            super(path, {
-                GETCOLLECTION: new Action(pathWithQuery(path, query))
-            }, query);
+            super(path + "/calendarView", "startDateTime=" + startDate.toString() + "&endDateTime=" + endDate.toString()); // REVIEW need to restore toISOString()
+        }
+        actions = {
+            GETCOLLECTION: new Action(pathWithQuery(this.path, this.query))
         }
     }
     
-    var calendarView = (path:string) => (startDate:Date, endDate:Date) => new CalendarView(path + "/calendarView", startDate, endDate);
+    var calendarView = (path:string) => (startDate:Date, endDate:Date) => new CalendarView(path, startDate, endDate);
 
     export class User extends Endpoint<Kurve.UserDataModel> {
-        constructor(protected path:string) {
-            super(path, {
-                GET: new Action(path),
-            });
+        constructor(path:string = "", userId?:string) {
+            super(userId? path + "/users/" + userId : path + "/me");
         }
+        actions = {
+            GET: new Action(this.path),
+        };
         message = message(this.path);
         messages = messages(this.path);
         event = event(this.path);
@@ -212,18 +213,19 @@ namespace RequestBuilder {
         calendarView = calendarView(this.path);
     }
 
-    var me = new User("/me");
-    var user = (userId:string) => new User("/users/" + userId);
+    var me = new User();
+    var user = (userId:string) => new User("", userId);
 
     export class Users extends Endpoint<Kurve.UserDataModel> {
-        constructor(protected path:string) {
-            super(path, {
-                GETCOLLECTION: new Action(path),
-            });
+        constructor(path:string = "") {
+            super(path + "/users");
         }
+        actions = {
+            GETCOLLECTION: new Action(this.path),
+        };
     }
 
-    var users = new Users("/users/");
+    var users = new Users();
 
     export class Root {
         me = me;
@@ -246,7 +248,7 @@ class MockGraph {
         return this.getUntyped(path, scopes) as Collection<Model>;
     }
 
-    getCollection<Model>(endpoint:RequestBuilder.Node<Model>):Collection<Model> {
+    getCollection<Model>(endpoint:RequestBuilder.Endpoint<Model>):Collection<Model> {
         var action = endpoint.actions && endpoint.actions.GETCOLLECTION;
         if (!action) {
             console.log("no GETCOLLECTION endpoint, sorry!");
@@ -264,7 +266,7 @@ class MockGraph {
         return {} as Model;
     }
 
-    get<Model>(endpoint:RequestBuilder.Node<Model>):Model {
+    get<Model>(endpoint:RequestBuilder.Endpoint<Model>):Model {
         var action = endpoint.actions && endpoint.actions.GET;
         if (!action) {
             console.log("no GET endpoint, sorry!");
@@ -282,7 +284,7 @@ class MockGraph {
         return this.postUntyped(path, scopes, request) as Model;
     }
 
-    post<Model>(endpoint:RequestBuilder.Node<Model>, request:Model):Model {
+    post<Model>(endpoint:RequestBuilder.Endpoint<Model>, request:Model):Model {
         var action = endpoint.actions && endpoint.actions.POST;
         if (!action) {
             console.log("no POST endpoint, sorry!");
@@ -300,7 +302,7 @@ class MockGraph {
         return this.patchUntyped(path, scopes, request) as Model;
     }
 
-    patch<Model>(endpoint:RequestBuilder.Node<Model>, request:Model):Model {
+    patch<Model>(endpoint:RequestBuilder.Endpoint<Model>, request:Model):Model {
         var action = endpoint.actions && endpoint.actions.PATCH;
         if (!action) {
             console.log("no PATCH endpoint, sorry!");
@@ -316,7 +318,7 @@ class MockGraph {
     deleteTyped<Model>(path:string, scopes:string[]):void {
     }
     
-    delete<Model>(endpoint:RequestBuilder.Node<Model>):void {
+    delete<Model>(endpoint:RequestBuilder.Endpoint<Model>):void {
         var action = endpoint.actions.DELETE;
         if (!action) {
             console.log("no DELETE endpoint, sorry!");
@@ -330,3 +332,4 @@ class MockGraph {
 
 var rb = new RequestBuilder.Root();
 var graph = new MockGraph();
+
