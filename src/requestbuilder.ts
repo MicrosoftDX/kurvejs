@@ -75,10 +75,8 @@ namespace RequestBuilder {
 
     export class Endpoint<Model> {
         public actions: Actions;
-        private model:Model;                        // need to reference Model to make type inference work
+        private model:Model;        // need to reference Model to make type inference work
         constructor(protected path:string, protected query?:string) {
-            this.path = path;
-            this.query = query;
         }
         addQuery = (query?:string) => new AddQuery<Model>(this.path, queryUnion(this.query, query), this.actions);
         pathWithQuery = pathWithQuery(this.path, this.query);
@@ -89,7 +87,7 @@ namespace RequestBuilder {
             super(path, query);
             if (actions) {
                 for (var verb in actions)
-                    actions[verb].pathWithQuery = pathWithQuery(path, query);
+                    actions[verb].pathWithQuery = this.pathWithQuery;
                 this.actions = actions;
             }
         }
@@ -310,4 +308,3 @@ class MockGraph {
 
 var rb = new RequestBuilder.Root();
 var graph = new MockGraph();
-
