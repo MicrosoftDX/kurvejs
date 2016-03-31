@@ -50,28 +50,26 @@ However I have examined the 1.0 and Beta docs closely and I believe that this ap
 
 import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel } from './models';
 
-namespace RequestBuilder {
+export class Action {
+    constructor(public pathWithQuery:string, public scopes?:string[]){}
+}
 
-    export class Action {
-        constructor(public pathWithQuery:string, public scopes?:string[]){}
-    }
+export interface Actions {
+    GET?:Action;
+    GETCOLLECTION?:Action;
+    POST?:Action;
+    DELETE?:Action;
+    PATCH?:Action;
+}
 
-    interface Actions {
-        GET?:Action;
-        GETCOLLECTION?:Action;
-        POST?:Action;
-        DELETE?:Action;
-        PATCH?:Action;
-    }
+function queryUnion(query1?:string, query2?:string) {
+    if (query1)
+        return query1 + (query2 ? "&" + query2 : "");
+    else
+        return query2;
+}
 
-    function queryUnion(query1?:string, query2?:string) {
-        if (query1)
-            return query1 + (query2 ? "&" + query2 : "");
-        else
-            return query2;
-    }
-
-    var pathWithQuery = (path:string, query?:string) => path + (query ? "?" + query : "");
+var pathWithQuery = (path:string, query?:string) => path + (query ? "?" + query : "");
 
     export class Endpoint<Model> {
         public actions: Actions;
@@ -95,121 +93,120 @@ namespace RequestBuilder {
         }
     }
 
-    export class Attachment extends Endpoint<AttachmentDataModel> {
-        constructor(path:string, attachmentId:string) {
-            super(path + "/attachments/" + attachmentId);
-        }
-        actions = {
-            GET: new Action(this.path)
-        };
+export class Attachment extends Endpoint<AttachmentDataModel> {
+    constructor(path:string, attachmentId:string) {
+        super(path + "/attachments/" + attachmentId);
     }
+    actions = {
+        GET: new Action(this.path)
+    };
+}
 
-    var attachment = (path:string) => (attachmentId:string) => new Attachment(path, attachmentId);
+var attachment = (path:string) => (attachmentId:string) => new Attachment(path, attachmentId);
 
-    export class Attachments extends Endpoint<AttachmentDataModel> {
-        constructor(path:string) {
-            super(path + "/attachments");
-        }
-        actions = {
-            GETCOLLECTION: new Action(this.path),
-        };
+export class Attachments extends Endpoint<AttachmentDataModel> {
+    constructor(path:string) {
+        super(path + "/attachments");
     }
+    actions = {
+        GETCOLLECTION: new Action(this.path),
+    };
+}
 
-    var attachments = (path:string) => new Attachments(path);
+var attachments = (path:string) => new Attachments(path);
 
-    export class Message extends Endpoint<MessageDataModel> {
-        constructor(path:string, messageId:string) {
-            super(path + "/messages/" + messageId);
-        }
-        actions = {
-            GET: new Action(this.path),
-            POST: new Action(this.path)
-        };
-        attachment = attachment(this.path);
-        attachments = attachments(this.path);
+export class Message extends Endpoint<MessageDataModel> {
+    constructor(path:string, messageId:string) {
+        super(path + "/messages/" + messageId);
     }
+    actions = {
+        GET: new Action(this.path),
+        POST: new Action(this.path)
+    };
+    attachment = attachment(this.path);
+    attachments = attachments(this.path);
+}
 
-    var message = (path:string) => (messageId:string) => new Message(path, messageId);
+var message = (path:string) => (messageId:string) => new Message(path, messageId);
 
-    export class Messages extends Endpoint<MessageDataModel> {
-        constructor(path:string) {
-            super(path + "/messages/");
-        }
-        actions = {
-            GETCOLLECTION: new Action(this.path),
-        };
+export class Messages extends Endpoint<MessageDataModel> {
+    constructor(path:string) {
+        super(path + "/messages/");
     }
+    actions = {
+        GETCOLLECTION: new Action(this.path),
+    };
+}
 
-    var messages = (path:string) => new Messages(path);
+var messages = (path:string) => new Messages(path);
 
-    export class Event extends Endpoint<EventDataModel> {
-        constructor(path:string, eventId:string) {
-            super(path + "/events/");
-        }
-        actions = {
-            GET: new Action(this.path),
-        };
-        attachment = attachment(this.path);
-        attachments = attachments(this.path);
+export class Event extends Endpoint<EventDataModel> {
+    constructor(path:string, eventId:string) {
+        super(path + "/events/");
     }
+    actions = {
+        GET: new Action(this.path),
+    };
+    attachment = attachment(this.path);
+    attachments = attachments(this.path);
+}
 
-    var event = (path:string) => (eventId:string) => new Event(path, eventId);
+var event = (path:string) => (eventId:string) => new Event(path, eventId);
 
-    export class Events extends Endpoint<EventDataModel> {
-        constructor(path:string) {
-            super(path + "/events/");
-        }
-        actions = {
-            GETCOLLECTION: new Action(this.path),
-        };
+export class Events extends Endpoint<EventDataModel[]> {
+    constructor(path:string) {
+        super(path + "/events/");
     }
+    actions = {
+        GETCOLLECTION: new Action(this.path),
+    };
+}
 
-    var events = (path:string) => new Events(path);
+var events = (path:string) => new Events(path);
 
-    export class CalendarView extends Endpoint<EventDataModel> {
-        constructor(path:string, startDate:Date, endDate:Date) {
-            super(path + "/calendarView", "startDateTime=" + startDate.toString() + "&endDateTime=" + endDate.toString()); // REVIEW need to restore toISOString()
-        }
-        actions = {
-            GETCOLLECTION: new Action(pathWithQuery(this.path, this.query))
-        }
+export class CalendarView extends Endpoint<EventDataModel> {
+    constructor(path:string, startDate:Date, endDate:Date) {
+        super(path + "/calendarView", "startDateTime=" + startDate.toString() + "&endDateTime=" + endDate.toString()); // REVIEW need to restore toISOString()
     }
-
-    var calendarView = (path:string) => (startDate:Date, endDate:Date) => new CalendarView(path, startDate, endDate);
-
-    export class User extends Endpoint<UserDataModel> {
-        constructor(path:string = "", userId?:string) {
-            super(userId? path + "/users/" + userId : path + "/me");
-        }
-        actions = {
-            GET: new Action(this.path),
-        };
-        message = message(this.path);
-        messages = messages(this.path);
-        event = event(this.path);
-        events = events(this.path);
-        calendarView = calendarView(this.path);
+    actions = {
+        GETCOLLECTION: new Action(pathWithQuery(this.path, this.query))
     }
+}
 
-    var me = new User();
-    var user = (userId:string) => new User("", userId);
+var calendarView = (path:string) => (startDate:Date, endDate:Date) => new CalendarView(path, startDate, endDate);
 
-    export class Users extends Endpoint<UserDataModel> {
-        constructor(path:string = "") {
-            super(path + "/users");
-        }
-        actions = {
-            GETCOLLECTION: new Action(this.path),
-        };
+export class User extends Endpoint<UserDataModel> {
+    constructor(path:string = "", userId?:string) {
+        super(userId? path + "/users/" + userId : path + "/me");
     }
+    actions = {
+        GET: new Action(this.path),
+    };
+    message = message(this.path);
+    messages = messages(this.path);
+    event = event(this.path);
+    events = events(this.path);
+    calendarView = calendarView(this.path);
+}
 
-    var users = new Users();
+var me = new User("https://graph.microsoft.com/v1.0");
+var user = (userId:string) => new User("", userId);
 
-    export class Root {
-        me = me;
-        user = user;
-        users = users;
+export class Users extends Endpoint<UserDataModel> {
+    constructor(path:string = "") {
+        super(path + "/users");
     }
+    actions = {
+        GETCOLLECTION: new Action(this.path),
+    };
+}
+
+var users = new Users();
+
+export class Root {
+    me = me;
+    user = user;
+    users = users;
 }
 
 interface Collection<Model> {
@@ -226,7 +223,7 @@ class MockGraph {
         return this.getUntyped(path, scopes);
     }
 
-    getCollection<Model>(endpoint:RequestBuilder.Endpoint<Model>):Collection<Model> {
+    getCollection<Model>(endpoint:Endpoint<Model>):Collection<Model> {
         var action = endpoint.actions && endpoint.actions.GETCOLLECTION;
         if (!action) {
             console.log("no GETCOLLECTION endpoint, sorry!");
@@ -244,7 +241,7 @@ class MockGraph {
         return;
     }
 
-    get<Model>(endpoint:RequestBuilder.Endpoint<Model>):Model {
+    get<Model>(endpoint:Endpoint<Model>):Model {
         var action = endpoint.actions && endpoint.actions.GET;
         if (!action) {
             console.log("no GET endpoint, sorry!");
@@ -262,7 +259,7 @@ class MockGraph {
         return this.postUntyped(path, scopes, request);
     }
 
-    post<Model>(endpoint:RequestBuilder.Endpoint<Model>, request:Model):Model {
+    post<Model>(endpoint:Endpoint<Model>, request:Model):Model {
         var action = endpoint.actions && endpoint.actions.POST;
         if (!action) {
             console.log("no POST endpoint, sorry!");
@@ -280,7 +277,7 @@ class MockGraph {
         return this.patchUntyped(path, scopes, request);
     }
 
-    patch<Model>(endpoint:RequestBuilder.Endpoint<Model>, request:Model):Model {
+    patch<Model>(endpoint:Endpoint<Model>, request:Model):Model {
         var action = endpoint.actions && endpoint.actions.PATCH;
         if (!action) {
             console.log("no PATCH endpoint, sorry!");
@@ -296,7 +293,7 @@ class MockGraph {
     deleteTyped<Model>(path:string, scopes:string[]):void {
     }
 
-    delete<Model>(endpoint:RequestBuilder.Endpoint<Model>):void {
+    delete<Model>(endpoint:Endpoint<Model>):void {
         var action = endpoint.actions.DELETE;
         if (!action) {
             console.log("no DELETE endpoint, sorry!");
@@ -308,6 +305,5 @@ class MockGraph {
 
 }
 
-var rb = new RequestBuilder.Root();
+var rb = new Root();
 var graph = new MockGraph();
-

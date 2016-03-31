@@ -255,10 +255,108 @@ declare module 'Kurve/src/models' {
 	}
 
 }
+declare module 'Kurve/src/requestbuilder' {
+	import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel } from 'Kurve/src/models';
+	export class Action {
+	    pathWithQuery: string;
+	    scopes: string[];
+	    constructor(pathWithQuery: string, scopes?: string[]);
+	}
+	export interface Actions {
+	    GET?: Action;
+	    GETCOLLECTION?: Action;
+	    POST?: Action;
+	    DELETE?: Action;
+	    PATCH?: Action;
+	}
+	export class Endpoint<Model> {
+	    protected path: string;
+	    protected query: string;
+	    actions: Actions;
+	    private model;
+	    constructor(path: string, query?: string);
+	    addQuery: (query?: string) => AddQuery<Model>;
+	    pathWithQuery: string;
+	}
+	export class AddQuery<Model> extends Endpoint<Model> {
+	    constructor(path: string, query: string, actions: Actions);
+	}
+	export class Attachment extends Endpoint<AttachmentDataModel> {
+	    constructor(path: string, attachmentId: string);
+	    actions: {
+	        GET: Action;
+	    };
+	}
+	export class Attachments extends Endpoint<AttachmentDataModel> {
+	    constructor(path: string);
+	    actions: {
+	        GETCOLLECTION: Action;
+	    };
+	}
+	export class Message extends Endpoint<MessageDataModel> {
+	    constructor(path: string, messageId: string);
+	    actions: {
+	        GET: Action;
+	        POST: Action;
+	    };
+	    attachment: (attachmentId: string) => Attachment;
+	    attachments: Attachments;
+	}
+	export class Messages extends Endpoint<MessageDataModel> {
+	    constructor(path: string);
+	    actions: {
+	        GETCOLLECTION: Action;
+	    };
+	}
+	export class Event extends Endpoint<EventDataModel> {
+	    constructor(path: string, eventId: string);
+	    actions: {
+	        GET: Action;
+	    };
+	    attachment: (attachmentId: string) => Attachment;
+	    attachments: Attachments;
+	}
+	export class Events extends Endpoint<EventDataModel[]> {
+	    constructor(path: string);
+	    actions: {
+	        GETCOLLECTION: Action;
+	    };
+	}
+	export class CalendarView extends Endpoint<EventDataModel> {
+	    constructor(path: string, startDate: Date, endDate: Date);
+	    actions: {
+	        GETCOLLECTION: Action;
+	    };
+	}
+	export class User extends Endpoint<UserDataModel> {
+	    constructor(path?: string, userId?: string);
+	    actions: {
+	        GET: Action;
+	    };
+	    message: (messageId: string) => Message;
+	    messages: Messages;
+	    event: (eventId: string) => Event;
+	    events: Events;
+	    calendarView: (startDate: Date, endDate: Date) => CalendarView;
+	}
+	export class Users extends Endpoint<UserDataModel> {
+	    constructor(path?: string);
+	    actions: {
+	        GETCOLLECTION: Action;
+	    };
+	}
+	export class Root {
+	    me: User;
+	    user: (userId: string) => User;
+	    users: Users;
+	}
+
+}
 declare module 'Kurve/src/graph' {
 	import { Promise, PromiseCallback } from 'Kurve/src/promises';
 	import { Identity, Error } from 'Kurve/src/identity';
 	import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from 'Kurve/src/models';
+	import { Endpoint } from 'Kurve/src/requestbuilder';
 	export module Scopes {
 	    class General {
 	        static OpenId: string;
@@ -442,6 +540,7 @@ declare module 'Kurve/src/graph' {
 	    getAsync(url: string): Promise<string, Error>;
 	    get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
 	    private generateError(xhr);
+	    endpointGet<T>(endpoint: Endpoint<T>): Promise<T, Error>;
 	    private getUsers(urlString, callback, scopes?, basicProfileOnly?);
 	    private getUser(urlString, callback, scopes?);
 	    private addAccessTokenAndSend(xhr, callback, scopes?);
