@@ -3,41 +3,33 @@
 RequestBuilder allows you to discover and access the Microsoft Graph using Visual Studio Code intellisense.
 
 Just start typing at the bottom of this file and see how intellisense helps you explore the graph:
-    rb.                     actions, me, user, users
-    rb.me                   actions, event, events, message, messages, calendarView
-    rb.me.event             event(eventId:string) => Event
-    rb.me.event("123")      action, attachment, attachments,
+    graph.                     me, user, users
+    graph.me                   event, events, message, messages, calendarView, GET, PATCH, DELETE
+    graph.me.event             event(eventId:string) => Event
+    graph.me.event("123")      attachment, attachments, GET, PATCH, DELETE
 
-Each endpoint exposes the set of available actions, along with the necessary metadata for each action
-    rb.me.event("123").actions
-    -> GET, POST, PATCH, DELETE
-    rb.me.event("123").actions.GET.pathWithQuery
-    -> '/me/event/123/'
-    (Soon this will include scope information as well)
+Each endpoint exposes the set of available REST verbs through strongly typed methods:
+    graph.me.GET():UserDataModel
+    graph.me.events.GETCOLLECTION():EventDataModel
+    graph.me.events.POST(event:EventDataModel):EventDataModel
 
-Simply pass this metadata to the REST channel of your choice, e.g.
-    MyRESTLibrary.get(rb.me.event("123").actions.pathWithQuery)
-
-However if you provide an endpoint directly to our Graph implementation, it will infer the relevant types:
-    graph.get(rb.me.event("123")).organizer.name
-
-Certain endpoints have parameters that are encoded into the request either on the path or the querystring:
-    rb.me.event("123")
+Certain endpoints have parameters that are encoded into the request either in the path or the querystring:
+    graph.me.event("123")
     -> /me/events/123
-    rb.me.calendarView([startDate],[endDate])
+    graph.me.calendarView([startDate],[endDate])
     -> /me/calendarView?startDate=[startDate]&endDate=[endDate]
 
-You can add ODATA queries to these or any other endpoint:
-    rb.me.messages("123").addQuery("$select=id,subject")
-    -> /me/messages/123?$select=id,subject
-    rb.me.calendarView([startDate],[endDate]).addQuery("$select=organizer")
-    -> /me/calendarView?startDate=[startDate]&endDate=[endDate]&$select=organizer
+You can add ODATA queries through the REST methods:
+    graph.me.messages("123").GET("$select=id,subject")
+    -> GET "/me/messages/123?$select=id,subject""
+    graph.me.calendarView([startDate],[endDate]).GETCOLLECTION("$select=organizer")
+    -> GETCOLLECTION "/me/calendarView?startDate=[startDate]&endDate=[endDate]&$select=organizer""
 
 The API mirrors the structure of the Graph paths:
     to access:
         /users/billba@microsoft.com/messages/123-456-789/attachments
     we do:
-        rb.user("billba@microsoft.com").message("1234").attachments("6789")
+        graph.user("billba@microsoft.com").message("1234").attachments("6789")
     compare to the old Kurve-y way of doing things:
         graph.messageAttachmentForUser("billba@microsoft.com", "12345", "6789")
 
@@ -51,167 +43,168 @@ However I have examined the 1.0 and Beta docs closely and I believe that this ap
 
 import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel } from './models';
 
-export class Action {
-    constructor(public pathWithQuery:string, public scopes?:string[]){}
-}
-
-interface Actions {
-    GET?:Action;
-    GETCOLLECTION?:Action;
-    POST?:Action;
-    DELETE?:Action;
-    PATCH?:Action;
-}
-
 interface Collection<Model> {
-    collection:Model[];
+    objects:Model[];
     //  nextLink callback will go here
 }
 
-function queryUnion(query1?:string, query2?:string) {
-    if (query1)
-        return query1 + (query2 ? "&" + query2 : "");
-    else
-        return query2;
+var pathWithQuery = (path:string, query1?:string, query2?:string) => {
+    var query = (query1 ? query1 + (query2 ? "&" + query2 : "" ) : query2); 
+    return path + (query ? "?" + query : "");
 }
 
-var pathWithQuery = (path:string, query?:string) => path + (query ? "?" + query : "");
-
-export class Endpoint<Model> {
-    public actions: Actions;
-    private model:Model;        // need to reference Model to make type inference work
-    constructor(protected path:string, protected query?:string) {
+export class Endpoint {
+    constructor(protected graph:Graph, protected path:string, protected query?:string) {
     }
-    addQuery = (query?:string) => new AddQuery<Model>(this.path, queryUnion(this.query, query), this.actions);
-    pathWithQuery = pathWithQuery(this.path, this.query);
+//  pathWithQuery = (query?:string) => pathWithQuery(this.path, this.query, query);
 }
 
-export class AddQuery<Model> extends Endpoint<Model> {
-    constructor(path:string, query:string, actions:Actions) {
-        super(path, query);
-        if (actions) {
-            for (var verb in actions)
-                actions[verb].pathWithQuery = this.pathWithQuery;
-            this.actions = actions;
-        }
+export class Attachment extends Endpoint {
+    constructor(protected graph:Graph, path:string, attachmentId:string) {
+        super(graph, path + "/attachments/" + attachmentId);
     }
+
+    GET = this.graph.GET<AttachmentDataModel>(this.path, this.query);
+    PATCH = this.graph.PATCH<AttachmentDataModel>(this.path, this.query);
+    DELETE = this.graph.DELETE<AttachmentDataModel>(this.path, this.query);
 }
 
-export class Attachment extends Endpoint<AttachmentDataModel> {
-    constructor(path:string, attachmentId:string) {
-        super(path + "/attachments/" + attachmentId);
+var attachment = (graph:Graph, path:string) => (attachmentId:string) => new Attachment(graph, path, attachmentId);
+
+export class Attachments extends Endpoint {
+    constructor(protected graph:Graph, path:string) {
+        super(graph, path + "/attachments");
     }
-    actions = {
-        GET: new Action(this.path)
-    };
+
+    GETCOLLECTION = this.graph.GETCOLLECTION<AttachmentDataModel>(this.path, this.query);
+    POST = this.graph.POST<AttachmentDataModel>(this.path, this.query);
 }
 
-var attachment = (path:string) => (attachmentId:string) => new Attachment(path, attachmentId);
+var attachments = (graph:Graph, path:string) => new Attachments(graph, path);
 
-export class Attachments extends Endpoint<AttachmentDataModel> {
-    constructor(path:string) {
-        super(path + "/attachments");
+export class Message extends Endpoint {
+    constructor(protected graph:Graph, path:string, messageId:string) {
+        super(graph, path + "/messages/" + messageId);
     }
-    actions = {
-        GETCOLLECTION: new Action(this.path),
-    };
+
+    GET = this.graph.GET<MessageDataModel>(this.path, this.query);
+    PATCH = this.graph.PATCH<MessageDataModel>(this.path, this.query);
+    DELETE = this.graph.DELETE<MessageDataModel>(this.path, this.query);
+
+    attachment = attachment(this.graph, this.path);
+    attachments = attachments(this.graph, this.path);
 }
 
-var attachments = (path:string) => new Attachments(path);
+var message = (graph:Graph, path:string) => (messageId:string) => new Message(graph, path, messageId);
 
-export class Message extends Endpoint<MessageDataModel> {
-    constructor(path:string, messageId:string) {
-        super(path + "/messages/" + messageId);
+export class Messages extends Endpoint {
+    constructor(protected graph:Graph, path:string) {
+        super(graph, path + "/messages/");
     }
-    actions = {
-        GET: new Action(this.path),
-        POST: new Action(this.path)
-    };
-    attachment = attachment(this.path);
-    attachments = attachments(this.path);
+
+    GETCOLLECTION = this.graph.GETCOLLECTION<MessageDataModel>(this.path, this.query);
+    POST = this.graph.POST<MessageDataModel>(this.path, this.query);
 }
 
-var message = (path:string) => (messageId:string) => new Message(path, messageId);
+var messages = (graph:Graph, path:string) => new Messages(graph, path);
 
-export class Messages extends Endpoint<MessageDataModel> {
-    constructor(path:string) {
-        super(path + "/messages/");
+export class Event extends Endpoint {
+    constructor(protected graph:Graph, path:string, eventId:string) {
+        super(graph, path + "/events/");
     }
-    actions = {
-        GETCOLLECTION: new Action(this.path),
-    };
+
+    GET = this.graph.GET<EventDataModel>(this.path, this.query);
+    PATCH = this.graph.PATCH<EventDataModel>(this.path, this.query);
+    DELETE = this.graph.DELETE<EventDataModel>(this.path, this.query);
+
+    attachment = attachment(this.graph, this.path);
+    attachments = attachments(this.graph, this.path);
 }
 
-var messages = (path:string) => new Messages(path);
+var event = (graph:Graph, path:string) => (eventId:string) => new Event(graph, path, eventId);
 
-export class Event extends Endpoint<EventDataModel> {
-    constructor(path:string, eventId:string) {
-        super(path + "/events/");
+export class Events extends Endpoint {
+    constructor(protected graph:Graph, path:string) {
+        super(graph, path + "/events/");
     }
-    actions = {
-        GET: new Action(this.path),
-    };
-    attachment = attachment(this.path);
-    attachments = attachments(this.path);
+
+    GETCOLLECTION = this.graph.GETCOLLECTION<EventDataModel>(this.path, this.query);
+    POST = this.graph.POST<EventDataModel>(this.path, this.query);
 }
 
-var event = (path:string) => (eventId:string) => new Event(path, eventId);
+var events = (graph:Graph, path:string) => new Events(graph, path);
 
-export class Events extends Endpoint<EventDataModel> {
-    constructor(path:string) {
-        super(path + "/events/");
+export class CalendarView extends Endpoint {
+    constructor(protected graph:Graph, path:string, startDate:Date, endDate:Date) {
+        super(graph, path + "/calendarView", "startDateTime=" + startDate.toString() + "&endDateTime=" + endDate.toString()); // REVIEW need to restore toISOString()
     }
-    actions = {
-        GETCOLLECTION: new Action(this.path),
-    };
+
+    GETCOLLECTION = this.graph.GETCOLLECTION<EventDataModel>(this.path, this.query);
 }
 
-var events = (path:string) => new Events(path);
+var calendarView = (graph:Graph, path:string) => (startDate:Date, endDate:Date) => new CalendarView(graph, path, startDate, endDate);
 
-export class CalendarView extends Endpoint<EventDataModel> {
-    constructor(path:string, startDate:Date, endDate:Date) {
-        super(path + "/calendarView", "startDateTime=" + startDate.toString() + "&endDateTime=" + endDate.toString()); // REVIEW need to restore toISOString()
+export class User extends Endpoint {
+    constructor(protected graph:Graph, path:string = "", userId?:string) {
+        super(graph, userId? path + "/users/" + userId : path + "/me");
     }
-    actions = {
-        GETCOLLECTION: new Action(pathWithQuery(this.path, this.query))
-    }
+
+    GET = this.graph.GET<UserDataModel>(this.path, this.query);
+    PATCH = this.graph.PATCH<UserDataModel>(this.path, this.query);
+    DELETE = this.graph.DELETE<UserDataModel>(this.path, this.query);
+
+    message = message(this.graph, this.path);
+    messages = messages(this.graph, this.path);
+    event = event(this.graph, this.path);
+    events = events(this.graph, this.path);
+    calendarView = calendarView(this.graph, this.path);
 }
 
-var calendarView = (path:string) => (startDate:Date, endDate:Date) => new CalendarView(path, startDate, endDate);
+var user = (graph:Graph) => (userId:string) => new User(graph, "", userId);
 
-export class User extends Endpoint<UserDataModel> {
-    constructor(path:string = "", userId?:string) {
-        super(userId? path + "/users/" + userId : path + "/me");
+export class Users extends Endpoint {
+    constructor(protected graph:Graph, path:string = "") {
+        super(graph, path + "/users");
     }
-    actions = {
-        GET: new Action(this.path),
-    };
-    message = message(this.path);
-    messages = messages(this.path);
-    event = event(this.path);
-    events = events(this.path);
-    calendarView = calendarView(this.path);
+
+    GETCOLLECTION = this.graph.GETCOLLECTION<UserDataModel>(this.path, this.query);
+    POST = this.graph.POST<UserDataModel>(this.path, this.query);
 }
-
-var me = new User();
-var user = (userId:string) => new User("", userId);
-
-export class Users extends Endpoint<UserDataModel> {
-    constructor(path:string = "") {
-        super(path + "/users");
-    }
-    actions = {
-        GETCOLLECTION: new Action(this.path),
-    };
-}
-
-var users = new Users();
 
 export class Graph {
-    me = me;
-    user = user;
-    users = users;
+    GetCollection<Model>(path:string, scopes?:string[]):Collection<Model> {
+        console.log("GETCOLLECTION", path);
+        return {objects:[]};
+    }
+
+    Get<Model>(path:string, scopes?:string[]):Model {
+        console.log("GET", path);
+        return {} as Model;
+    }
+
+    Post<Model>(object:Model, path:string, scopes?:string[]):Model {
+        console.log("POST", path);
+        return {} as Model;
+    }
+
+    Patch<Model>(object:Model, path:string, scopes?:string[]):Model {
+        console.log("PATCH", path);
+        return {} as Model;
+    }
+
+    Delete<Model>(path:string, scopes?:string[]):void {
+        console.log("DELETE     ", path);
+    }
+    
+    GETCOLLECTION = <Model>(path:string, queryT?:string, scopes?:string[]) => (query?:string) => this.GetCollection<Model>(pathWithQuery(path, queryT, query), scopes);
+    GET = <Model>(path:string, queryT?:string, scopes?:string[]) => (query?:string) => this.Get<Model>(pathWithQuery(path, queryT, query), scopes);
+    POST = <Model>(path:string, queryT?:string, scopes?:string[]) => (object:Model, query?:string) => this.Post<Model>(object, pathWithQuery(path, queryT, query), scopes);
+    PATCH = <Model>(path:string, queryT?:string, scopes?:string[]) => (object:Model, query?:string) => this.Patch<Model>(object, pathWithQuery(path, queryT, query), scopes);
+    DELETE = <Model>(path:string, queryT?:string, scopes?:string[]) => (query?:string) => this.Delete<Model>(pathWithQuery(path, queryT, query), scopes);
+
+    me = new User(this);
+    user = user(this);
+    users = new Users(this);
 }
 
 var graph = new Graph();
-
