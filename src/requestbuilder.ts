@@ -11,7 +11,8 @@ Just start typing at the bottom of this file and see how intellisense helps you 
 Each endpoint exposes the set of available actions, along with the necessary metadata for each action
     rb.me.event("123").actions
     -> GET, POST, PATCH, DELETE
-    rb.me.event("123").actions.GET.pathWithQuery = '/me/event/123/'
+    rb.me.event("123").actions.GET.pathWithQuery
+    -> '/me/event/123/'
     (Soon this will include scope information as well)
 
 Simply pass this metadata to the REST channel of your choice, e.g.
