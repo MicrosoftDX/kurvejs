@@ -107,8 +107,8 @@ import { Collection, UserNode, UsersNode, pathWithQuery } from "./requestbuilder
             }
         }
 
-        GET = <Model>(path:string, scopes?:string[]) => this.Get<Model>(path, scopes);
-        GETCOLLECTION = <Model>(path:string, scopes?:string[]) => this.GetCollection<Model>(path, scopes);
+        GET = <Model>(path:string, scopes?:string[]) => () => this.Get<Model>(path, scopes);
+        GETCOLLECTION = <Model>(path:string, scopes?:string[]) => () => this.GetCollection<Model>(path, scopes);
 
         me = new UserNode(this, this.baseUrl);
         user = (userId:string) => new UserNode(this, this.baseUrl, userId);
@@ -316,9 +316,10 @@ import { Collection, UserNode, UsersNode, pathWithQuery } from "./requestbuilder
 //
 //*********************************************************
 
+
 /*
 var graph = new Graph(new Identity({}));
 
-graph.user("123").addQuery("foo=bar").
+graph.me.messages.GetMessages()
+.then(collection => collection.objects[0].subject)
 */
-
