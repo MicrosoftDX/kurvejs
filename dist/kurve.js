@@ -60,6 +60,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	__export(__webpack_require__(1));
 	__export(__webpack_require__(3));
+	__export(__webpack_require__(4));
 
 
 /***/ },
@@ -67,349 +68,22 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
-	var __extends = (this && this.__extends) || function (d, b) {
-	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-	    function __() { this.constructor = d; }
-	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-	};
 	var promises_1 = __webpack_require__(2);
 	var identity_1 = __webpack_require__(3);
-	var Scopes;
-	(function (Scopes) {
-	    var Util = (function () {
-	        function Util() {
-	        }
-	        Util.rootUrl = "https://graph.microsoft.com/";
-	        return Util;
-	    }());
-	    var General = (function () {
-	        function General() {
-	        }
-	        General.OpenId = "openid";
-	        General.OfflineAccess = "offline_access";
-	        return General;
-	    }());
-	    Scopes.General = General;
-	    var User = (function () {
-	        function User() {
-	        }
-	        User.Read = Util.rootUrl + "User.Read";
-	        User.ReadWrite = Util.rootUrl + "User.ReadWrite";
-	        User.ReadBasicAll = Util.rootUrl + "User.ReadBasic.All";
-	        User.ReadAll = Util.rootUrl + "User.Read.All";
-	        User.ReadWriteAll = Util.rootUrl + "User.ReadWrite.All";
-	        return User;
-	    }());
-	    Scopes.User = User;
-	    var Contacts = (function () {
-	        function Contacts() {
-	        }
-	        Contacts.Read = Util.rootUrl + "Contacts.Read";
-	        Contacts.ReadWrite = Util.rootUrl + "Contacts.ReadWrite";
-	        return Contacts;
-	    }());
-	    Scopes.Contacts = Contacts;
-	    var Directory = (function () {
-	        function Directory() {
-	        }
-	        Directory.ReadAll = Util.rootUrl + "Directory.Read.All";
-	        Directory.ReadWriteAll = Util.rootUrl + "Directory.ReadWrite.All";
-	        Directory.AccessAsUserAll = Util.rootUrl + "Directory.AccessAsUser.All";
-	        return Directory;
-	    }());
-	    Scopes.Directory = Directory;
-	    var Group = (function () {
-	        function Group() {
-	        }
-	        Group.ReadAll = Util.rootUrl + "Group.Read.All";
-	        Group.ReadWriteAll = Util.rootUrl + "Group.ReadWrite.All";
-	        Group.AccessAsUserAll = Util.rootUrl + "Directory.AccessAsUser.All";
-	        return Group;
-	    }());
-	    Scopes.Group = Group;
-	    var Mail = (function () {
-	        function Mail() {
-	        }
-	        Mail.Read = Util.rootUrl + "Mail.Read";
-	        Mail.ReadWrite = Util.rootUrl + "Mail.ReadWrite";
-	        Mail.Send = Util.rootUrl + "Mail.Send";
-	        return Mail;
-	    }());
-	    Scopes.Mail = Mail;
-	    var Calendars = (function () {
-	        function Calendars() {
-	        }
-	        Calendars.Read = Util.rootUrl + "Calendars.Read";
-	        Calendars.ReadWrite = Util.rootUrl + "Calendars.ReadWrite";
-	        return Calendars;
-	    }());
-	    Scopes.Calendars = Calendars;
-	    var Files = (function () {
-	        function Files() {
-	        }
-	        Files.Read = Util.rootUrl + "Files.Read";
-	        Files.ReadAll = Util.rootUrl + "Files.Read.All";
-	        Files.ReadWrite = Util.rootUrl + "Files.ReadWrite";
-	        Files.ReadWriteAppFolder = Util.rootUrl + "Files.ReadWrite.AppFolder";
-	        Files.ReadWriteSelected = Util.rootUrl + "Files.ReadWrite.Selected";
-	        return Files;
-	    }());
-	    Scopes.Files = Files;
-	    var Tasks = (function () {
-	        function Tasks() {
-	        }
-	        Tasks.ReadWrite = Util.rootUrl + "Tasks.ReadWrite";
-	        return Tasks;
-	    }());
-	    Scopes.Tasks = Tasks;
-	    var People = (function () {
-	        function People() {
-	        }
-	        People.Read = Util.rootUrl + "People.Read";
-	        People.ReadWrite = Util.rootUrl + "People.ReadWrite";
-	        return People;
-	    }());
-	    Scopes.People = People;
-	    var Notes = (function () {
-	        function Notes() {
-	        }
-	        Notes.Create = Util.rootUrl + "Notes.Create";
-	        Notes.ReadWriteCreatedByApp = Util.rootUrl + "Notes.ReadWrite.CreatedByApp";
-	        Notes.Read = Util.rootUrl + "Notes.Read";
-	        Notes.ReadAll = Util.rootUrl + "Notes.Read.All";
-	        Notes.ReadWriteAll = Util.rootUrl + "Notes.ReadWrite.All";
-	        return Notes;
-	    }());
-	    Scopes.Notes = Notes;
-	})(Scopes = exports.Scopes || (exports.Scopes = {}));
-	var DataModelWrapper = (function () {
-	    function DataModelWrapper(graph, _data) {
-	        this.graph = graph;
-	        this._data = _data;
-	    }
-	    Object.defineProperty(DataModelWrapper.prototype, "data", {
-	        get: function () { return this._data; },
-	        enumerable: true,
-	        configurable: true
-	    });
-	    return DataModelWrapper;
-	}());
-	exports.DataModelWrapper = DataModelWrapper;
-	var DataModelListWrapper = (function (_super) {
-	    __extends(DataModelListWrapper, _super);
-	    function DataModelListWrapper() {
-	        _super.apply(this, arguments);
-	    }
-	    return DataModelListWrapper;
-	}(DataModelWrapper));
-	exports.DataModelListWrapper = DataModelListWrapper;
-	var ProfilePhoto = (function (_super) {
-	    __extends(ProfilePhoto, _super);
-	    function ProfilePhoto() {
-	        _super.apply(this, arguments);
-	    }
-	    return ProfilePhoto;
-	}(DataModelWrapper));
-	exports.ProfilePhoto = ProfilePhoto;
-	(function (EventsEndpoint) {
-	    EventsEndpoint[EventsEndpoint["events"] = 0] = "events";
-	    EventsEndpoint[EventsEndpoint["calendarView"] = 1] = "calendarView";
-	})(exports.EventsEndpoint || (exports.EventsEndpoint = {}));
-	var EventsEndpoint = exports.EventsEndpoint;
-	var User = (function (_super) {
-	    __extends(User, _super);
-	    function User() {
-	        _super.apply(this, arguments);
-	    }
-	    User.prototype.events = function (callback, odataQuery) {
-	        this.graph.eventsForUser(this._data.userPrincipalName, EventsEndpoint.events, callback, odataQuery);
-	    };
-	    User.prototype.eventsAsync = function (odataQuery) {
-	        return this.graph.eventsForUserAsync(this._data.userPrincipalName, EventsEndpoint.events, odataQuery);
-	    };
-	    User.prototype.memberOf = function (callback, Error, odataQuery) {
-	        this.graph.memberOfForUser(this._data.userPrincipalName, callback, odataQuery);
-	    };
-	    User.prototype.memberOfAsync = function (odataQuery) {
-	        return this.graph.memberOfForUserAsync(this._data.userPrincipalName, odataQuery);
-	    };
-	    User.prototype.messages = function (callback, odataQuery) {
-	        this.graph.messagesForUser(this._data.userPrincipalName, callback, odataQuery);
-	    };
-	    User.prototype.messagesAsync = function (odataQuery) {
-	        return this.graph.messagesForUserAsync(this._data.userPrincipalName, odataQuery);
-	    };
-	    User.prototype.manager = function (callback, odataQuery) {
-	        this.graph.managerForUser(this._data.userPrincipalName, callback, odataQuery);
-	    };
-	    User.prototype.managerAsync = function (odataQuery) {
-	        return this.graph.managerForUserAsync(this._data.userPrincipalName, odataQuery);
-	    };
-	    User.prototype.profilePhoto = function (callback, odataQuery) {
-	        this.graph.profilePhotoForUser(this._data.userPrincipalName, callback, odataQuery);
-	    };
-	    User.prototype.profilePhotoAsync = function (odataQuery) {
-	        return this.graph.profilePhotoForUserAsync(this._data.userPrincipalName, odataQuery);
-	    };
-	    User.prototype.profilePhotoValue = function (callback, odataQuery) {
-	        this.graph.profilePhotoValueForUser(this._data.userPrincipalName, callback, odataQuery);
-	    };
-	    User.prototype.profilePhotoValueAsync = function (odataQuery) {
-	        return this.graph.profilePhotoValueForUserAsync(this._data.userPrincipalName, odataQuery);
-	    };
-	    User.prototype.calendarView = function (callback, odataQuery) {
-	        this.graph.eventsForUser(this._data.userPrincipalName, EventsEndpoint.calendarView, callback, odataQuery);
-	    };
-	    User.prototype.calendarViewAsync = function (odataQuery) {
-	        return this.graph.eventsForUserAsync(this._data.userPrincipalName, EventsEndpoint.calendarView, odataQuery);
-	    };
-	    User.prototype.mailFolders = function (callback, odataQuery) {
-	        this.graph.mailFoldersForUser(this._data.userPrincipalName, callback, odataQuery);
-	    };
-	    User.prototype.mailFoldersAsync = function (odataQuery) {
-	        return this.graph.mailFoldersForUserAsync(this._data.userPrincipalName, odataQuery);
-	    };
-	    User.prototype.message = function (messageId, callback, odataQuery) {
-	        this.graph.messageForUser(this._data.userPrincipalName, messageId, callback, odataQuery);
-	    };
-	    User.prototype.messageAsync = function (messageId, odataQuery) {
-	        return this.graph.messageForUserAsync(this._data.userPrincipalName, messageId, odataQuery);
-	    };
-	    User.prototype.event = function (eventId, callback, odataQuery) {
-	        this.graph.eventForUser(this._data.userPrincipalName, eventId, callback, odataQuery);
-	    };
-	    User.prototype.eventAsync = function (eventId, odataQuery) {
-	        return this.graph.eventForUserAsync(this._data.userPrincipalName, eventId, odataQuery);
-	    };
-	    User.prototype.messageAttachment = function (messageId, attachmentId, callback, odataQuery) {
-	        this.graph.messageAttachmentForUser(this._data.userPrincipalName, messageId, attachmentId, callback, odataQuery);
-	    };
-	    User.prototype.messageAttachmentAsync = function (messageId, attachmentId, odataQuery) {
-	        return this.graph.messageAttachmentForUserAsync(this._data.userPrincipalName, messageId, attachmentId, odataQuery);
-	    };
-	    return User;
-	}(DataModelWrapper));
-	exports.User = User;
-	var Users = (function (_super) {
-	    __extends(Users, _super);
-	    function Users() {
-	        _super.apply(this, arguments);
-	    }
-	    return Users;
-	}(DataModelListWrapper));
-	exports.Users = Users;
-	var Message = (function (_super) {
-	    __extends(Message, _super);
-	    function Message() {
-	        _super.apply(this, arguments);
-	    }
-	    return Message;
-	}(DataModelWrapper));
-	exports.Message = Message;
-	var Messages = (function (_super) {
-	    __extends(Messages, _super);
-	    function Messages() {
-	        _super.apply(this, arguments);
-	    }
-	    return Messages;
-	}(DataModelListWrapper));
-	exports.Messages = Messages;
-	var Event = (function (_super) {
-	    __extends(Event, _super);
-	    function Event() {
-	        _super.apply(this, arguments);
-	    }
-	    return Event;
-	}(DataModelWrapper));
-	exports.Event = Event;
-	var Events = (function (_super) {
-	    __extends(Events, _super);
-	    function Events(graph, endpoint, _data) {
-	        _super.call(this, graph, _data);
-	        this.graph = graph;
-	        this.endpoint = endpoint;
-	        this._data = _data;
-	    }
-	    return Events;
-	}(DataModelListWrapper));
-	exports.Events = Events;
-	var Contact = (function () {
-	    function Contact() {
-	    }
-	    return Contact;
-	}());
-	exports.Contact = Contact;
-	var Group = (function (_super) {
-	    __extends(Group, _super);
-	    function Group() {
-	        _super.apply(this, arguments);
-	    }
-	    return Group;
-	}(DataModelWrapper));
-	exports.Group = Group;
-	var Groups = (function (_super) {
-	    __extends(Groups, _super);
-	    function Groups() {
-	        _super.apply(this, arguments);
-	    }
-	    return Groups;
-	}(DataModelListWrapper));
-	exports.Groups = Groups;
-	var MailFolder = (function (_super) {
-	    __extends(MailFolder, _super);
-	    function MailFolder() {
-	        _super.apply(this, arguments);
-	    }
-	    return MailFolder;
-	}(DataModelWrapper));
-	exports.MailFolder = MailFolder;
-	var MailFolders = (function (_super) {
-	    __extends(MailFolders, _super);
-	    function MailFolders() {
-	        _super.apply(this, arguments);
-	    }
-	    return MailFolders;
-	}(DataModelListWrapper));
-	exports.MailFolders = MailFolders;
-	(function (AttachmentType) {
-	    AttachmentType[AttachmentType["fileAttachment"] = 0] = "fileAttachment";
-	    AttachmentType[AttachmentType["itemAttachment"] = 1] = "itemAttachment";
-	    AttachmentType[AttachmentType["referenceAttachment"] = 2] = "referenceAttachment";
-	})(exports.AttachmentType || (exports.AttachmentType = {}));
-	var AttachmentType = exports.AttachmentType;
-	var Attachment = (function (_super) {
-	    __extends(Attachment, _super);
-	    function Attachment() {
-	        _super.apply(this, arguments);
-	    }
-	    Attachment.prototype.getType = function () {
-	        switch (this._data['@odata.type']) {
-	            case "#microsoft.graph.fileAttachment":
-	                return AttachmentType.fileAttachment;
-	            case "#microsoft.graph.itemAttachment":
-	                return AttachmentType.itemAttachment;
-	            case "#microsoft.graph.referenceAttachment":
-	                return AttachmentType.referenceAttachment;
-	        }
-	    };
-	    return Attachment;
-	}(DataModelWrapper));
-	exports.Attachment = Attachment;
-	var Attachments = (function (_super) {
-	    __extends(Attachments, _super);
-	    function Attachments() {
-	        _super.apply(this, arguments);
-	    }
-	    return Attachments;
-	}(DataModelListWrapper));
-	exports.Attachments = Attachments;
+	var requestbuilder_1 = __webpack_require__(4);
 	var Graph = (function () {
 	    function Graph(identityInfo) {
+	        var _this = this;
 	        this.req = null;
 	        this.accessToken = null;
 	        this.KurveIdentity = null;
 	        this.defaultResourceID = "https://graph.microsoft.com";
-	        this.baseUrl = "https://graph.microsoft.com/v1.0/";
+	        this.baseUrl = "https://graph.microsoft.com/v1.0";
+	        this.GET = function (path, queryT, scopes) { return function (query) { return _this.Get(requestbuilder_1.pathWithQuery(path, queryT, query), scopes); }; };
+	        this.GETCOLLECTION = function (path, queryT, scopes) { return function (query) { return _this.GetCollection(requestbuilder_1.pathWithQuery(path, queryT, query), scopes); }; };
+	        this.me = new requestbuilder_1.User(this, this.baseUrl);
+	        this.user = function (userId) { return new requestbuilder_1.User(_this, _this.baseUrl, userId); };
+	        this.users = new requestbuilder_1.Users(this, this.baseUrl);
 	        if (identityInfo.defaultAccessToken) {
 	            this.accessToken = identityInfo.defaultAccessToken;
 	        }
@@ -417,6 +91,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.KurveIdentity = identityInfo.identity;
 	        }
 	    }
+	    Graph.prototype.Get = function (path, scopes) {
+	        console.log("GET", path);
+	        var d = new promises_1.Deferred();
+	        this.get(path, function (error, result) {
+	            var jsonResult = JSON.parse(result);
+	            if (jsonResult.error) {
+	                var errorODATA = new identity_1.Error();
+	                errorODATA.other = jsonResult.error;
+	                d.reject(errorODATA);
+	                return;
+	            }
+	            d.resolve(jsonResult);
+	        });
+	        return d.promise;
+	    };
+	    Graph.prototype.GetCollection = function (path, scopes) {
+	        console.log("GETCOLLECTION", path);
+	        var d = new promises_1.Deferred();
+	        this.get(path, function (error, result) {
+	            var jsonResult = JSON.parse(result);
+	            if (jsonResult.error) {
+	                var errorODATA = new identity_1.Error();
+	                errorODATA.other = jsonResult.error;
+	                d.reject(errorODATA);
+	                return;
+	            }
+	            var resultsArray = (jsonResult.value ? jsonResult.value : [jsonResult]);
+	            d.resolve({ objects: resultsArray });
+	        });
+	        return d.promise;
+	    };
 	    Graph.prototype.scopesForV2 = function (scopes) {
 	        if (!this.KurveIdentity)
 	            return null;
@@ -424,180 +129,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return null;
 	        else
 	            return scopes;
-	    };
-	    Graph.prototype.meAsync = function (odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.me(function (error, user) { return error ? d.reject(error) : d.resolve(user); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.me = function (callback, odataQuery) {
-	        var scopes = [Scopes.User.Read];
-	        var urlString = this.buildMeUrl("", odataQuery);
-	        this.getUser(urlString, callback, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.userAsync = function (userId, odataQuery, basicProfileOnly) {
-	        if (basicProfileOnly === void 0) { basicProfileOnly = true; }
-	        var d = new promises_1.Deferred();
-	        this.user(userId, function (error, user) { return error ? d.reject(error) : d.resolve(user); }, odataQuery, basicProfileOnly);
-	        return d.promise;
-	    };
-	    Graph.prototype.user = function (userId, callback, odataQuery, basicProfileOnly) {
-	        if (basicProfileOnly === void 0) { basicProfileOnly = true; }
-	        var scopes = basicProfileOnly ? [Scopes.User.ReadBasicAll] : [Scopes.User.ReadAll];
-	        var urlString = this.buildUsersUrl(userId, odataQuery);
-	        this.getUser(urlString, callback, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.usersAsync = function (odataQuery, basicProfileOnly) {
-	        if (basicProfileOnly === void 0) { basicProfileOnly = true; }
-	        var d = new promises_1.Deferred();
-	        this.users(function (error, users) { return error ? d.reject(error) : d.resolve(users); }, odataQuery, basicProfileOnly);
-	        return d.promise;
-	    };
-	    Graph.prototype.users = function (callback, odataQuery, basicProfileOnly) {
-	        if (basicProfileOnly === void 0) { basicProfileOnly = true; }
-	        var scopes = basicProfileOnly ? [Scopes.User.ReadBasicAll] : [Scopes.User.ReadAll];
-	        var urlString = this.buildUsersUrl("", odataQuery);
-	        this.getUsers(urlString, callback, this.scopesForV2(scopes), basicProfileOnly);
-	    };
-	    Graph.prototype.groupAsync = function (groupId, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.group(groupId, function (error, group) { return error ? d.reject(error) : d.resolve(group); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.group = function (groupId, callback, odataQuery) {
-	        var scopes = [Scopes.Group.ReadAll];
-	        var urlString = this.buildGroupsUrl(groupId, odataQuery);
-	        this.getGroup(urlString, callback, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.groupsAsync = function (odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.groups(function (error, groups) { return error ? d.reject(error) : d.resolve(groups); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.groups = function (callback, odataQuery) {
-	        var scopes = [Scopes.Group.ReadAll];
-	        var urlString = this.buildGroupsUrl("", odataQuery);
-	        this.getGroups(urlString, callback, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.messageForUserAsync = function (userPrincipalName, messageId, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.messageForUser(userPrincipalName, messageId, function (error, message) { return error ? d.reject(error) : d.resolve(message); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.messageForUser = function (userPrincipalName, messageId, callback, odataQuery) {
-	        var scopes = [Scopes.Mail.Read];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId, odataQuery);
-	        this.getMessage(urlString, messageId, function (error, result) { return callback(error, result); }, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.messagesForUserAsync = function (userPrincipalName, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.messagesForUser(userPrincipalName, function (error, messages) { return error ? d.reject(error) : d.resolve(messages); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.messagesForUser = function (userPrincipalName, callback, odataQuery) {
-	        var scopes = [Scopes.Mail.Read];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/messages", odataQuery);
-	        this.getMessages(urlString, function (error, result) { return callback(error, result); }, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.mailFoldersForUserAsync = function (userPrincipalName, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.mailFoldersForUser(userPrincipalName, function (error, messages) { return error ? d.reject(error) : d.resolve(messages); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.mailFoldersForUser = function (userPrincipalName, callback, odataQuery) {
-	        var scopes = [Scopes.Mail.Read];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/mailFolders", odataQuery);
-	        this.getMailFolders(urlString, function (error, result) { return callback(error, result); }, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.eventForUserAsync = function (userPrincipalName, eventId, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.eventForUser(userPrincipalName, eventId, function (error, event) { return error ? d.reject(error) : d.resolve(event); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.eventForUser = function (userPrincipalName, eventId, callback, odataQuery) {
-	        var scopes = [Scopes.Calendars.Read];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/events/" + eventId, odataQuery);
-	        this.getEvent(urlString, eventId, function (error, result) { return callback(error, result); }, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.eventsForUserAsync = function (userPrincipalName, endpoint, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.eventsForUser(userPrincipalName, endpoint, function (error, events) { return error ? d.reject(error) : d.resolve(events); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.eventsForUser = function (userPrincipalName, endpoint, callback, odataQuery) {
-	        var scopes = [Scopes.Calendars.Read];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/" + EventsEndpoint[endpoint], odataQuery);
-	        this.getEvents(urlString, endpoint, function (error, result) { return callback(error, result); }, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.memberOfForUserAsync = function (userPrincipalName, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.memberOfForUser(userPrincipalName, function (error, groups) { return error ? d.reject(error) : d.resolve(groups); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.memberOfForUser = function (userPrincipalName, callback, odataQuery) {
-	        var scopes = [Scopes.Group.ReadAll];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/memberOf", odataQuery);
-	        this.getGroups(urlString, callback, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.managerForUserAsync = function (userPrincipalName, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.managerForUser(userPrincipalName, function (error, user) { return error ? d.reject(error) : d.resolve(user); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.managerForUser = function (userPrincipalName, callback, odataQuery) {
-	        var scopes = [Scopes.Directory.ReadAll];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/manager", odataQuery);
-	        this.getUser(urlString, callback, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.directReportsForUserAsync = function (userPrincipalName, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.directReportsForUser(userPrincipalName, function (error, users) { return error ? d.reject(error) : d.resolve(users); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.directReportsForUser = function (userPrincipalName, callback, odataQuery) {
-	        var scopes = [Scopes.Directory.ReadAll];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/directReports", odataQuery);
-	        this.getUsers(urlString, callback, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.profilePhotoForUserAsync = function (userPrincipalName, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.profilePhotoForUser(userPrincipalName, function (error, profilePhoto) { return error ? d.reject(error) : d.resolve(profilePhoto); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.profilePhotoForUser = function (userPrincipalName, callback, odataQuery) {
-	        var scopes = [Scopes.User.ReadBasicAll];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/photo", odataQuery);
-	        this.getPhoto(urlString, callback, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.profilePhotoValueForUserAsync = function (userPrincipalName, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.profilePhotoValueForUser(userPrincipalName, function (error, result) { return error ? d.reject(error) : d.resolve(result); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.profilePhotoValueForUser = function (userPrincipalName, callback, odataQuery) {
-	        var scopes = [Scopes.User.ReadBasicAll];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/photo/$value", odataQuery);
-	        this.getPhotoValue(urlString, callback, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.messageAttachmentsForUserAsync = function (userPrincipalName, messageId, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.messageAttachmentsForUser(userPrincipalName, messageId, function (error, result) { return error ? d.reject(error) : d.resolve(result); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.messageAttachmentsForUser = function (userPrincipalName, messageId, callback, odataQuery) {
-	        var scopes = [Scopes.Mail.Read];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId + "/attachments", odataQuery);
-	        this.getMessageAttachments(urlString, callback, this.scopesForV2(scopes));
-	    };
-	    Graph.prototype.messageAttachmentForUserAsync = function (userPrincipalName, messageId, attachmentId, odataQuery) {
-	        var d = new promises_1.Deferred();
-	        this.messageAttachmentForUser(userPrincipalName, messageId, attachmentId, function (error, attachment) { return error ? d.reject(error) : d.resolve(attachment); }, odataQuery);
-	        return d.promise;
-	    };
-	    Graph.prototype.messageAttachmentForUser = function (userPrincipalName, messageId, attachmentId, callback, odataQuery) {
-	        var scopes = [Scopes.Mail.Read];
-	        var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId + "/attachments/" + attachmentId, odataQuery);
-	        this.getMessageAttachment(urlString, callback, this.scopesForV2(scopes));
 	    };
 	    Graph.prototype.getAsync = function (url) {
 	        var d = new promises_1.Deferred();
@@ -633,58 +164,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            response.other = xhr.response;
 	        return response;
 	    };
-	    Graph.prototype.getUsers = function (urlString, callback, scopes, basicProfileOnly) {
-	        var _this = this;
-	        if (basicProfileOnly === void 0) { basicProfileOnly = true; }
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var usersODATA = JSON.parse(result);
-	            if (usersODATA.error) {
-	                var errorODATA = new identity_1.Error();
-	                errorODATA.other = usersODATA.error;
-	                callback(errorODATA);
-	                return;
-	            }
-	            var resultsArray = (usersODATA.value ? usersODATA.value : [usersODATA]);
-	            var users = new Users(_this, resultsArray.map(function (o) { return new User(_this, o); }));
-	            var nextLink = usersODATA['@odata.nextLink'];
-	            if (nextLink) {
-	                users.nextLink = function (callback) {
-	                    var scopes = basicProfileOnly ? [Scopes.User.ReadBasicAll] : [Scopes.User.ReadAll];
-	                    var d = new promises_1.Deferred();
-	                    _this.getUsers(nextLink, function (error, result) {
-	                        if (callback)
-	                            callback(error, result);
-	                        else
-	                            error ? d.reject(error) : d.resolve(result);
-	                    }, _this.scopesForV2(scopes), basicProfileOnly);
-	                    return d.promise;
-	                };
-	            }
-	            callback(null, users);
-	        }, null, scopes);
-	    };
-	    Graph.prototype.getUser = function (urlString, callback, scopes) {
-	        var _this = this;
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var userODATA = JSON.parse(result);
-	            if (userODATA.error) {
-	                var errorODATA = new identity_1.Error();
-	                errorODATA.other = userODATA.error;
-	                callback(errorODATA);
-	                return;
-	            }
-	            var user = new User(_this, userODATA);
-	            callback(null, user);
-	        }, null, scopes);
-	    };
 	    Graph.prototype.addAccessTokenAndSend = function (xhr, callback, scopes) {
 	        if (this.accessToken) {
 	            xhr.setRequestHeader('Authorization', 'Bearer ' + this.accessToken);
@@ -714,284 +193,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }));
 	            }
 	        }
-	    };
-	    Graph.prototype.getMessage = function (urlString, messageId, callback, scopes) {
-	        var _this = this;
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var ODATA = JSON.parse(result);
-	            if (ODATA.error) {
-	                var ODATAError = new identity_1.Error();
-	                ODATAError.other = ODATA.error;
-	                callback(ODATAError);
-	                return;
-	            }
-	            var message = new Message(_this, ODATA);
-	            callback(null, message);
-	        }, null, scopes);
-	    };
-	    Graph.prototype.getMessages = function (urlString, callback, scopes) {
-	        var _this = this;
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var messagesODATA = JSON.parse(result);
-	            if (messagesODATA.error) {
-	                var errorODATA = new identity_1.Error();
-	                errorODATA.other = messagesODATA.error;
-	                callback(errorODATA);
-	                return;
-	            }
-	            var resultsArray = (messagesODATA.value ? messagesODATA.value : [messagesODATA]);
-	            var messages = new Messages(_this, resultsArray.map(function (o) { return new Message(_this, o); }));
-	            var nextLink = messagesODATA['@odata.nextLink'];
-	            if (nextLink) {
-	                messages.nextLink = function (callback) {
-	                    var scopes = [Scopes.Mail.Read];
-	                    var d = new promises_1.Deferred();
-	                    _this.getMessages(nextLink, function (error, messages) {
-	                        if (callback)
-	                            callback(error, messages);
-	                        else
-	                            error ? d.reject(error) : d.resolve(messages);
-	                    }, _this.scopesForV2(scopes));
-	                    return d.promise;
-	                };
-	            }
-	            callback(null, messages);
-	        }, null, scopes);
-	    };
-	    Graph.prototype.getEvent = function (urlString, EventId, callback, scopes) {
-	        var _this = this;
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var ODATA = JSON.parse(result);
-	            if (ODATA.error) {
-	                var ODATAError = new identity_1.Error();
-	                ODATAError.other = ODATA.error;
-	                callback(ODATAError);
-	                return;
-	            }
-	            var event = new Event(_this, ODATA);
-	            callback(null, event);
-	        }, null, scopes);
-	    };
-	    Graph.prototype.getEvents = function (urlString, endpoint, callback, scopes) {
-	        var _this = this;
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var odata = JSON.parse(result);
-	            if (odata.error) {
-	                var errorODATA = new identity_1.Error();
-	                errorODATA.other = odata.error;
-	                callback(errorODATA);
-	                return;
-	            }
-	            var resultsArray = (odata.value ? odata.value : [odata]);
-	            var events = new Events(_this, endpoint, resultsArray.map(function (o) { return new Event(_this, o); }));
-	            var nextLink = odata['@odata.nextLink'];
-	            if (nextLink) {
-	                events.nextLink = function (callback) {
-	                    var scopes = [Scopes.Mail.Read];
-	                    var d = new promises_1.Deferred();
-	                    _this.getEvents(nextLink, endpoint, function (error, result) {
-	                        if (callback)
-	                            callback(error, result);
-	                        else
-	                            error ? d.reject(error) : d.resolve(result);
-	                    }, _this.scopesForV2(scopes));
-	                    return d.promise;
-	                };
-	            }
-	            callback(null, events);
-	        }, null, scopes);
-	    };
-	    Graph.prototype.getGroups = function (urlString, callback, scopes) {
-	        var _this = this;
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var groupsODATA = JSON.parse(result);
-	            if (groupsODATA.error) {
-	                var errorODATA = new identity_1.Error();
-	                errorODATA.other = groupsODATA.error;
-	                callback(errorODATA);
-	                return;
-	            }
-	            var resultsArray = (groupsODATA.value ? groupsODATA.value : [groupsODATA]);
-	            var groups = new Groups(_this, resultsArray.map(function (o) { return new Group(_this, o); }));
-	            var nextLink = groupsODATA['@odata.nextLink'];
-	            if (nextLink) {
-	                groups.nextLink = function (callback) {
-	                    var scopes = [Scopes.Group.ReadAll];
-	                    var d = new promises_1.Deferred();
-	                    _this.getGroups(nextLink, function (error, result) {
-	                        if (callback)
-	                            callback(error, result);
-	                        else
-	                            error ? d.reject(error) : d.resolve(result);
-	                    }, _this.scopesForV2(scopes));
-	                    return d.promise;
-	                };
-	            }
-	            callback(null, groups);
-	        }, null, scopes);
-	    };
-	    Graph.prototype.getGroup = function (urlString, callback, scopes) {
-	        var _this = this;
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var ODATA = JSON.parse(result);
-	            if (ODATA.error) {
-	                var ODATAError = new identity_1.Error();
-	                ODATAError.other = ODATA.error;
-	                callback(ODATAError);
-	                return;
-	            }
-	            var group = new Group(_this, ODATA);
-	            callback(null, group);
-	        }, null, scopes);
-	    };
-	    Graph.prototype.getPhoto = function (urlString, callback, scopes) {
-	        var _this = this;
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var ODATA = JSON.parse(result);
-	            if (ODATA.error) {
-	                var errorODATA = new identity_1.Error();
-	                errorODATA.other = ODATA.error;
-	                callback(errorODATA);
-	                return;
-	            }
-	            var photo = new ProfilePhoto(_this, ODATA);
-	            callback(null, photo);
-	        }, null, scopes);
-	    };
-	    Graph.prototype.getPhotoValue = function (urlString, callback, scopes) {
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(null, errorGet);
-	                return;
-	            }
-	            callback(result);
-	        }, "blob", scopes);
-	    };
-	    Graph.prototype.getMailFolders = function (urlString, callback, scopes) {
-	        var _this = this;
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var odata = JSON.parse(result);
-	            if (odata.error) {
-	                var errorODATA = new identity_1.Error();
-	                errorODATA.other = odata.error;
-	                callback(errorODATA);
-	            }
-	            var resultsArray = (odata.value ? odata.value : [odata]);
-	            var mailFolders = new MailFolders(_this, resultsArray.map(function (o) { return new MailFolder(_this, o); }));
-	            var nextLink = odata['@odata.nextLink'];
-	            if (nextLink) {
-	                mailFolders.nextLink = function (callback) {
-	                    var scopes = [Scopes.User.ReadAll];
-	                    var d = new promises_1.Deferred();
-	                    _this.getMailFolders(nextLink, function (error, result) {
-	                        if (callback)
-	                            callback(error, result);
-	                        else
-	                            error ? d.reject(error) : d.resolve(result);
-	                    }, _this.scopesForV2(scopes));
-	                    return d.promise;
-	                };
-	            }
-	            callback(null, mailFolders);
-	        }, null, scopes);
-	    };
-	    Graph.prototype.getMessageAttachments = function (urlString, callback, scopes) {
-	        var _this = this;
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var attachmentsODATA = JSON.parse(result);
-	            if (attachmentsODATA.error) {
-	                var errorODATA = new identity_1.Error();
-	                errorODATA.other = attachmentsODATA.error;
-	                callback(errorODATA);
-	                return;
-	            }
-	            var resultsArray = (attachmentsODATA.value ? attachmentsODATA.value : [attachmentsODATA]);
-	            var attachments = new Attachments(_this, resultsArray.map(function (o) { return new Attachment(_this, o); }));
-	            var nextLink = attachmentsODATA['@odata.nextLink'];
-	            if (nextLink) {
-	                attachments.nextLink = function (callback) {
-	                    var scopes = [Scopes.Mail.Read];
-	                    var d = new promises_1.Deferred();
-	                    _this.getMessageAttachments(nextLink, function (error, attachments) {
-	                        if (callback)
-	                            callback(error, attachments);
-	                        else
-	                            error ? d.reject(error) : d.resolve(attachments);
-	                    }, _this.scopesForV2(scopes));
-	                    return d.promise;
-	                };
-	            }
-	            callback(null, attachments);
-	        }, null, scopes);
-	    };
-	    Graph.prototype.getMessageAttachment = function (urlString, callback, scopes) {
-	        var _this = this;
-	        this.get(urlString, function (errorGet, result) {
-	            if (errorGet) {
-	                callback(errorGet);
-	                return;
-	            }
-	            var ODATA = JSON.parse(result);
-	            if (ODATA.error) {
-	                var ODATAError = new identity_1.Error();
-	                ODATAError.other = ODATA.error;
-	                callback(ODATAError);
-	                return;
-	            }
-	            var attachment = new Attachment(_this, ODATA);
-	            callback(null, attachment);
-	        }, null, scopes);
-	    };
-	    Graph.prototype.buildUrl = function (root, path, odataQuery) {
-	        return this.baseUrl + root + path + (odataQuery ? "?" + odataQuery : "");
-	    };
-	    Graph.prototype.buildMeUrl = function (path, odataQuery) {
-	        if (path === void 0) { path = ""; }
-	        return this.buildUrl("me/", path, odataQuery);
-	    };
-	    Graph.prototype.buildUsersUrl = function (path, odataQuery) {
-	        if (path === void 0) { path = ""; }
-	        return this.buildUrl("users/", path, odataQuery);
-	    };
-	    Graph.prototype.buildGroupsUrl = function (path, odataQuery) {
-	        if (path === void 0) { path = ""; }
-	        return this.buildUrl("groups/", path, odataQuery);
 	    };
 	    return Graph;
 	}());
@@ -1652,6 +853,150 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Identity;
 	}());
 	exports.Identity = Identity;
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	"use strict";
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
+	exports.pathWithQuery = function (path, query1, query2) {
+	    var query = (query1 ? query1 + (query2 ? "&" + query2 : "") : query2);
+	    return path + (query ? "?" + query : "");
+	};
+	var Endpoint = (function () {
+	    function Endpoint(graph, path, query) {
+	        this.graph = graph;
+	        this.path = path;
+	        this.query = query;
+	    }
+	    return Endpoint;
+	}());
+	exports.Endpoint = Endpoint;
+	var Attachment = (function (_super) {
+	    __extends(Attachment, _super);
+	    function Attachment(graph, path, attachmentId) {
+	        _super.call(this, graph, path + "/attachments/" + attachmentId);
+	        this.graph = graph;
+	        this.GET = this.graph.GET(this.path, this.query);
+	    }
+	    return Attachment;
+	}(Endpoint));
+	exports.Attachment = Attachment;
+	var attachment = function (graph, path) { return function (attachmentId) { return new Attachment(graph, path, attachmentId); }; };
+	var Attachments = (function (_super) {
+	    __extends(Attachments, _super);
+	    function Attachments(graph, path) {
+	        _super.call(this, graph, path + "/attachments");
+	        this.graph = graph;
+	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
+	    }
+	    return Attachments;
+	}(Endpoint));
+	exports.Attachments = Attachments;
+	var attachments = function (graph, path) { return new Attachments(graph, path); };
+	var Message = (function (_super) {
+	    __extends(Message, _super);
+	    function Message(graph, path, messageId) {
+	        _super.call(this, graph, path + "/messages/" + messageId);
+	        this.graph = graph;
+	        this.GET = this.graph.GET(this.path, this.query);
+	        this.attachment = attachment(this.graph, this.path);
+	        this.attachments = attachments(this.graph, this.path);
+	    }
+	    return Message;
+	}(Endpoint));
+	exports.Message = Message;
+	var message = function (graph, path) { return function (messageId) { return new Message(graph, path, messageId); }; };
+	var Messages = (function (_super) {
+	    __extends(Messages, _super);
+	    function Messages(graph, path) {
+	        _super.call(this, graph, path + "/messages/");
+	        this.graph = graph;
+	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
+	    }
+	    return Messages;
+	}(Endpoint));
+	exports.Messages = Messages;
+	var messages = function (graph, path) { return new Messages(graph, path); };
+	var Event = (function (_super) {
+	    __extends(Event, _super);
+	    function Event(graph, path, eventId) {
+	        _super.call(this, graph, path + "/events/");
+	        this.graph = graph;
+	        this.GET = this.graph.GET(this.path, this.query);
+	        this.attachment = attachment(this.graph, this.path);
+	        this.attachments = attachments(this.graph, this.path);
+	    }
+	    return Event;
+	}(Endpoint));
+	exports.Event = Event;
+	var event = function (graph, path) { return function (eventId) { return new Event(graph, path, eventId); }; };
+	var Events = (function (_super) {
+	    __extends(Events, _super);
+	    function Events(graph, path) {
+	        _super.call(this, graph, path + "/events/");
+	        this.graph = graph;
+	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
+	    }
+	    return Events;
+	}(Endpoint));
+	exports.Events = Events;
+	var events = function (graph, path) { return new Events(graph, path); };
+	var CalendarView = (function (_super) {
+	    __extends(CalendarView, _super);
+	    function CalendarView(graph, path, startDate, endDate) {
+	        _super.call(this, graph, path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
+	        this.graph = graph;
+	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
+	    }
+	    return CalendarView;
+	}(Endpoint));
+	exports.CalendarView = CalendarView;
+	var calendarView = function (graph, path) { return function (startDate, endDate) { return new CalendarView(graph, path, startDate, endDate); }; };
+	var MailFolders = (function (_super) {
+	    __extends(MailFolders, _super);
+	    function MailFolders(graph, path) {
+	        _super.call(this, graph, path + "/mailFolders");
+	        this.graph = graph;
+	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
+	    }
+	    return MailFolders;
+	}(Endpoint));
+	exports.MailFolders = MailFolders;
+	var User = (function (_super) {
+	    __extends(User, _super);
+	    function User(graph, path, userId) {
+	        if (path === void 0) { path = ""; }
+	        _super.call(this, graph, userId ? path + "/users/" + userId : path + "/me");
+	        this.graph = graph;
+	        this.GET = this.graph.GET(this.path, this.query);
+	        this.message = message(this.graph, this.path);
+	        this.messages = messages(this.graph, this.path);
+	        this.event = event(this.graph, this.path);
+	        this.events = events(this.graph, this.path);
+	        this.calendarView = calendarView(this.graph, this.path);
+	        this.mailFolders = new MailFolders(this.graph, this.path);
+	    }
+	    return User;
+	}(Endpoint));
+	exports.User = User;
+	var Users = (function (_super) {
+	    __extends(Users, _super);
+	    function Users(graph, path) {
+	        if (path === void 0) { path = ""; }
+	        _super.call(this, graph, path + "/users");
+	        this.graph = graph;
+	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
+	    }
+	    return Users;
+	}(Endpoint));
+	exports.Users = Users;
 
 
 /***/ }

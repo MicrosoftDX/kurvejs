@@ -41,19 +41,23 @@ However I have examined the 1.0 and Beta docs closely and I believe that this ap
 
 */
 
-import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel } from './models';
+import { Promise } from "./promises";
+import { Graph } from "./graph";
+import { Error } from "./identity";
+import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel, MailFolderDataModel } from './models';
 
-interface Collection<Model> {
+export interface Collection<Model> {
     objects:Model[];
+    nextLink?:any;
     //  nextLink callback will go here
 }
 
-var pathWithQuery = (path:string, query1?:string, query2?:string) => {
+export var pathWithQuery = (path:string, query1?:string, query2?:string) => {
     var query = (query1 ? query1 + (query2 ? "&" + query2 : "" ) : query2); 
     return path + (query ? "?" + query : "");
 }
 
-export class Endpoint {
+export abstract class Endpoint {
     constructor(protected graph:Graph, protected path:string, protected query?:string) {
     }
 //  pathWithQuery = (query?:string) => pathWithQuery(this.path, this.query, query);
@@ -65,8 +69,10 @@ export class Attachment extends Endpoint {
     }
 
     GET = this.graph.GET<AttachmentDataModel>(this.path, this.query);
+/*    
     PATCH = this.graph.PATCH<AttachmentDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<AttachmentDataModel>(this.path, this.query);
+*/
 }
 
 var attachment = (graph:Graph, path:string) => (attachmentId:string) => new Attachment(graph, path, attachmentId);
@@ -77,7 +83,9 @@ export class Attachments extends Endpoint {
     }
 
     GETCOLLECTION = this.graph.GETCOLLECTION<AttachmentDataModel>(this.path, this.query);
+/*
     POST = this.graph.POST<AttachmentDataModel>(this.path, this.query);
+*/
 }
 
 var attachments = (graph:Graph, path:string) => new Attachments(graph, path);
@@ -88,9 +96,10 @@ export class Message extends Endpoint {
     }
 
     GET = this.graph.GET<MessageDataModel>(this.path, this.query);
+/*
     PATCH = this.graph.PATCH<MessageDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<MessageDataModel>(this.path, this.query);
-
+*/
     attachment = attachment(this.graph, this.path);
     attachments = attachments(this.graph, this.path);
 }
@@ -103,7 +112,9 @@ export class Messages extends Endpoint {
     }
 
     GETCOLLECTION = this.graph.GETCOLLECTION<MessageDataModel>(this.path, this.query);
+/*
     POST = this.graph.POST<MessageDataModel>(this.path, this.query);
+*/
 }
 
 var messages = (graph:Graph, path:string) => new Messages(graph, path);
@@ -114,9 +125,10 @@ export class Event extends Endpoint {
     }
 
     GET = this.graph.GET<EventDataModel>(this.path, this.query);
+/*
     PATCH = this.graph.PATCH<EventDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<EventDataModel>(this.path, this.query);
-
+*/
     attachment = attachment(this.graph, this.path);
     attachments = attachments(this.graph, this.path);
 }
@@ -129,14 +141,16 @@ export class Events extends Endpoint {
     }
 
     GETCOLLECTION = this.graph.GETCOLLECTION<EventDataModel>(this.path, this.query);
+/*
     POST = this.graph.POST<EventDataModel>(this.path, this.query);
+*/
 }
 
 var events = (graph:Graph, path:string) => new Events(graph, path);
 
 export class CalendarView extends Endpoint {
     constructor(protected graph:Graph, path:string, startDate:Date, endDate:Date) {
-        super(graph, path + "/calendarView", "startDateTime=" + startDate.toString() + "&endDateTime=" + endDate.toString()); // REVIEW need to restore toISOString()
+        super(graph, path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
     }
 
     GETCOLLECTION = this.graph.GETCOLLECTION<EventDataModel>(this.path, this.query);
@@ -144,23 +158,31 @@ export class CalendarView extends Endpoint {
 
 var calendarView = (graph:Graph, path:string) => (startDate:Date, endDate:Date) => new CalendarView(graph, path, startDate, endDate);
 
+export class MailFolders extends Endpoint {
+    constructor(protected graph:Graph, path:string) {
+        super(graph, path + "/mailFolders");
+    }
+
+    GETCOLLECTION = this.graph.GETCOLLECTION<MailFolderDataModel>(this.path, this.query);
+}
+
 export class User extends Endpoint {
     constructor(protected graph:Graph, path:string = "", userId?:string) {
         super(graph, userId? path + "/users/" + userId : path + "/me");
     }
 
     GET = this.graph.GET<UserDataModel>(this.path, this.query);
+/*
     PATCH = this.graph.PATCH<UserDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<UserDataModel>(this.path, this.query);
-
+*/
     message = message(this.graph, this.path);
     messages = messages(this.graph, this.path);
     event = event(this.graph, this.path);
     events = events(this.graph, this.path);
     calendarView = calendarView(this.graph, this.path);
+    mailFolders = new MailFolders(this.graph, this.path)
 }
-
-var user = (graph:Graph) => (userId:string) => new User(graph, "", userId);
 
 export class Users extends Endpoint {
     constructor(protected graph:Graph, path:string = "") {
@@ -168,16 +190,20 @@ export class Users extends Endpoint {
     }
 
     GETCOLLECTION = this.graph.GETCOLLECTION<UserDataModel>(this.path, this.query);
+/*
     POST = this.graph.POST<UserDataModel>(this.path, this.query);
+*/
 }
 
+/*
 export class Graph {
     GetCollection<Model>(path:string, scopes?:string[]):Collection<Model> {
         console.log("GETCOLLECTION", path);
         return {objects:[]};
     }
 
-    Get<Model>(path:string, scopes?:string[]):Model {
+
+    Get<Model>(path:string, scopes?:string[]): Promise<Model, Error> {
         console.log("GET", path);
         return {} as Model;
     }
@@ -196,15 +222,9 @@ export class Graph {
         console.log("DELETE     ", path);
     }
     
-    GETCOLLECTION = <Model>(path:string, queryT?:string, scopes?:string[]) => (query?:string) => this.GetCollection<Model>(pathWithQuery(path, queryT, query), scopes);
-    GET = <Model>(path:string, queryT?:string, scopes?:string[]) => (query?:string) => this.Get<Model>(pathWithQuery(path, queryT, query), scopes);
     POST = <Model>(path:string, queryT?:string, scopes?:string[]) => (object:Model, query?:string) => this.Post<Model>(object, pathWithQuery(path, queryT, query), scopes);
     PATCH = <Model>(path:string, queryT?:string, scopes?:string[]) => (object:Model, query?:string) => this.Patch<Model>(object, pathWithQuery(path, queryT, query), scopes);
     DELETE = <Model>(path:string, queryT?:string, scopes?:string[]) => (query?:string) => this.Delete<Model>(pathWithQuery(path, queryT, query), scopes);
-
-    me = new User(this);
-    user = user(this);
-    users = new Users(this);
 }
+*/
 
-var graph = new Graph();

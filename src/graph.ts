@@ -3,7 +3,8 @@
 import { Deferred, Promise, PromiseCallback } from "./promises";
 import { Identity, OAuthVersion, Error } from "./identity";
 import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from "./models"
-
+import { Collection, User, Users, pathWithQuery } from "./requestbuilder";
+/*
     export module Scopes {
         class Util {
             static rootUrl = "https://graph.microsoft.com/";
@@ -64,7 +65,8 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
             public static ReadWriteAll: string = Util.rootUrl + "Notes.ReadWrite.All";
         }
     }
-
+*/
+/*
     export class DataModelWrapper<T> {
         constructor(protected graph: Graph, protected _data: T) {
         }
@@ -233,13 +235,13 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
 
     export class Attachments extends DataModelListWrapper<Attachment, Attachments>{
     }
-
+*/
     export class Graph {
         private req: XMLHttpRequest = null;
         private accessToken: string = null;
         private KurveIdentity: Identity = null;
         private defaultResourceID: string = "https://graph.microsoft.com";
-        private baseUrl: string = "https://graph.microsoft.com/v1.0/";
+        private baseUrl: string = "https://graph.microsoft.com/v1.0";
 
         constructor(identityInfo: { identity: Identity });
         constructor(identityInfo: { defaultAccessToken: string });
@@ -251,6 +253,55 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
             }
         }
 
+        GET = <Model>(path:string, queryT?:string, scopes?:string[]) => (query?:string) => this.Get<Model>(pathWithQuery(path, queryT, query), scopes);
+        GETCOLLECTION = <Model>(path:string, queryT?:string, scopes?:string[]) => (query?:string) => this.GetCollection<Model>(pathWithQuery(path, queryT, query), scopes);
+
+        me = new User(this, this.baseUrl);
+        user = (userId:string) => new User(this, this.baseUrl, userId);
+        users = new Users(this, this.baseUrl);
+
+        public Get<Model>(path:string, scopes?:string[]): Promise<Model, Error> {
+            console.log("GET", path);
+            var d = new Deferred<Model, Error>();
+
+            this.get(path, (error, result) => {
+                var jsonResult = JSON.parse(result) ;
+
+                if (jsonResult.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = jsonResult.error;
+                    d.reject(errorODATA);
+                    return;
+                }
+
+                d.resolve(jsonResult);
+            });
+
+            return d.promise;
+         }
+
+        public GetCollection<Model>(path:string, scopes?:string[]): Promise<Collection<Model>, Error> {
+            console.log("GETCOLLECTION", path);
+            var d = new Deferred<Collection<Model>, Error>();
+
+            this.get(path, (error, result) => {
+                var jsonResult = JSON.parse(result) ;
+
+                if (jsonResult.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = jsonResult.error;
+                    d.reject(errorODATA);
+                    return;
+                }
+
+                var resultsArray = (jsonResult.value ? jsonResult.value : [jsonResult]) as any[];
+
+                d.resolve({objects:resultsArray});
+            });
+
+            return d.promise;
+         }
+ 
         //Only adds scopes when linked to a v2 Oauth of kurve identity
         private scopesForV2(scopes: string[]): string[] {
             if (!this.KurveIdentity)
@@ -259,7 +310,7 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
                 return null;
             else return scopes;
         }
-
+/*
         //Users
         public meAsync(odataQuery?: string): Promise<User, Error> {
             var d = new Deferred<User,Error>();
@@ -471,7 +522,7 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
             var urlString = this.buildUsersUrl(userPrincipalName + "/messages/" + messageId + "/attachments/" + attachmentId, odataQuery);
             this.getMessageAttachment(urlString, callback, this.scopesForV2(scopes));
         }
-
+*/
         //http verbs
         public getAsync(url: string): Promise<string, Error> {
             var d = new Deferred<string,Error>();
@@ -510,7 +561,7 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
             return response;
 
         }
-
+/*
         //Private methods
 
         private getUsers(urlString, callback: PromiseCallback<Users>, scopes?: string[], basicProfileOnly = true): void {
@@ -568,7 +619,7 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
             },null,scopes);
 
         }
-
+*/
         private addAccessTokenAndSend(xhr: XMLHttpRequest, callback: (error: Error) => void, scopes?:string[]): void {
             if (this.accessToken) {
                 //Using default access token
@@ -604,7 +655,7 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
                 }
             }
         }
-
+/*
         private getMessage(urlString: string, messageId: string, callback: PromiseCallback<Message>, scopes?:string[]): void {
             this.get(urlString, (errorGet: Error, result: string) => {
                 if (errorGet) {
@@ -902,6 +953,7 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
         private buildGroupsUrl(path: string = "", odataQuery?: string) {
             return this.buildUrl("groups/", path, odataQuery);
         }
+*/
     }
 
 //*********************************************************
@@ -938,3 +990,12 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 //*********************************************************
+
+
+/*
+
+var graph = new Graph(new Identity({}));
+
+graph.me.message("123").actions
+
+*/

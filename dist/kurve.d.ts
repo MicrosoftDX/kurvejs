@@ -255,143 +255,88 @@ declare module 'Kurve/src/models' {
 	}
 
 }
+declare module 'Kurve/src/requestbuilder' {
+	import { Promise } from 'Kurve/src/promises';
+	import { Graph } from 'Kurve/src/graph';
+	import { Error } from 'Kurve/src/identity';
+	import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel, MailFolderDataModel } from 'Kurve/src/models';
+	export interface Collection<Model> {
+	    objects: Model[];
+	    nextLink?: any;
+	}
+	export var pathWithQuery: (path: string, query1?: string, query2?: string) => string;
+	export abstract class Endpoint {
+	    protected graph: Graph;
+	    protected path: string;
+	    protected query: string;
+	    constructor(graph: Graph, path: string, query?: string);
+	}
+	export class Attachment extends Endpoint {
+	    protected graph: Graph;
+	    constructor(graph: Graph, path: string, attachmentId: string);
+	    GET: (query?: string) => Promise<AttachmentDataModel, Error>;
+	}
+	export class Attachments extends Endpoint {
+	    protected graph: Graph;
+	    constructor(graph: Graph, path: string);
+	    GETCOLLECTION: (query?: string) => Promise<Collection<AttachmentDataModel>, Error>;
+	}
+	export class Message extends Endpoint {
+	    protected graph: Graph;
+	    constructor(graph: Graph, path: string, messageId: string);
+	    GET: (query?: string) => Promise<MessageDataModel, Error>;
+	    attachment: (attachmentId: string) => Attachment;
+	    attachments: Attachments;
+	}
+	export class Messages extends Endpoint {
+	    protected graph: Graph;
+	    constructor(graph: Graph, path: string);
+	    GETCOLLECTION: (query?: string) => Promise<Collection<MessageDataModel>, Error>;
+	}
+	export class Event extends Endpoint {
+	    protected graph: Graph;
+	    constructor(graph: Graph, path: string, eventId: string);
+	    GET: (query?: string) => Promise<EventDataModel, Error>;
+	    attachment: (attachmentId: string) => Attachment;
+	    attachments: Attachments;
+	}
+	export class Events extends Endpoint {
+	    protected graph: Graph;
+	    constructor(graph: Graph, path: string);
+	    GETCOLLECTION: (query?: string) => Promise<Collection<EventDataModel>, Error>;
+	}
+	export class CalendarView extends Endpoint {
+	    protected graph: Graph;
+	    constructor(graph: Graph, path: string, startDate: Date, endDate: Date);
+	    GETCOLLECTION: (query?: string) => Promise<Collection<EventDataModel>, Error>;
+	}
+	export class MailFolders extends Endpoint {
+	    protected graph: Graph;
+	    constructor(graph: Graph, path: string);
+	    GETCOLLECTION: (query?: string) => Promise<Collection<MailFolderDataModel>, Error>;
+	}
+	export class User extends Endpoint {
+	    protected graph: Graph;
+	    constructor(graph: Graph, path?: string, userId?: string);
+	    GET: (query?: string) => Promise<UserDataModel, Error>;
+	    message: (messageId: string) => Message;
+	    messages: Messages;
+	    event: (eventId: string) => Event;
+	    events: Events;
+	    calendarView: (startDate: Date, endDate: Date) => CalendarView;
+	    mailFolders: MailFolders;
+	}
+	export class Users extends Endpoint {
+	    protected graph: Graph;
+	    constructor(graph: Graph, path?: string);
+	    GETCOLLECTION: (query?: string) => Promise<Collection<UserDataModel>, Error>;
+	}
+
+}
 declare module 'Kurve/src/graph' {
 	import { Promise, PromiseCallback } from 'Kurve/src/promises';
 	import { Identity, Error } from 'Kurve/src/identity';
-	import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from 'Kurve/src/models';
-	export module Scopes {
-	    class General {
-	        static OpenId: string;
-	        static OfflineAccess: string;
-	    }
-	    class User {
-	        static Read: string;
-	        static ReadWrite: string;
-	        static ReadBasicAll: string;
-	        static ReadAll: string;
-	        static ReadWriteAll: string;
-	    }
-	    class Contacts {
-	        static Read: string;
-	        static ReadWrite: string;
-	    }
-	    class Directory {
-	        static ReadAll: string;
-	        static ReadWriteAll: string;
-	        static AccessAsUserAll: string;
-	    }
-	    class Group {
-	        static ReadAll: string;
-	        static ReadWriteAll: string;
-	        static AccessAsUserAll: string;
-	    }
-	    class Mail {
-	        static Read: string;
-	        static ReadWrite: string;
-	        static Send: string;
-	    }
-	    class Calendars {
-	        static Read: string;
-	        static ReadWrite: string;
-	    }
-	    class Files {
-	        static Read: string;
-	        static ReadAll: string;
-	        static ReadWrite: string;
-	        static ReadWriteAppFolder: string;
-	        static ReadWriteSelected: string;
-	    }
-	    class Tasks {
-	        static ReadWrite: string;
-	    }
-	    class People {
-	        static Read: string;
-	        static ReadWrite: string;
-	    }
-	    class Notes {
-	        static Create: string;
-	        static ReadWriteCreatedByApp: string;
-	        static Read: string;
-	        static ReadAll: string;
-	        static ReadWriteAll: string;
-	    }
-	}
-	export class DataModelWrapper<T> {
-	    protected graph: Graph;
-	    protected _data: T;
-	    constructor(graph: Graph, _data: T);
-	    data: T;
-	}
-	export class DataModelListWrapper<T, S> extends DataModelWrapper<T[]> {
-	    nextLink: NextLink<S>;
-	}
-	export class ProfilePhoto extends DataModelWrapper<ProfilePhotoDataModel> {
-	}
-	export enum EventsEndpoint {
-	    events = 0,
-	    calendarView = 1,
-	}
-	export class User extends DataModelWrapper<UserDataModel> {
-	    events(callback: PromiseCallback<Events>, odataQuery?: string): void;
-	    eventsAsync(odataQuery?: string): Promise<Events, Error>;
-	    memberOf(callback: PromiseCallback<Groups>, Error: any, odataQuery?: string): void;
-	    memberOfAsync(odataQuery?: string): Promise<Groups, Error>;
-	    messages(callback: PromiseCallback<Messages>, odataQuery?: string): void;
-	    messagesAsync(odataQuery?: string): Promise<Messages, Error>;
-	    manager(callback: PromiseCallback<User>, odataQuery?: string): void;
-	    managerAsync(odataQuery?: string): Promise<User, Error>;
-	    profilePhoto(callback: PromiseCallback<ProfilePhoto>, odataQuery?: string): void;
-	    profilePhotoAsync(odataQuery?: string): Promise<ProfilePhoto, Error>;
-	    profilePhotoValue(callback: PromiseCallback<any>, odataQuery?: string): void;
-	    profilePhotoValueAsync(odataQuery?: string): Promise<any, Error>;
-	    calendarView(callback: PromiseCallback<Events>, odataQuery?: string): void;
-	    calendarViewAsync(odataQuery?: string): Promise<Events, Error>;
-	    mailFolders(callback: PromiseCallback<MailFolders>, odataQuery?: string): void;
-	    mailFoldersAsync(odataQuery?: string): Promise<MailFolders, Error>;
-	    message(messageId: string, callback: PromiseCallback<Message>, odataQuery?: string): void;
-	    messageAsync(messageId: string, odataQuery?: string): Promise<Message, Error>;
-	    event(eventId: string, callback: PromiseCallback<Event>, odataQuery?: string): void;
-	    eventAsync(eventId: string, odataQuery?: string): Promise<Event, Error>;
-	    messageAttachment(messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string): void;
-	    messageAttachmentAsync(messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error>;
-	}
-	export interface NextLink<T> {
-	    (callback?: PromiseCallback<T>): Promise<T, Error>;
-	}
-	export class Users extends DataModelListWrapper<User, Users> {
-	}
-	export class Message extends DataModelWrapper<MessageDataModel> {
-	}
-	export class Messages extends DataModelListWrapper<Message, Messages> {
-	}
-	export class Event extends DataModelWrapper<EventDataModel> {
-	}
-	export class Events extends DataModelListWrapper<Event, Events> {
-	    protected graph: Graph;
-	    protected endpoint: EventsEndpoint;
-	    protected _data: Event[];
-	    constructor(graph: Graph, endpoint: EventsEndpoint, _data: Event[]);
-	}
-	export class Contact {
-	}
-	export class Group extends DataModelWrapper<GroupDataModel> {
-	}
-	export class Groups extends DataModelListWrapper<Group, Groups> {
-	}
-	export class MailFolder extends DataModelWrapper<MailFolderDataModel> {
-	}
-	export class MailFolders extends DataModelListWrapper<MailFolder, MailFolders> {
-	}
-	export enum AttachmentType {
-	    fileAttachment = 0,
-	    itemAttachment = 1,
-	    referenceAttachment = 2,
-	}
-	export class Attachment extends DataModelWrapper<AttachmentDataModel> {
-	    getType(): AttachmentType;
-	}
-	export class Attachments extends DataModelListWrapper<Attachment, Attachments> {
-	}
+	import { Collection, User, Users } from 'Kurve/src/requestbuilder';
 	export class Graph {
 	    private req;
 	    private accessToken;
@@ -404,62 +349,18 @@ declare module 'Kurve/src/graph' {
 	    constructor(identityInfo: {
 	        defaultAccessToken: string;
 	    });
+	    GET: <Model>(path: string, queryT?: string, scopes?: string[]) => (query?: string) => Promise<Model, Error>;
+	    GETCOLLECTION: <Model>(path: string, queryT?: string, scopes?: string[]) => (query?: string) => Promise<Collection<Model>, Error>;
+	    me: User;
+	    user: (userId: string) => User;
+	    users: Users;
+	    Get<Model>(path: string, scopes?: string[]): Promise<Model, Error>;
+	    GetCollection<Model>(path: string, scopes?: string[]): Promise<Collection<Model>, Error>;
 	    private scopesForV2(scopes);
-	    meAsync(odataQuery?: string): Promise<User, Error>;
-	    me(callback: PromiseCallback<User>, odataQuery?: string): void;
-	    userAsync(userId: string, odataQuery?: string, basicProfileOnly?: boolean): Promise<User, Error>;
-	    user(userId: string, callback: PromiseCallback<User>, odataQuery?: string, basicProfileOnly?: boolean): void;
-	    usersAsync(odataQuery?: string, basicProfileOnly?: boolean): Promise<Users, Error>;
-	    users(callback: PromiseCallback<Users>, odataQuery?: string, basicProfileOnly?: boolean): void;
-	    groupAsync(groupId: string, odataQuery?: string): Promise<Group, Error>;
-	    group(groupId: string, callback: PromiseCallback<Group>, odataQuery?: string): void;
-	    groupsAsync(odataQuery?: string): Promise<Groups, Error>;
-	    groups(callback: PromiseCallback<Groups>, odataQuery?: string): void;
-	    messageForUserAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Message, Error>;
-	    messageForUser(userPrincipalName: string, messageId: string, callback: PromiseCallback<Message>, odataQuery?: string): void;
-	    messagesForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Messages, Error>;
-	    messagesForUser(userPrincipalName: string, callback: PromiseCallback<Messages>, odataQuery?: string): void;
-	    mailFoldersForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<MailFolders, Error>;
-	    mailFoldersForUser(userPrincipalName: string, callback: PromiseCallback<MailFolders>, odataQuery?: string): void;
-	    eventForUserAsync(userPrincipalName: string, eventId: string, odataQuery?: string): Promise<Event, Error>;
-	    eventForUser(userPrincipalName: string, eventId: string, callback: PromiseCallback<Event>, odataQuery?: string): void;
-	    eventsForUserAsync(userPrincipalName: string, endpoint: EventsEndpoint, odataQuery?: string): Promise<Events, Error>;
-	    eventsForUser(userPrincipalName: string, endpoint: EventsEndpoint, callback: (error: Error, messages: Events) => void, odataQuery?: string): void;
-	    memberOfForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Groups, Error>;
-	    memberOfForUser(userPrincipalName: string, callback: PromiseCallback<Groups>, odataQuery?: string): void;
-	    managerForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<User, Error>;
-	    managerForUser(userPrincipalName: string, callback: PromiseCallback<User>, odataQuery?: string): void;
-	    directReportsForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<Users, Error>;
-	    directReportsForUser(userPrincipalName: string, callback: PromiseCallback<Users>, odataQuery?: string): void;
-	    profilePhotoForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<ProfilePhoto, Error>;
-	    profilePhotoForUser(userPrincipalName: string, callback: PromiseCallback<ProfilePhoto>, odataQuery?: string): void;
-	    profilePhotoValueForUserAsync(userPrincipalName: string, odataQuery?: string): Promise<any, Error>;
-	    profilePhotoValueForUser(userPrincipalName: string, callback: PromiseCallback<any>, odataQuery?: string): void;
-	    messageAttachmentsForUserAsync(userPrincipalName: string, messageId: string, odataQuery?: string): Promise<Attachments, Error>;
-	    messageAttachmentsForUser(userPrincipalName: string, messageId: string, callback: PromiseCallback<Attachments>, odataQuery?: string): void;
-	    messageAttachmentForUserAsync(userPrincipalName: string, messageId: string, attachmentId: string, odataQuery?: string): Promise<Attachment, Error>;
-	    messageAttachmentForUser(userPrincipalName: string, messageId: string, attachmentId: string, callback: PromiseCallback<Attachment>, odataQuery?: string): void;
 	    getAsync(url: string): Promise<string, Error>;
 	    get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
 	    private generateError(xhr);
-	    private getUsers(urlString, callback, scopes?, basicProfileOnly?);
-	    private getUser(urlString, callback, scopes?);
 	    private addAccessTokenAndSend(xhr, callback, scopes?);
-	    private getMessage(urlString, messageId, callback, scopes?);
-	    private getMessages(urlString, callback, scopes?);
-	    private getEvent(urlString, EventId, callback, scopes?);
-	    private getEvents(urlString, endpoint, callback, scopes?);
-	    private getGroups(urlString, callback, scopes?);
-	    private getGroup(urlString, callback, scopes?);
-	    private getPhoto(urlString, callback, scopes?);
-	    private getPhotoValue(urlString, callback, scopes?);
-	    private getMailFolders(urlString, callback, scopes?);
-	    private getMessageAttachments(urlString, callback, scopes?);
-	    private getMessageAttachment(urlString, callback, scopes?);
-	    private buildUrl(root, path, odataQuery?);
-	    private buildMeUrl(path?, odataQuery?);
-	    private buildUsersUrl(path?, odataQuery?);
-	    private buildGroupsUrl(path?, odataQuery?);
 	}
 
 }
@@ -467,6 +368,7 @@ declare module 'Kurve/src/kurve' {
 	export * from 'Kurve/src/graph';
 	export * from 'Kurve/src/identity';
 	export * from 'Kurve/src/models';
+	export * from 'Kurve/src/requestbuilder';
 
 }
 declare module 'Kurve' {
