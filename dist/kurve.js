@@ -865,9 +865,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	exports.queryUnion = function (query1, query2) { return (query1 ? query1 + (query2 ? "&" + query2 : "") : query2); };
-	exports.pathWithQuery = function (path, query1, query2) {
-	    var query = exports.queryUnion(query1, query2);
+	var queryUnion = function (query1, query2) { return (query1 ? query1 + (query2 ? "&" + query2 : "") : query2); };
+	var pathWithQuery = function (path, query1, query2) {
+	    var query = queryUnion(query1, query2);
 	    return path + (query ? "?" + query : "");
 	};
 	var Node = (function () {
@@ -876,9 +876,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.graph = graph;
 	        this.path = path;
 	        this.query = query;
-	        this.pathWithQuery = function () { return exports.pathWithQuery(_this.path, _this.query); };
+	        this.pathWithQuery = function () { return pathWithQuery(_this.path, _this.query); };
 	        this.odata = function (query) {
-	            _this.query = exports.queryUnion(_this.query, query);
+	            _this.query = queryUnion(_this.query, query);
 	            return _this;
 	        };
 	        this.orderby = function () {
@@ -1024,21 +1024,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	var CalendarViewEndpoint = (function (_super) {
 	    __extends(CalendarViewEndpoint, _super);
 	    function CalendarViewEndpoint() {
+	        var _this = this;
 	        _super.apply(this, arguments);
 	        this.GetCalendarView = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.dateRange = function (startDate, endDate) { return _this.odata("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString()); };
 	    }
 	    return CalendarViewEndpoint;
 	}(Node));
 	exports.CalendarViewEndpoint = CalendarViewEndpoint;
 	var CalendarViewNode = (function (_super) {
 	    __extends(CalendarViewNode, _super);
-	    function CalendarViewNode(graph, path, startDate, endDate) {
-	        _super.call(this, graph, path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
+	    function CalendarViewNode(graph, path) {
+	        _super.call(this, graph, path + "/calendarView");
 	    }
 	    return CalendarViewNode;
 	}(CalendarViewEndpoint));
 	exports.CalendarViewNode = CalendarViewNode;
-	var calendarView = function (graph, path) { return function (startDate, endDate) { return new CalendarViewNode(graph, path, startDate, endDate); }; };
+	var calendarView = function (graph, path) { return new CalendarViewNode(graph, path); };
 	var MailFoldersEndpoint = (function (_super) {
 	    __extends(MailFoldersEndpoint, _super);
 	    function MailFoldersEndpoint() {

@@ -3,7 +3,7 @@
 import { Deferred, Promise, PromiseCallback } from "./promises";
 import { Identity, OAuthVersion, Error } from "./identity";
 import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from "./models"
-import { Collection, UserNode, UsersNode, pathWithQuery } from "./requestbuilder";
+import { Collection, UserNode, UsersNode } from "./requestbuilder";
 /*
     export module Scopes {
         class Util {
@@ -318,9 +318,9 @@ import { Collection, UserNode, UsersNode, pathWithQuery } from "./requestbuilder
 //
 //*********************************************************
 
+
 /*
 var graph = new Graph(new Identity({}));
-
 
 graph.me.message("123").attachment("123").odata("foo==bar").GetAttachment()
 .then(object => object.contentBytes)

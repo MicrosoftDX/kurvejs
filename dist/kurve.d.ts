@@ -264,8 +264,6 @@ declare module 'Kurve/src/requestbuilder' {
 	    objects: Model[];
 	    nextLink?: any;
 	}
-	export var queryUnion: (query1: string, query2: string) => string;
-	export var pathWithQuery: (path: string, query1?: string, query2?: string) => string;
 	export abstract class Node {
 	    protected graph: Graph;
 	    protected path: string;
@@ -322,9 +320,10 @@ declare module 'Kurve/src/requestbuilder' {
 	}
 	export class CalendarViewEndpoint extends Node {
 	    GetCalendarView: () => Promise<Collection<EventDataModel>, Error>;
+	    dateRange: (startDate: Date, endDate: Date) => this;
 	}
 	export class CalendarViewNode extends CalendarViewEndpoint {
-	    constructor(graph: Graph, path: string, startDate: Date, endDate: Date);
+	    constructor(graph: Graph, path: string);
 	}
 	export class MailFoldersEndpoint extends Node {
 	    GetMailFolders: () => Promise<Collection<MailFolderDataModel>, Error>;
@@ -342,7 +341,7 @@ declare module 'Kurve/src/requestbuilder' {
 	    messages: MessagesNode;
 	    event: (eventId: string) => EventNode;
 	    events: EventsNode;
-	    calendarView: (startDate: Date, endDate: Date) => CalendarViewNode;
+	    calendarView: CalendarViewNode;
 	    mailFolders: MailFoldersNode;
 	}
 	export class UsersEndpoint extends Node {

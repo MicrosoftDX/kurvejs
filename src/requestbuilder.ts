@@ -52,9 +52,9 @@ export interface Collection<Model> {
     //  nextLink callback will go here
 }
 
-export var queryUnion = (query1:string, query2:string) => (query1 ? query1 + (query2 ? "&" + query2 : "" ) : query2); 
+var queryUnion = (query1:string, query2:string) => (query1 ? query1 + (query2 ? "&" + query2 : "" ) : query2); 
 
-export var pathWithQuery = (path:string, query1?:string, query2?:string) => {
+var pathWithQuery = (path:string, query1?:string, query2?:string) => {
     var query = queryUnion(query1, query2); 
     return path + (query ? "?" + query : "");
 }
@@ -176,15 +176,16 @@ var events = (graph:Graph, path:string) => new EventsNode(graph, path);
 
 export class CalendarViewEndpoint extends Node {
     GetCalendarView = this.graph.GETCOLLECTION<EventDataModel>(this.pathWithQuery);
+    dateRange = (startDate:Date, endDate:Date) => this.odata(`startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`);
 }
 
 export class CalendarViewNode extends CalendarViewEndpoint {
-    constructor(graph:Graph, path:string, startDate:Date, endDate:Date) {
-        super(graph, path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
+    constructor(graph:Graph, path:string) {
+        super(graph, path + "/calendarView");
     }
 }
 
-var calendarView = (graph:Graph, path:string) => (startDate:Date, endDate:Date) => new CalendarViewNode(graph, path, startDate, endDate);
+var calendarView = (graph:Graph, path:string) => new CalendarViewNode(graph, path);
 
 export class MailFoldersEndpoint extends Node {
     GetMailFolders = this.graph.GETCOLLECTION<MailFolderDataModel>(this.pathWithQuery);
