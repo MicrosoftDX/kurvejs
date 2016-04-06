@@ -90,6 +90,8 @@ import { Collection, UserNode, UsersNode, pathWithQuery } from "./requestbuilder
         }
     }
 */
+    type PathWithQuery = () => string;
+
     export class Graph {
         private req: XMLHttpRequest = null;
         private accessToken: string = null;
@@ -107,8 +109,8 @@ import { Collection, UserNode, UsersNode, pathWithQuery } from "./requestbuilder
             }
         }
 
-        GET = <Model>(path:string, scopes?:string[]) => () => this.Get<Model>(path, scopes);
-        GETCOLLECTION = <Model>(path:string, scopes?:string[]) => () => this.GetCollection<Model>(path, scopes);
+        GET = <Model>(pathWithQuery:PathWithQuery, scopes?:string[]) => () => this.Get<Model>(pathWithQuery(), scopes);
+        GETCOLLECTION = <Model>(pathWithQuery:PathWithQuery, scopes?:string[]) => () => this.GetCollection<Model>(pathWithQuery(), scopes);
 
         me = new UserNode(this, this.baseUrl);
         user = (userId:string) => new UserNode(this, this.baseUrl, userId);
@@ -319,6 +321,7 @@ import { Collection, UserNode, UsersNode, pathWithQuery } from "./requestbuilder
 /*
 var graph = new Graph(new Identity({}));
 
-graph.me.message("123").attachment("123").addQuery("foo==bar").GetAttachment()
+
+graph.me.message("123").attachment("123").odata("foo==bar").GetAttachment()
 .then(object => object.contentBytes)
 */

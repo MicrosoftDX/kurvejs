@@ -79,8 +79,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.KurveIdentity = null;
 	        this.defaultResourceID = "https://graph.microsoft.com";
 	        this.baseUrl = "https://graph.microsoft.com/v1.0";
-	        this.GET = function (path, scopes) { return function () { return _this.Get(path, scopes); }; };
-	        this.GETCOLLECTION = function (path, scopes) { return function () { return _this.GetCollection(path, scopes); }; };
+	        this.GET = function (pathWithQuery, scopes) { return function () { return _this.Get(pathWithQuery(), scopes); }; };
+	        this.GETCOLLECTION = function (pathWithQuery, scopes) { return function () { return _this.GetCollection(pathWithQuery(), scopes); }; };
 	        this.me = new requestbuilder_1.UserNode(this, this.baseUrl);
 	        this.user = function (userId) { return new requestbuilder_1.UserNode(_this, _this.baseUrl, userId); };
 	        this.users = new requestbuilder_1.UsersNode(this, this.baseUrl);
@@ -870,14 +870,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var query = exports.queryUnion(query1, query2);
 	    return path + (query ? "?" + query : "");
 	};
-	var selectQuery = function (fields) { return ("$select=" + fields.join(",")); };
-	var orderByQuery = function (fields) { return ("$orderby=" + fields.join(",")); };
 	var Node = (function () {
 	    function Node(graph, path, query) {
+	        var _this = this;
 	        this.graph = graph;
 	        this.path = path;
 	        this.query = query;
-	        this.pathWithQuery = exports.pathWithQuery(this.path, this.query);
+	        this.pathWithQuery = function () { return exports.pathWithQuery(_this.path, _this.query); };
+	        this.odata = function (query) {
+	            _this.query = exports.queryUnion(_this.query, query);
+	            return _this;
+	        };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.odata("$orderby=" + fields.join(","));
+	        };
+	        this.top = function (items) { return _this.odata("$top=" + items.toString); };
+	        this.skip = function (items) { return _this.odata("$skip=" + items.toString); };
+	        this.filter = function (query) { return _this.odata("$filter=" + query); };
+	        this.expand = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.odata("$expand=" + fields.join(","));
+	        };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.odata("$select=" + fields.join(","));
+	        };
 	    }
 	    return Node;
 	}());
@@ -885,24 +912,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var AttachmentEndpoint = (function (_super) {
 	    __extends(AttachmentEndpoint, _super);
 	    function AttachmentEndpoint() {
-	        var _this = this;
 	        _super.apply(this, arguments);
 	        this.GetAttachment = this.graph.GET(this.pathWithQuery);
-	        this.addQuery = function (query) { return new AttachmentsEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(selectQuery(fields));
-	        };
-	        this.orderby = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(orderByQuery(fields));
-	        };
 	    }
 	    return AttachmentEndpoint;
 	}(Node));
@@ -919,24 +930,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var AttachmentsEndpoint = (function (_super) {
 	    __extends(AttachmentsEndpoint, _super);
 	    function AttachmentsEndpoint() {
-	        var _this = this;
 	        _super.apply(this, arguments);
 	        this.GetAttachments = this.graph.GETCOLLECTION(this.pathWithQuery);
-	        this.addQuery = function (query) { return new AttachmentsEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(selectQuery(fields));
-	        };
-	        this.orderby = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(orderByQuery(fields));
-	        };
 	    }
 	    return AttachmentsEndpoint;
 	}(Node));
@@ -953,24 +948,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var MessageEndpoint = (function (_super) {
 	    __extends(MessageEndpoint, _super);
 	    function MessageEndpoint() {
-	        var _this = this;
 	        _super.apply(this, arguments);
 	        this.GetMessage = this.graph.GET(this.pathWithQuery);
-	        this.addQuery = function (query) { return new MessageEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(selectQuery(fields));
-	        };
-	        this.orderby = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(orderByQuery(fields));
-	        };
 	    }
 	    return MessageEndpoint;
 	}(Node));
@@ -989,24 +968,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var MessagesEndpoint = (function (_super) {
 	    __extends(MessagesEndpoint, _super);
 	    function MessagesEndpoint() {
-	        var _this = this;
 	        _super.apply(this, arguments);
 	        this.GetMessages = this.graph.GETCOLLECTION(this.pathWithQuery);
-	        this.addQuery = function (query) { return new MessagesEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(selectQuery(fields));
-	        };
-	        this.orderby = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(orderByQuery(fields));
-	        };
 	    }
 	    return MessagesEndpoint;
 	}(Node));
@@ -1023,24 +986,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var EventEndpoint = (function (_super) {
 	    __extends(EventEndpoint, _super);
 	    function EventEndpoint() {
-	        var _this = this;
 	        _super.apply(this, arguments);
 	        this.GetEvent = this.graph.GET(this.pathWithQuery);
-	        this.addQuery = function (query) { return new EventEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(selectQuery(fields));
-	        };
-	        this.orderby = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(orderByQuery(fields));
-	        };
 	    }
 	    return EventEndpoint;
 	}(Node));
@@ -1059,24 +1006,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var EventsEndpoint = (function (_super) {
 	    __extends(EventsEndpoint, _super);
 	    function EventsEndpoint() {
-	        var _this = this;
 	        _super.apply(this, arguments);
 	        this.GetEvents = this.graph.GETCOLLECTION(this.pathWithQuery);
-	        this.addQuery = function (query) { return new EventsEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(selectQuery(fields));
-	        };
-	        this.orderby = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(orderByQuery(fields));
-	        };
 	    }
 	    return EventsEndpoint;
 	}(Node));
@@ -1093,24 +1024,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var CalendarViewEndpoint = (function (_super) {
 	    __extends(CalendarViewEndpoint, _super);
 	    function CalendarViewEndpoint() {
-	        var _this = this;
 	        _super.apply(this, arguments);
 	        this.GetCalendarView = this.graph.GETCOLLECTION(this.pathWithQuery);
-	        this.addQuery = function (query) { return new CalendarViewEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(selectQuery(fields));
-	        };
-	        this.orderby = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(orderByQuery(fields));
-	        };
 	    }
 	    return CalendarViewEndpoint;
 	}(Node));
@@ -1127,24 +1042,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var MailFoldersEndpoint = (function (_super) {
 	    __extends(MailFoldersEndpoint, _super);
 	    function MailFoldersEndpoint() {
-	        var _this = this;
 	        _super.apply(this, arguments);
 	        this.GetMailFolders = this.graph.GETCOLLECTION(this.pathWithQuery);
-	        this.addQuery = function (query) { return new MailFoldersEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(selectQuery(fields));
-	        };
-	        this.orderby = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(orderByQuery(fields));
-	        };
 	    }
 	    return MailFoldersEndpoint;
 	}(Node));
@@ -1160,24 +1059,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var UserEndpoint = (function (_super) {
 	    __extends(UserEndpoint, _super);
 	    function UserEndpoint() {
-	        var _this = this;
 	        _super.apply(this, arguments);
 	        this.GetUser = this.graph.GET(this.pathWithQuery);
-	        this.addQuery = function (query) { return new UserEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(selectQuery(fields));
-	        };
-	        this.orderby = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(orderByQuery(fields));
-	        };
 	    }
 	    return UserEndpoint;
 	}(Node));
@@ -1201,24 +1084,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	var UsersEndpoint = (function (_super) {
 	    __extends(UsersEndpoint, _super);
 	    function UsersEndpoint() {
-	        var _this = this;
 	        _super.apply(this, arguments);
 	        this.GetUsers = this.graph.GETCOLLECTION(this.pathWithQuery);
-	        this.addQuery = function (query) { return new UsersEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(selectQuery(fields));
-	        };
-	        this.orderby = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.addQuery(orderByQuery(fields));
-	        };
 	    }
 	    return UsersEndpoint;
 	}(Node));

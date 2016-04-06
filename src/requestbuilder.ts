@@ -59,13 +59,20 @@ export var pathWithQuery = (path:string, query1?:string, query2?:string) => {
     return path + (query ? "?" + query : "");
 }
 
-var selectQuery = (fields:string[]) => `$select=${fields.join(",")}`;
-var orderByQuery = (fields:string[]) => `$orderby=${fields.join(",")}`;
-
 export abstract class Node {
     constructor(protected graph:Graph, protected path:string, protected query?:string) {
     }
-    protected pathWithQuery = pathWithQuery(this.path, this.query);
+    protected pathWithQuery = () => pathWithQuery(this.path, this.query);
+    odata = (query:string) => {
+        this.query = queryUnion(this.query, query);
+        return this;
+    }
+    orderby = (...fields:string[]) => this.odata(`$orderby=${fields.join(",")}`);
+    top = (items:Number) => this.odata(`$top=${items.toString}`);
+    skip = (items:Number) => this.odata(`$skip=${items.toString}`);
+    filter = (query:string) => this.odata(`$filter=${query}`);
+    expand = (...fields:string[]) => this.odata(`$expand=${fields.join(",")}`);
+    select = (...fields:string[]) => this.odata(`$select=${fields.join(",")}`);
 }
 
 export class AttachmentEndpoint extends Node {
@@ -74,9 +81,6 @@ export class AttachmentEndpoint extends Node {
     PATCH = this.graph.PATCH<AttachmentDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<AttachmentDataModel>(this.path, this.query);
 */
-    addQuery = (query:string) => new AttachmentsEndpoint(this.graph, this.path, queryUnion(this.query, query));
-    select = (...fields:string[]) => this.addQuery(selectQuery(fields));
-    orderby = (...fields:string[]) => this.addQuery(orderByQuery(fields));
 }
 
 export class AttachmentNode extends AttachmentEndpoint {
@@ -92,9 +96,6 @@ export class AttachmentsEndpoint extends Node {
 /*
     POST = this.graph.POST<AttachmentDataModel>(this.path, this.query);
 */
-    addQuery = (query:string) => new AttachmentsEndpoint(this.graph, this.path, queryUnion(this.query, query));
-    select = (...fields:string[]) => this.addQuery(selectQuery(fields));
-    orderby = (...fields:string[]) => this.addQuery(orderByQuery(fields));
 }
 
 export class AttachmentsNode extends AttachmentsEndpoint {
@@ -111,9 +112,6 @@ export class MessageEndpoint extends Node {
     PATCH = this.graph.PATCH<MessageDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<MessageDataModel>(this.path, this.query);
 */
-    addQuery = (query:string) => new MessageEndpoint(this.graph, this.path, queryUnion(this.query, query));
-    select = (...fields:string[]) => this.addQuery(selectQuery(fields));
-    orderby = (...fields:string[]) => this.addQuery(orderByQuery(fields));
 }
 
 export class MessageNode extends MessageEndpoint {
@@ -132,9 +130,6 @@ export class MessagesEndpoint extends Node {
 /*
     CreateMessage = this.graph.POST<MessageDataModel>(this.path, this.query);
 */
-    addQuery = (query:string) => new MessagesEndpoint(this.graph, this.path, queryUnion(this.query, query));
-    select = (...fields:string[]) => this.addQuery(selectQuery(fields));
-    orderby = (...fields:string[]) => this.addQuery(orderByQuery(fields));
 }
 
 export class MessagesNode extends MessagesEndpoint {
@@ -151,9 +146,6 @@ export class EventEndpoint extends Node {
     PATCH = this.graph.PATCH<EventDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<EventDataModel>(this.path, this.query);
 */
-    addQuery = (query:string) => new EventEndpoint(this.graph, this.path, queryUnion(this.query, query));
-    select = (...fields:string[]) => this.addQuery(selectQuery(fields));
-    orderby = (...fields:string[]) => this.addQuery(orderByQuery(fields));
 }
 
 export class EventNode extends EventEndpoint {
@@ -172,9 +164,6 @@ export class EventsEndpoint extends Node {
 /*
     POST = this.graph.POST<EventDataModel>(this.path, this.query);
 */
-    addQuery = (query:string) => new EventsEndpoint(this.graph, this.path, queryUnion(this.query, query));
-    select = (...fields:string[]) => this.addQuery(selectQuery(fields));
-    orderby = (...fields:string[]) => this.addQuery(orderByQuery(fields));
 }
 
 export class EventsNode extends EventsEndpoint {
@@ -187,10 +176,6 @@ var events = (graph:Graph, path:string) => new EventsNode(graph, path);
 
 export class CalendarViewEndpoint extends Node {
     GetCalendarView = this.graph.GETCOLLECTION<EventDataModel>(this.pathWithQuery);
-
-    addQuery = (query:string) => new CalendarViewEndpoint(this.graph, this.path, queryUnion(this.query, query));
-    select = (...fields:string[]) => this.addQuery(selectQuery(fields));
-    orderby = (...fields:string[]) => this.addQuery(orderByQuery(fields));
 }
 
 export class CalendarViewNode extends CalendarViewEndpoint {
@@ -203,10 +188,6 @@ var calendarView = (graph:Graph, path:string) => (startDate:Date, endDate:Date) 
 
 export class MailFoldersEndpoint extends Node {
     GetMailFolders = this.graph.GETCOLLECTION<MailFolderDataModel>(this.pathWithQuery);
-
-    addQuery = (query:string) => new MailFoldersEndpoint(this.graph, this.path, queryUnion(this.query, query));
-    select = (...fields:string[]) => this.addQuery(selectQuery(fields));
-    orderby = (...fields:string[]) => this.addQuery(orderByQuery(fields));
 }
 
 export class MailFoldersNode extends MailFoldersEndpoint {
@@ -221,9 +202,6 @@ export class UserEndpoint extends Node {
     PATCH = this.graph.PATCH<UserDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<UserDataModel>(this.path, this.query);
 */
-    addQuery = (query:string) => new UserEndpoint(this.graph, this.path, queryUnion(this.query, query));
-    select = (...fields:string[]) => this.addQuery(selectQuery(fields));
-    orderby = (...fields:string[]) => this.addQuery(orderByQuery(fields));
 }
 
 export class UserNode extends UserEndpoint {
@@ -244,9 +222,6 @@ export class UsersEndpoint extends Node {
 /*
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */
-    addQuery = (query:string) => new UsersEndpoint(this.graph, this.path, queryUnion(this.query, query));
-    select = (...fields:string[]) => this.addQuery(selectQuery(fields));
-    orderby = (...fields:string[]) => this.addQuery(orderByQuery(fields));
 }
 
 export class UsersNode extends Node {

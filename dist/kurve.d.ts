@@ -271,31 +271,29 @@ declare module 'Kurve/src/requestbuilder' {
 	    protected path: string;
 	    protected query: string;
 	    constructor(graph: Graph, path: string, query?: string);
-	    protected pathWithQuery: string;
+	    protected pathWithQuery: () => string;
+	    odata: (query: string) => this;
+	    orderby: (...fields: string[]) => this;
+	    top: (items: Number) => this;
+	    skip: (items: Number) => this;
+	    filter: (query: string) => this;
+	    expand: (...fields: string[]) => this;
+	    select: (...fields: string[]) => this;
 	}
 	export class AttachmentEndpoint extends Node {
 	    GetAttachment: () => Promise<AttachmentDataModel, Error>;
-	    addQuery: (query: string) => AttachmentsEndpoint;
-	    select: (...fields: string[]) => AttachmentsEndpoint;
-	    orderby: (...fields: string[]) => AttachmentsEndpoint;
 	}
 	export class AttachmentNode extends AttachmentEndpoint {
 	    constructor(graph: Graph, path: string, attachmentId: string);
 	}
 	export class AttachmentsEndpoint extends Node {
 	    GetAttachments: () => Promise<Collection<AttachmentDataModel>, Error>;
-	    addQuery: (query: string) => AttachmentsEndpoint;
-	    select: (...fields: string[]) => AttachmentsEndpoint;
-	    orderby: (...fields: string[]) => AttachmentsEndpoint;
 	}
 	export class AttachmentsNode extends AttachmentsEndpoint {
 	    constructor(graph: Graph, path: string);
 	}
 	export class MessageEndpoint extends Node {
 	    GetMessage: () => Promise<MessageDataModel, Error>;
-	    addQuery: (query: string) => MessageEndpoint;
-	    select: (...fields: string[]) => MessageEndpoint;
-	    orderby: (...fields: string[]) => MessageEndpoint;
 	}
 	export class MessageNode extends MessageEndpoint {
 	    constructor(graph: Graph, path: string, messageId: string);
@@ -304,18 +302,12 @@ declare module 'Kurve/src/requestbuilder' {
 	}
 	export class MessagesEndpoint extends Node {
 	    GetMessages: () => Promise<Collection<MessageDataModel>, Error>;
-	    addQuery: (query: string) => MessagesEndpoint;
-	    select: (...fields: string[]) => MessagesEndpoint;
-	    orderby: (...fields: string[]) => MessagesEndpoint;
 	}
 	export class MessagesNode extends MessagesEndpoint {
 	    constructor(graph: Graph, path: string);
 	}
 	export class EventEndpoint extends Node {
 	    GetEvent: () => Promise<EventDataModel, Error>;
-	    addQuery: (query: string) => EventEndpoint;
-	    select: (...fields: string[]) => EventEndpoint;
-	    orderby: (...fields: string[]) => EventEndpoint;
 	}
 	export class EventNode extends EventEndpoint {
 	    constructor(graph: Graph, path: string, eventId: string);
@@ -324,36 +316,24 @@ declare module 'Kurve/src/requestbuilder' {
 	}
 	export class EventsEndpoint extends Node {
 	    GetEvents: () => Promise<Collection<EventDataModel>, Error>;
-	    addQuery: (query: string) => EventsEndpoint;
-	    select: (...fields: string[]) => EventsEndpoint;
-	    orderby: (...fields: string[]) => EventsEndpoint;
 	}
 	export class EventsNode extends EventsEndpoint {
 	    constructor(graph: Graph, path: string);
 	}
 	export class CalendarViewEndpoint extends Node {
 	    GetCalendarView: () => Promise<Collection<EventDataModel>, Error>;
-	    addQuery: (query: string) => CalendarViewEndpoint;
-	    select: (...fields: string[]) => CalendarViewEndpoint;
-	    orderby: (...fields: string[]) => CalendarViewEndpoint;
 	}
 	export class CalendarViewNode extends CalendarViewEndpoint {
 	    constructor(graph: Graph, path: string, startDate: Date, endDate: Date);
 	}
 	export class MailFoldersEndpoint extends Node {
 	    GetMailFolders: () => Promise<Collection<MailFolderDataModel>, Error>;
-	    addQuery: (query: string) => MailFoldersEndpoint;
-	    select: (...fields: string[]) => MailFoldersEndpoint;
-	    orderby: (...fields: string[]) => MailFoldersEndpoint;
 	}
 	export class MailFoldersNode extends MailFoldersEndpoint {
 	    constructor(graph: Graph, path: string);
 	}
 	export class UserEndpoint extends Node {
 	    GetUser: () => Promise<UserDataModel, Error>;
-	    addQuery: (query: string) => UserEndpoint;
-	    select: (...fields: string[]) => UserEndpoint;
-	    orderby: (...fields: string[]) => UserEndpoint;
 	}
 	export class UserNode extends UserEndpoint {
 	    protected graph: Graph;
@@ -367,9 +347,6 @@ declare module 'Kurve/src/requestbuilder' {
 	}
 	export class UsersEndpoint extends Node {
 	    GetUsers: () => Promise<Collection<UserDataModel>, Error>;
-	    addQuery: (query: string) => UsersEndpoint;
-	    select: (...fields: string[]) => UsersEndpoint;
-	    orderby: (...fields: string[]) => UsersEndpoint;
 	}
 	export class UsersNode extends Node {
 	    constructor(graph: Graph, path?: string);
@@ -392,8 +369,8 @@ declare module 'Kurve/src/graph' {
 	    constructor(identityInfo: {
 	        defaultAccessToken: string;
 	    });
-	    GET: <Model>(path: string, scopes?: string[]) => () => Promise<Model, Error>;
-	    GETCOLLECTION: <Model>(path: string, scopes?: string[]) => () => Promise<Collection<Model>, Error>;
+	    GET: <Model>(pathWithQuery: () => string, scopes?: string[]) => () => Promise<Model, Error>;
+	    GETCOLLECTION: <Model>(pathWithQuery: () => string, scopes?: string[]) => () => Promise<Collection<Model>, Error>;
 	    me: UserNode;
 	    user: (userId: string) => UserNode;
 	    users: UsersNode;
