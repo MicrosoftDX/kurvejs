@@ -112,9 +112,9 @@ import { Collection, User, Users } from "./requestbuilder";
         GET = <Model>(pathWithQuery:PathWithQuery, scopes?:string[]) => () => this.Get<Model>(pathWithQuery(), scopes);
         GETCOLLECTION = <Model>(pathWithQuery:PathWithQuery, scopes?:string[]) => () => this.GetCollection<Model>(pathWithQuery(), scopes);
 
-        me = new User(this, this.baseUrl);
+        me = () => new User(this, this.baseUrl);
         user = (userId:string) => new User(this, this.baseUrl, userId);
-        users = new Users(this, this.baseUrl);
+        users = () => new Users(this, this.baseUrl);
 
         public Get<Model>(path:string, scopes?:string[]): Promise<Model, Error> {
             console.log("GET", path);
@@ -165,13 +165,6 @@ import { Collection, User, Users } from "./requestbuilder";
             if (this.KurveIdentity.getCurrentOauthVersion() === OAuthVersion.v1)
                 return null;
             else return scopes;
-        }
-
-        //http verbs
-        public getAsync(url: string): Promise<string, Error> {
-            var d = new Deferred<string,Error>();
-            this.get(url, (error, response) => error ? d.reject(error) : d.resolve(response))
-            return d.promise;
         }
 
         public get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?:string[]): void {

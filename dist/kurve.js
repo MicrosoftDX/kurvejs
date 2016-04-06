@@ -81,9 +81,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.baseUrl = "https://graph.microsoft.com/v1.0";
 	        this.GET = function (pathWithQuery, scopes) { return function () { return _this.Get(pathWithQuery(), scopes); }; };
 	        this.GETCOLLECTION = function (pathWithQuery, scopes) { return function () { return _this.GetCollection(pathWithQuery(), scopes); }; };
-	        this.me = new requestbuilder_1.User(this, this.baseUrl);
+	        this.me = function () { return new requestbuilder_1.User(_this, _this.baseUrl); };
 	        this.user = function (userId) { return new requestbuilder_1.User(_this, _this.baseUrl, userId); };
-	        this.users = new requestbuilder_1.Users(this, this.baseUrl);
+	        this.users = function () { return new requestbuilder_1.Users(_this, _this.baseUrl); };
 	        if (identityInfo.defaultAccessToken) {
 	            this.accessToken = identityInfo.defaultAccessToken;
 	        }
@@ -129,11 +129,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return null;
 	        else
 	            return scopes;
-	    };
-	    Graph.prototype.getAsync = function (url) {
-	        var d = new promises_1.Deferred();
-	        this.get(url, function (error, response) { return error ? d.reject(error) : d.resolve(response); });
-	        return d.promise;
 	    };
 	    Graph.prototype.get = function (url, callback, responseType, scopes) {
 	        var _this = this;
@@ -918,7 +913,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Attachment;
 	}(Node));
 	exports.Attachment = Attachment;
-	var attachment = function (graph, path) { return function (attachmentId) { return new Attachment(graph, path, attachmentId); }; };
+	function _attachments(arg) {
+	    if (arg)
+	        return new Attachment(this.graph, this.path, arg);
+	    else
+	        return new Attachments(this.graph, this.path);
+	}
+	exports._attachments = _attachments;
 	var Attachments = (function (_super) {
 	    __extends(Attachments, _super);
 	    function Attachments(graph, path) {
@@ -928,19 +929,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Attachments;
 	}(Node));
 	exports.Attachments = Attachments;
-	var attachments = function (graph, path) { return new Attachments(graph, path); };
 	var Message = (function (_super) {
 	    __extends(Message, _super);
 	    function Message(graph, path, messageId) {
 	        _super.call(this, graph, path + "/messages/" + messageId);
-	        this.attachment = attachment(this.graph, this.path);
-	        this.attachments = attachments(this.graph, this.path);
+	        this.attachments = _attachments;
 	        this.GetMessage = this.graph.GET(this.pathWithQuery);
 	    }
 	    return Message;
 	}(Node));
 	exports.Message = Message;
-	var message = function (graph, path) { return function (messageId) { return new Message(graph, path, messageId); }; };
+	function _messages(arg) {
+	    if (arg)
+	        return new Message(this.graph, this.path, arg);
+	    else
+	        return new Messages(this.graph, this.path);
+	}
+	exports._messages = _messages;
 	var Messages = (function (_super) {
 	    __extends(Messages, _super);
 	    function Messages(graph, path) {
@@ -950,19 +955,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Messages;
 	}(Node));
 	exports.Messages = Messages;
-	var messages = function (graph, path) { return new Messages(graph, path); };
 	var Event = (function (_super) {
 	    __extends(Event, _super);
 	    function Event(graph, path, eventId) {
 	        _super.call(this, graph, path + "/events/");
-	        this.attachment = attachment(this.graph, this.path);
-	        this.attachments = attachments(this.graph, this.path);
+	        this.attachments = _attachments;
 	        this.GetEvent = this.graph.GET(this.pathWithQuery);
 	    }
 	    return Event;
 	}(Node));
 	exports.Event = Event;
-	var event = function (graph, path) { return function (eventId) { return new Event(graph, path, eventId); }; };
 	var Events = (function (_super) {
 	    __extends(Events, _super);
 	    function Events(graph, path) {
@@ -972,7 +974,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Events;
 	}(Node));
 	exports.Events = Events;
-	var events = function (graph, path) { return new Events(graph, path); };
+	function _events(arg) {
+	    if (arg)
+	        return new Event(this.graph, this.path, arg);
+	    else
+	        return new Events(this.graph, this.path);
+	}
+	exports._events = _events;
 	var CalendarView = (function (_super) {
 	    __extends(CalendarView, _super);
 	    function CalendarView(graph, path) {
@@ -984,7 +992,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return CalendarView;
 	}(Node));
 	exports.CalendarView = CalendarView;
-	var calendarView = function (graph, path) { return new CalendarView(graph, path); };
 	var MailFolders = (function (_super) {
 	    __extends(MailFolders, _super);
 	    function MailFolders(graph, path) {
@@ -997,15 +1004,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	var User = (function (_super) {
 	    __extends(User, _super);
 	    function User(graph, path, userId) {
+	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, userId ? path + "/users/" + userId : path + "/me");
 	        this.graph = graph;
-	        this.message = message(this.graph, this.path);
-	        this.messages = messages(this.graph, this.path);
-	        this.event = event(this.graph, this.path);
-	        this.events = events(this.graph, this.path);
-	        this.calendarView = calendarView(this.graph, this.path);
-	        this.mailFolders = new MailFolders(this.graph, this.path);
+	        this.messages = _messages;
+	        this.events = _events;
+	        this.calendarView = function () { return new CalendarView(_this.graph, _this.path); };
+	        this.mailFolders = function () { return new MailFolders(_this.graph, _this.path); };
 	        this.GetUser = this.graph.GET(this.pathWithQuery);
 	    }
 	    return User;
