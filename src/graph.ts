@@ -316,10 +316,9 @@ import { Collection, UserNode, UsersNode, pathWithQuery } from "./requestbuilder
 //
 //*********************************************************
 
-
 /*
 var graph = new Graph(new Identity({}));
 
-graph.me.messages.GetMessages()
-.then(collection => collection.objects[0].subject)
+graph.me.message("123").attachment("123").addQuery("foo==bar").GetAttachment()
+.then(object => object.contentBytes)
 */

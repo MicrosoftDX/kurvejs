@@ -79,11 +79,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.KurveIdentity = null;
 	        this.defaultResourceID = "https://graph.microsoft.com";
 	        this.baseUrl = "https://graph.microsoft.com/v1.0";
-	        this.GET = function (path, queryT, scopes) { return function (query) { return _this.Get(requestbuilder_1.pathWithQuery(path, queryT, query), scopes); }; };
-	        this.GETCOLLECTION = function (path, queryT, scopes) { return function (query) { return _this.GetCollection(requestbuilder_1.pathWithQuery(path, queryT, query), scopes); }; };
-	        this.me = new requestbuilder_1.User(this, this.baseUrl);
-	        this.user = function (userId) { return new requestbuilder_1.User(_this, _this.baseUrl, userId); };
-	        this.users = new requestbuilder_1.Users(this, this.baseUrl);
+	        this.GET = function (path, scopes) { return function () { return _this.Get(path, scopes); }; };
+	        this.GETCOLLECTION = function (path, scopes) { return function () { return _this.GetCollection(path, scopes); }; };
+	        this.me = new requestbuilder_1.UserNode(this, this.baseUrl);
+	        this.user = function (userId) { return new requestbuilder_1.UserNode(_this, _this.baseUrl, userId); };
+	        this.users = new requestbuilder_1.UsersNode(this, this.baseUrl);
 	        if (identityInfo.defaultAccessToken) {
 	            this.accessToken = identityInfo.defaultAccessToken;
 	        }
@@ -865,138 +865,373 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
+	exports.queryUnion = function (query1, query2) { return (query1 ? query1 + (query2 ? "&" + query2 : "") : query2); };
 	exports.pathWithQuery = function (path, query1, query2) {
-	    var query = (query1 ? query1 + (query2 ? "&" + query2 : "") : query2);
+	    var query = exports.queryUnion(query1, query2);
 	    return path + (query ? "?" + query : "");
 	};
-	var Endpoint = (function () {
-	    function Endpoint(graph, path, query) {
+	var selectQuery = function (fields) { return ("$select=" + fields.join(",")); };
+	var orderByQuery = function (fields) { return ("$orderby=" + fields.join(",")); };
+	var Node = (function () {
+	    function Node(graph, path, query) {
 	        this.graph = graph;
 	        this.path = path;
 	        this.query = query;
+	        this.pathWithQuery = exports.pathWithQuery(this.path, this.query);
 	    }
-	    return Endpoint;
+	    return Node;
 	}());
-	exports.Endpoint = Endpoint;
-	var Attachment = (function (_super) {
-	    __extends(Attachment, _super);
-	    function Attachment(graph, path, attachmentId) {
+	exports.Node = Node;
+	var AttachmentEndpoint = (function (_super) {
+	    __extends(AttachmentEndpoint, _super);
+	    function AttachmentEndpoint() {
+	        var _this = this;
+	        _super.apply(this, arguments);
+	        this.GetAttachment = this.graph.GET(this.pathWithQuery);
+	        this.addQuery = function (query) { return new AttachmentsEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(selectQuery(fields));
+	        };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(orderByQuery(fields));
+	        };
+	    }
+	    return AttachmentEndpoint;
+	}(Node));
+	exports.AttachmentEndpoint = AttachmentEndpoint;
+	var AttachmentNode = (function (_super) {
+	    __extends(AttachmentNode, _super);
+	    function AttachmentNode(graph, path, attachmentId) {
 	        _super.call(this, graph, path + "/attachments/" + attachmentId);
-	        this.graph = graph;
-	        this.GET = this.graph.GET(this.path, this.query);
 	    }
-	    return Attachment;
-	}(Endpoint));
-	exports.Attachment = Attachment;
-	var attachment = function (graph, path) { return function (attachmentId) { return new Attachment(graph, path, attachmentId); }; };
-	var Attachments = (function (_super) {
-	    __extends(Attachments, _super);
-	    function Attachments(graph, path) {
+	    return AttachmentNode;
+	}(AttachmentEndpoint));
+	exports.AttachmentNode = AttachmentNode;
+	var attachment = function (graph, path) { return function (attachmentId) { return new AttachmentNode(graph, path, attachmentId); }; };
+	var AttachmentsEndpoint = (function (_super) {
+	    __extends(AttachmentsEndpoint, _super);
+	    function AttachmentsEndpoint() {
+	        var _this = this;
+	        _super.apply(this, arguments);
+	        this.GetAttachments = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.addQuery = function (query) { return new AttachmentsEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(selectQuery(fields));
+	        };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(orderByQuery(fields));
+	        };
+	    }
+	    return AttachmentsEndpoint;
+	}(Node));
+	exports.AttachmentsEndpoint = AttachmentsEndpoint;
+	var AttachmentsNode = (function (_super) {
+	    __extends(AttachmentsNode, _super);
+	    function AttachmentsNode(graph, path) {
 	        _super.call(this, graph, path + "/attachments");
-	        this.graph = graph;
-	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
 	    }
-	    return Attachments;
-	}(Endpoint));
-	exports.Attachments = Attachments;
-	var attachments = function (graph, path) { return new Attachments(graph, path); };
-	var Message = (function (_super) {
-	    __extends(Message, _super);
-	    function Message(graph, path, messageId) {
+	    return AttachmentsNode;
+	}(AttachmentsEndpoint));
+	exports.AttachmentsNode = AttachmentsNode;
+	var attachments = function (graph, path) { return new AttachmentsNode(graph, path); };
+	var MessageEndpoint = (function (_super) {
+	    __extends(MessageEndpoint, _super);
+	    function MessageEndpoint() {
+	        var _this = this;
+	        _super.apply(this, arguments);
+	        this.GetMessage = this.graph.GET(this.pathWithQuery);
+	        this.addQuery = function (query) { return new MessageEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(selectQuery(fields));
+	        };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(orderByQuery(fields));
+	        };
+	    }
+	    return MessageEndpoint;
+	}(Node));
+	exports.MessageEndpoint = MessageEndpoint;
+	var MessageNode = (function (_super) {
+	    __extends(MessageNode, _super);
+	    function MessageNode(graph, path, messageId) {
 	        _super.call(this, graph, path + "/messages/" + messageId);
-	        this.graph = graph;
-	        this.GET = this.graph.GET(this.path, this.query);
 	        this.attachment = attachment(this.graph, this.path);
 	        this.attachments = attachments(this.graph, this.path);
 	    }
-	    return Message;
-	}(Endpoint));
-	exports.Message = Message;
-	var message = function (graph, path) { return function (messageId) { return new Message(graph, path, messageId); }; };
-	var Messages = (function (_super) {
-	    __extends(Messages, _super);
-	    function Messages(graph, path) {
+	    return MessageNode;
+	}(MessageEndpoint));
+	exports.MessageNode = MessageNode;
+	var message = function (graph, path) { return function (messageId) { return new MessageNode(graph, path, messageId); }; };
+	var MessagesEndpoint = (function (_super) {
+	    __extends(MessagesEndpoint, _super);
+	    function MessagesEndpoint() {
+	        var _this = this;
+	        _super.apply(this, arguments);
+	        this.GetMessages = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.addQuery = function (query) { return new MessagesEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(selectQuery(fields));
+	        };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(orderByQuery(fields));
+	        };
+	    }
+	    return MessagesEndpoint;
+	}(Node));
+	exports.MessagesEndpoint = MessagesEndpoint;
+	var MessagesNode = (function (_super) {
+	    __extends(MessagesNode, _super);
+	    function MessagesNode(graph, path) {
 	        _super.call(this, graph, path + "/messages/");
-	        this.graph = graph;
-	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
 	    }
-	    return Messages;
-	}(Endpoint));
-	exports.Messages = Messages;
-	var messages = function (graph, path) { return new Messages(graph, path); };
-	var Event = (function (_super) {
-	    __extends(Event, _super);
-	    function Event(graph, path, eventId) {
+	    return MessagesNode;
+	}(MessagesEndpoint));
+	exports.MessagesNode = MessagesNode;
+	var messages = function (graph, path) { return new MessagesNode(graph, path); };
+	var EventEndpoint = (function (_super) {
+	    __extends(EventEndpoint, _super);
+	    function EventEndpoint() {
+	        var _this = this;
+	        _super.apply(this, arguments);
+	        this.GetEvent = this.graph.GET(this.pathWithQuery);
+	        this.addQuery = function (query) { return new EventEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(selectQuery(fields));
+	        };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(orderByQuery(fields));
+	        };
+	    }
+	    return EventEndpoint;
+	}(Node));
+	exports.EventEndpoint = EventEndpoint;
+	var EventNode = (function (_super) {
+	    __extends(EventNode, _super);
+	    function EventNode(graph, path, eventId) {
 	        _super.call(this, graph, path + "/events/");
-	        this.graph = graph;
-	        this.GET = this.graph.GET(this.path, this.query);
 	        this.attachment = attachment(this.graph, this.path);
 	        this.attachments = attachments(this.graph, this.path);
 	    }
-	    return Event;
-	}(Endpoint));
-	exports.Event = Event;
-	var event = function (graph, path) { return function (eventId) { return new Event(graph, path, eventId); }; };
-	var Events = (function (_super) {
-	    __extends(Events, _super);
-	    function Events(graph, path) {
+	    return EventNode;
+	}(EventEndpoint));
+	exports.EventNode = EventNode;
+	var event = function (graph, path) { return function (eventId) { return new EventNode(graph, path, eventId); }; };
+	var EventsEndpoint = (function (_super) {
+	    __extends(EventsEndpoint, _super);
+	    function EventsEndpoint() {
+	        var _this = this;
+	        _super.apply(this, arguments);
+	        this.GetEvents = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.addQuery = function (query) { return new EventsEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(selectQuery(fields));
+	        };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(orderByQuery(fields));
+	        };
+	    }
+	    return EventsEndpoint;
+	}(Node));
+	exports.EventsEndpoint = EventsEndpoint;
+	var EventsNode = (function (_super) {
+	    __extends(EventsNode, _super);
+	    function EventsNode(graph, path) {
 	        _super.call(this, graph, path + "/events/");
-	        this.graph = graph;
-	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
 	    }
-	    return Events;
-	}(Endpoint));
-	exports.Events = Events;
-	var events = function (graph, path) { return new Events(graph, path); };
-	var CalendarView = (function (_super) {
-	    __extends(CalendarView, _super);
-	    function CalendarView(graph, path, startDate, endDate) {
+	    return EventsNode;
+	}(EventsEndpoint));
+	exports.EventsNode = EventsNode;
+	var events = function (graph, path) { return new EventsNode(graph, path); };
+	var CalendarViewEndpoint = (function (_super) {
+	    __extends(CalendarViewEndpoint, _super);
+	    function CalendarViewEndpoint() {
+	        var _this = this;
+	        _super.apply(this, arguments);
+	        this.GetCalendarView = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.addQuery = function (query) { return new CalendarViewEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(selectQuery(fields));
+	        };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(orderByQuery(fields));
+	        };
+	    }
+	    return CalendarViewEndpoint;
+	}(Node));
+	exports.CalendarViewEndpoint = CalendarViewEndpoint;
+	var CalendarViewNode = (function (_super) {
+	    __extends(CalendarViewNode, _super);
+	    function CalendarViewNode(graph, path, startDate, endDate) {
 	        _super.call(this, graph, path + "/calendarView", "startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString());
-	        this.graph = graph;
-	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
 	    }
-	    return CalendarView;
-	}(Endpoint));
-	exports.CalendarView = CalendarView;
-	var calendarView = function (graph, path) { return function (startDate, endDate) { return new CalendarView(graph, path, startDate, endDate); }; };
-	var MailFolders = (function (_super) {
-	    __extends(MailFolders, _super);
-	    function MailFolders(graph, path) {
+	    return CalendarViewNode;
+	}(CalendarViewEndpoint));
+	exports.CalendarViewNode = CalendarViewNode;
+	var calendarView = function (graph, path) { return function (startDate, endDate) { return new CalendarViewNode(graph, path, startDate, endDate); }; };
+	var MailFoldersEndpoint = (function (_super) {
+	    __extends(MailFoldersEndpoint, _super);
+	    function MailFoldersEndpoint() {
+	        var _this = this;
+	        _super.apply(this, arguments);
+	        this.GetMailFolders = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.addQuery = function (query) { return new MailFoldersEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(selectQuery(fields));
+	        };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(orderByQuery(fields));
+	        };
+	    }
+	    return MailFoldersEndpoint;
+	}(Node));
+	exports.MailFoldersEndpoint = MailFoldersEndpoint;
+	var MailFoldersNode = (function (_super) {
+	    __extends(MailFoldersNode, _super);
+	    function MailFoldersNode(graph, path) {
 	        _super.call(this, graph, path + "/mailFolders");
-	        this.graph = graph;
-	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
 	    }
-	    return MailFolders;
-	}(Endpoint));
-	exports.MailFolders = MailFolders;
-	var User = (function (_super) {
-	    __extends(User, _super);
-	    function User(graph, path, userId) {
+	    return MailFoldersNode;
+	}(MailFoldersEndpoint));
+	exports.MailFoldersNode = MailFoldersNode;
+	var UserEndpoint = (function (_super) {
+	    __extends(UserEndpoint, _super);
+	    function UserEndpoint() {
+	        var _this = this;
+	        _super.apply(this, arguments);
+	        this.GetUser = this.graph.GET(this.pathWithQuery);
+	        this.addQuery = function (query) { return new UserEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(selectQuery(fields));
+	        };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(orderByQuery(fields));
+	        };
+	    }
+	    return UserEndpoint;
+	}(Node));
+	exports.UserEndpoint = UserEndpoint;
+	var UserNode = (function (_super) {
+	    __extends(UserNode, _super);
+	    function UserNode(graph, path, userId) {
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, userId ? path + "/users/" + userId : path + "/me");
 	        this.graph = graph;
-	        this.GET = this.graph.GET(this.path, this.query);
 	        this.message = message(this.graph, this.path);
 	        this.messages = messages(this.graph, this.path);
 	        this.event = event(this.graph, this.path);
 	        this.events = events(this.graph, this.path);
 	        this.calendarView = calendarView(this.graph, this.path);
-	        this.mailFolders = new MailFolders(this.graph, this.path);
+	        this.mailFolders = new MailFoldersNode(this.graph, this.path);
 	    }
-	    return User;
-	}(Endpoint));
-	exports.User = User;
-	var Users = (function (_super) {
-	    __extends(Users, _super);
-	    function Users(graph, path) {
+	    return UserNode;
+	}(UserEndpoint));
+	exports.UserNode = UserNode;
+	var UsersEndpoint = (function (_super) {
+	    __extends(UsersEndpoint, _super);
+	    function UsersEndpoint() {
+	        var _this = this;
+	        _super.apply(this, arguments);
+	        this.GetUsers = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.addQuery = function (query) { return new UsersEndpoint(_this.graph, _this.path, exports.queryUnion(_this.query, query)); };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(selectQuery(fields));
+	        };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.addQuery(orderByQuery(fields));
+	        };
+	    }
+	    return UsersEndpoint;
+	}(Node));
+	exports.UsersEndpoint = UsersEndpoint;
+	var UsersNode = (function (_super) {
+	    __extends(UsersNode, _super);
+	    function UsersNode(graph, path) {
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/users");
-	        this.graph = graph;
-	        this.GETCOLLECTION = this.graph.GETCOLLECTION(this.path, this.query);
 	    }
-	    return Users;
-	}(Endpoint));
-	exports.Users = Users;
+	    return UsersNode;
+	}(Node));
+	exports.UsersNode = UsersNode;
 
 
 /***/ }

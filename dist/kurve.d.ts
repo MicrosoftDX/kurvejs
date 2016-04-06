@@ -264,79 +264,122 @@ declare module 'Kurve/src/requestbuilder' {
 	    objects: Model[];
 	    nextLink?: any;
 	}
+	export var queryUnion: (query1: string, query2: string) => string;
 	export var pathWithQuery: (path: string, query1?: string, query2?: string) => string;
-	export abstract class Endpoint {
+	export abstract class Node {
 	    protected graph: Graph;
 	    protected path: string;
 	    protected query: string;
 	    constructor(graph: Graph, path: string, query?: string);
+	    protected pathWithQuery: string;
 	}
-	export class Attachment extends Endpoint {
-	    protected graph: Graph;
+	export class AttachmentEndpoint extends Node {
+	    GetAttachment: () => Promise<AttachmentDataModel, Error>;
+	    addQuery: (query: string) => AttachmentsEndpoint;
+	    select: (...fields: string[]) => AttachmentsEndpoint;
+	    orderby: (...fields: string[]) => AttachmentsEndpoint;
+	}
+	export class AttachmentNode extends AttachmentEndpoint {
 	    constructor(graph: Graph, path: string, attachmentId: string);
-	    GET: (query?: string) => Promise<AttachmentDataModel, Error>;
 	}
-	export class Attachments extends Endpoint {
-	    protected graph: Graph;
+	export class AttachmentsEndpoint extends Node {
+	    GetAttachments: () => Promise<Collection<AttachmentDataModel>, Error>;
+	    addQuery: (query: string) => AttachmentsEndpoint;
+	    select: (...fields: string[]) => AttachmentsEndpoint;
+	    orderby: (...fields: string[]) => AttachmentsEndpoint;
+	}
+	export class AttachmentsNode extends AttachmentsEndpoint {
 	    constructor(graph: Graph, path: string);
-	    GETCOLLECTION: (query?: string) => Promise<Collection<AttachmentDataModel>, Error>;
 	}
-	export class Message extends Endpoint {
-	    protected graph: Graph;
+	export class MessageEndpoint extends Node {
+	    GetMessage: () => Promise<MessageDataModel, Error>;
+	    addQuery: (query: string) => MessageEndpoint;
+	    select: (...fields: string[]) => MessageEndpoint;
+	    orderby: (...fields: string[]) => MessageEndpoint;
+	}
+	export class MessageNode extends MessageEndpoint {
 	    constructor(graph: Graph, path: string, messageId: string);
-	    GET: (query?: string) => Promise<MessageDataModel, Error>;
-	    attachment: (attachmentId: string) => Attachment;
-	    attachments: Attachments;
+	    attachment: (attachmentId: string) => AttachmentNode;
+	    attachments: AttachmentsNode;
 	}
-	export class Messages extends Endpoint {
-	    protected graph: Graph;
+	export class MessagesEndpoint extends Node {
+	    GetMessages: () => Promise<Collection<MessageDataModel>, Error>;
+	    addQuery: (query: string) => MessagesEndpoint;
+	    select: (...fields: string[]) => MessagesEndpoint;
+	    orderby: (...fields: string[]) => MessagesEndpoint;
+	}
+	export class MessagesNode extends MessagesEndpoint {
 	    constructor(graph: Graph, path: string);
-	    GETCOLLECTION: (query?: string) => Promise<Collection<MessageDataModel>, Error>;
 	}
-	export class Event extends Endpoint {
-	    protected graph: Graph;
+	export class EventEndpoint extends Node {
+	    GetEvent: () => Promise<EventDataModel, Error>;
+	    addQuery: (query: string) => EventEndpoint;
+	    select: (...fields: string[]) => EventEndpoint;
+	    orderby: (...fields: string[]) => EventEndpoint;
+	}
+	export class EventNode extends EventEndpoint {
 	    constructor(graph: Graph, path: string, eventId: string);
-	    GET: (query?: string) => Promise<EventDataModel, Error>;
-	    attachment: (attachmentId: string) => Attachment;
-	    attachments: Attachments;
+	    attachment: (attachmentId: string) => AttachmentNode;
+	    attachments: AttachmentsNode;
 	}
-	export class Events extends Endpoint {
-	    protected graph: Graph;
+	export class EventsEndpoint extends Node {
+	    GetEvents: () => Promise<Collection<EventDataModel>, Error>;
+	    addQuery: (query: string) => EventsEndpoint;
+	    select: (...fields: string[]) => EventsEndpoint;
+	    orderby: (...fields: string[]) => EventsEndpoint;
+	}
+	export class EventsNode extends EventsEndpoint {
 	    constructor(graph: Graph, path: string);
-	    GETCOLLECTION: (query?: string) => Promise<Collection<EventDataModel>, Error>;
 	}
-	export class CalendarView extends Endpoint {
-	    protected graph: Graph;
+	export class CalendarViewEndpoint extends Node {
+	    GetCalendarView: () => Promise<Collection<EventDataModel>, Error>;
+	    addQuery: (query: string) => CalendarViewEndpoint;
+	    select: (...fields: string[]) => CalendarViewEndpoint;
+	    orderby: (...fields: string[]) => CalendarViewEndpoint;
+	}
+	export class CalendarViewNode extends CalendarViewEndpoint {
 	    constructor(graph: Graph, path: string, startDate: Date, endDate: Date);
-	    GETCOLLECTION: (query?: string) => Promise<Collection<EventDataModel>, Error>;
 	}
-	export class MailFolders extends Endpoint {
-	    protected graph: Graph;
+	export class MailFoldersEndpoint extends Node {
+	    GetMailFolders: () => Promise<Collection<MailFolderDataModel>, Error>;
+	    addQuery: (query: string) => MailFoldersEndpoint;
+	    select: (...fields: string[]) => MailFoldersEndpoint;
+	    orderby: (...fields: string[]) => MailFoldersEndpoint;
+	}
+	export class MailFoldersNode extends MailFoldersEndpoint {
 	    constructor(graph: Graph, path: string);
-	    GETCOLLECTION: (query?: string) => Promise<Collection<MailFolderDataModel>, Error>;
 	}
-	export class User extends Endpoint {
+	export class UserEndpoint extends Node {
+	    GetUser: () => Promise<UserDataModel, Error>;
+	    addQuery: (query: string) => UserEndpoint;
+	    select: (...fields: string[]) => UserEndpoint;
+	    orderby: (...fields: string[]) => UserEndpoint;
+	}
+	export class UserNode extends UserEndpoint {
 	    protected graph: Graph;
 	    constructor(graph: Graph, path?: string, userId?: string);
-	    GET: (query?: string) => Promise<UserDataModel, Error>;
-	    message: (messageId: string) => Message;
-	    messages: Messages;
-	    event: (eventId: string) => Event;
-	    events: Events;
-	    calendarView: (startDate: Date, endDate: Date) => CalendarView;
-	    mailFolders: MailFolders;
+	    message: (messageId: string) => MessageNode;
+	    messages: MessagesNode;
+	    event: (eventId: string) => EventNode;
+	    events: EventsNode;
+	    calendarView: (startDate: Date, endDate: Date) => CalendarViewNode;
+	    mailFolders: MailFoldersNode;
 	}
-	export class Users extends Endpoint {
-	    protected graph: Graph;
+	export class UsersEndpoint extends Node {
+	    GetUsers: () => Promise<Collection<UserDataModel>, Error>;
+	    addQuery: (query: string) => UsersEndpoint;
+	    select: (...fields: string[]) => UsersEndpoint;
+	    orderby: (...fields: string[]) => UsersEndpoint;
+	}
+	export class UsersNode extends Node {
 	    constructor(graph: Graph, path?: string);
-	    GETCOLLECTION: (query?: string) => Promise<Collection<UserDataModel>, Error>;
 	}
 
 }
 declare module 'Kurve/src/graph' {
 	import { Promise, PromiseCallback } from 'Kurve/src/promises';
 	import { Identity, Error } from 'Kurve/src/identity';
-	import { Collection, User, Users } from 'Kurve/src/requestbuilder';
+	import { Collection, UserNode, UsersNode } from 'Kurve/src/requestbuilder';
 	export class Graph {
 	    private req;
 	    private accessToken;
@@ -349,11 +392,11 @@ declare module 'Kurve/src/graph' {
 	    constructor(identityInfo: {
 	        defaultAccessToken: string;
 	    });
-	    GET: <Model>(path: string, queryT?: string, scopes?: string[]) => (query?: string) => Promise<Model, Error>;
-	    GETCOLLECTION: <Model>(path: string, queryT?: string, scopes?: string[]) => (query?: string) => Promise<Collection<Model>, Error>;
-	    me: User;
-	    user: (userId: string) => User;
-	    users: Users;
+	    GET: <Model>(path: string, scopes?: string[]) => () => Promise<Model, Error>;
+	    GETCOLLECTION: <Model>(path: string, scopes?: string[]) => () => Promise<Collection<Model>, Error>;
+	    me: UserNode;
+	    user: (userId: string) => UserNode;
+	    users: UsersNode;
 	    Get<Model>(path: string, scopes?: string[]): Promise<Model, Error>;
 	    GetCollection<Model>(path: string, scopes?: string[]): Promise<Collection<Model>, Error>;
 	    private scopesForV2(scopes);
