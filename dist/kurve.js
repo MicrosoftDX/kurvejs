@@ -81,9 +81,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.baseUrl = "https://graph.microsoft.com/v1.0";
 	        this.GET = function (pathWithQuery, scopes) { return function () { return _this.Get(pathWithQuery(), scopes); }; };
 	        this.GETCOLLECTION = function (pathWithQuery, scopes) { return function () { return _this.GetCollection(pathWithQuery(), scopes); }; };
-	        this.me = new requestbuilder_1.UserNode(this, this.baseUrl);
-	        this.user = function (userId) { return new requestbuilder_1.UserNode(_this, _this.baseUrl, userId); };
-	        this.users = new requestbuilder_1.UsersNode(this, this.baseUrl);
+	        this.me = new requestbuilder_1.User(this, this.baseUrl);
+	        this.user = function (userId) { return new requestbuilder_1.User(_this, _this.baseUrl, userId); };
+	        this.users = new requestbuilder_1.Users(this, this.baseUrl);
 	        if (identityInfo.defaultAccessToken) {
 	            this.accessToken = identityInfo.defaultAccessToken;
 	        }
@@ -909,167 +909,94 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Node;
 	}());
 	exports.Node = Node;
-	var AttachmentEndpoint = (function (_super) {
-	    __extends(AttachmentEndpoint, _super);
-	    function AttachmentEndpoint() {
-	        _super.apply(this, arguments);
+	var Attachment = (function (_super) {
+	    __extends(Attachment, _super);
+	    function Attachment(graph, path, attachmentId) {
+	        _super.call(this, graph, path + "/attachments/" + attachmentId);
 	        this.GetAttachment = this.graph.GET(this.pathWithQuery);
 	    }
-	    return AttachmentEndpoint;
+	    return Attachment;
 	}(Node));
-	exports.AttachmentEndpoint = AttachmentEndpoint;
-	var AttachmentNode = (function (_super) {
-	    __extends(AttachmentNode, _super);
-	    function AttachmentNode(graph, path, attachmentId) {
-	        _super.call(this, graph, path + "/attachments/" + attachmentId);
-	    }
-	    return AttachmentNode;
-	}(AttachmentEndpoint));
-	exports.AttachmentNode = AttachmentNode;
-	var attachment = function (graph, path) { return function (attachmentId) { return new AttachmentNode(graph, path, attachmentId); }; };
-	var AttachmentsEndpoint = (function (_super) {
-	    __extends(AttachmentsEndpoint, _super);
-	    function AttachmentsEndpoint() {
-	        _super.apply(this, arguments);
+	exports.Attachment = Attachment;
+	var attachment = function (graph, path) { return function (attachmentId) { return new Attachment(graph, path, attachmentId); }; };
+	var Attachments = (function (_super) {
+	    __extends(Attachments, _super);
+	    function Attachments(graph, path) {
+	        _super.call(this, graph, path + "/attachments");
 	        this.GetAttachments = this.graph.GETCOLLECTION(this.pathWithQuery);
 	    }
-	    return AttachmentsEndpoint;
+	    return Attachments;
 	}(Node));
-	exports.AttachmentsEndpoint = AttachmentsEndpoint;
-	var AttachmentsNode = (function (_super) {
-	    __extends(AttachmentsNode, _super);
-	    function AttachmentsNode(graph, path) {
-	        _super.call(this, graph, path + "/attachments");
-	    }
-	    return AttachmentsNode;
-	}(AttachmentsEndpoint));
-	exports.AttachmentsNode = AttachmentsNode;
-	var attachments = function (graph, path) { return new AttachmentsNode(graph, path); };
-	var MessageEndpoint = (function (_super) {
-	    __extends(MessageEndpoint, _super);
-	    function MessageEndpoint() {
-	        _super.apply(this, arguments);
-	        this.GetMessage = this.graph.GET(this.pathWithQuery);
-	    }
-	    return MessageEndpoint;
-	}(Node));
-	exports.MessageEndpoint = MessageEndpoint;
-	var MessageNode = (function (_super) {
-	    __extends(MessageNode, _super);
-	    function MessageNode(graph, path, messageId) {
+	exports.Attachments = Attachments;
+	var attachments = function (graph, path) { return new Attachments(graph, path); };
+	var Message = (function (_super) {
+	    __extends(Message, _super);
+	    function Message(graph, path, messageId) {
 	        _super.call(this, graph, path + "/messages/" + messageId);
 	        this.attachment = attachment(this.graph, this.path);
 	        this.attachments = attachments(this.graph, this.path);
+	        this.GetMessage = this.graph.GET(this.pathWithQuery);
 	    }
-	    return MessageNode;
-	}(MessageEndpoint));
-	exports.MessageNode = MessageNode;
-	var message = function (graph, path) { return function (messageId) { return new MessageNode(graph, path, messageId); }; };
-	var MessagesEndpoint = (function (_super) {
-	    __extends(MessagesEndpoint, _super);
-	    function MessagesEndpoint() {
-	        _super.apply(this, arguments);
+	    return Message;
+	}(Node));
+	exports.Message = Message;
+	var message = function (graph, path) { return function (messageId) { return new Message(graph, path, messageId); }; };
+	var Messages = (function (_super) {
+	    __extends(Messages, _super);
+	    function Messages(graph, path) {
+	        _super.call(this, graph, path + "/messages/");
 	        this.GetMessages = this.graph.GETCOLLECTION(this.pathWithQuery);
 	    }
-	    return MessagesEndpoint;
+	    return Messages;
 	}(Node));
-	exports.MessagesEndpoint = MessagesEndpoint;
-	var MessagesNode = (function (_super) {
-	    __extends(MessagesNode, _super);
-	    function MessagesNode(graph, path) {
-	        _super.call(this, graph, path + "/messages/");
-	    }
-	    return MessagesNode;
-	}(MessagesEndpoint));
-	exports.MessagesNode = MessagesNode;
-	var messages = function (graph, path) { return new MessagesNode(graph, path); };
-	var EventEndpoint = (function (_super) {
-	    __extends(EventEndpoint, _super);
-	    function EventEndpoint() {
-	        _super.apply(this, arguments);
-	        this.GetEvent = this.graph.GET(this.pathWithQuery);
-	    }
-	    return EventEndpoint;
-	}(Node));
-	exports.EventEndpoint = EventEndpoint;
-	var EventNode = (function (_super) {
-	    __extends(EventNode, _super);
-	    function EventNode(graph, path, eventId) {
+	exports.Messages = Messages;
+	var messages = function (graph, path) { return new Messages(graph, path); };
+	var Event = (function (_super) {
+	    __extends(Event, _super);
+	    function Event(graph, path, eventId) {
 	        _super.call(this, graph, path + "/events/");
 	        this.attachment = attachment(this.graph, this.path);
 	        this.attachments = attachments(this.graph, this.path);
+	        this.GetEvent = this.graph.GET(this.pathWithQuery);
 	    }
-	    return EventNode;
-	}(EventEndpoint));
-	exports.EventNode = EventNode;
-	var event = function (graph, path) { return function (eventId) { return new EventNode(graph, path, eventId); }; };
-	var EventsEndpoint = (function (_super) {
-	    __extends(EventsEndpoint, _super);
-	    function EventsEndpoint() {
-	        _super.apply(this, arguments);
+	    return Event;
+	}(Node));
+	exports.Event = Event;
+	var event = function (graph, path) { return function (eventId) { return new Event(graph, path, eventId); }; };
+	var Events = (function (_super) {
+	    __extends(Events, _super);
+	    function Events(graph, path) {
+	        _super.call(this, graph, path + "/events/");
 	        this.GetEvents = this.graph.GETCOLLECTION(this.pathWithQuery);
 	    }
-	    return EventsEndpoint;
+	    return Events;
 	}(Node));
-	exports.EventsEndpoint = EventsEndpoint;
-	var EventsNode = (function (_super) {
-	    __extends(EventsNode, _super);
-	    function EventsNode(graph, path) {
-	        _super.call(this, graph, path + "/events/");
-	    }
-	    return EventsNode;
-	}(EventsEndpoint));
-	exports.EventsNode = EventsNode;
-	var events = function (graph, path) { return new EventsNode(graph, path); };
-	var CalendarViewEndpoint = (function (_super) {
-	    __extends(CalendarViewEndpoint, _super);
-	    function CalendarViewEndpoint() {
+	exports.Events = Events;
+	var events = function (graph, path) { return new Events(graph, path); };
+	var CalendarView = (function (_super) {
+	    __extends(CalendarView, _super);
+	    function CalendarView(graph, path) {
 	        var _this = this;
-	        _super.apply(this, arguments);
+	        _super.call(this, graph, path + "/calendarView");
 	        this.GetCalendarView = this.graph.GETCOLLECTION(this.pathWithQuery);
 	        this.dateRange = function (startDate, endDate) { return _this.odata("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString()); };
 	    }
-	    return CalendarViewEndpoint;
+	    return CalendarView;
 	}(Node));
-	exports.CalendarViewEndpoint = CalendarViewEndpoint;
-	var CalendarViewNode = (function (_super) {
-	    __extends(CalendarViewNode, _super);
-	    function CalendarViewNode(graph, path) {
-	        _super.call(this, graph, path + "/calendarView");
-	    }
-	    return CalendarViewNode;
-	}(CalendarViewEndpoint));
-	exports.CalendarViewNode = CalendarViewNode;
-	var calendarView = function (graph, path) { return new CalendarViewNode(graph, path); };
-	var MailFoldersEndpoint = (function (_super) {
-	    __extends(MailFoldersEndpoint, _super);
-	    function MailFoldersEndpoint() {
-	        _super.apply(this, arguments);
+	exports.CalendarView = CalendarView;
+	var calendarView = function (graph, path) { return new CalendarView(graph, path); };
+	var MailFolders = (function (_super) {
+	    __extends(MailFolders, _super);
+	    function MailFolders(graph, path) {
+	        _super.call(this, graph, path + "/mailFolders");
 	        this.GetMailFolders = this.graph.GETCOLLECTION(this.pathWithQuery);
 	    }
-	    return MailFoldersEndpoint;
+	    return MailFolders;
 	}(Node));
-	exports.MailFoldersEndpoint = MailFoldersEndpoint;
-	var MailFoldersNode = (function (_super) {
-	    __extends(MailFoldersNode, _super);
-	    function MailFoldersNode(graph, path) {
-	        _super.call(this, graph, path + "/mailFolders");
-	    }
-	    return MailFoldersNode;
-	}(MailFoldersEndpoint));
-	exports.MailFoldersNode = MailFoldersNode;
-	var UserEndpoint = (function (_super) {
-	    __extends(UserEndpoint, _super);
-	    function UserEndpoint() {
-	        _super.apply(this, arguments);
-	        this.GetUser = this.graph.GET(this.pathWithQuery);
-	    }
-	    return UserEndpoint;
-	}(Node));
-	exports.UserEndpoint = UserEndpoint;
-	var UserNode = (function (_super) {
-	    __extends(UserNode, _super);
-	    function UserNode(graph, path, userId) {
+	exports.MailFolders = MailFolders;
+	var User = (function (_super) {
+	    __extends(User, _super);
+	    function User(graph, path, userId) {
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, userId ? path + "/users/" + userId : path + "/me");
 	        this.graph = graph;
@@ -1078,29 +1005,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.event = event(this.graph, this.path);
 	        this.events = events(this.graph, this.path);
 	        this.calendarView = calendarView(this.graph, this.path);
-	        this.mailFolders = new MailFoldersNode(this.graph, this.path);
+	        this.mailFolders = new MailFolders(this.graph, this.path);
+	        this.GetUser = this.graph.GET(this.pathWithQuery);
 	    }
-	    return UserNode;
-	}(UserEndpoint));
-	exports.UserNode = UserNode;
-	var UsersEndpoint = (function (_super) {
-	    __extends(UsersEndpoint, _super);
-	    function UsersEndpoint() {
-	        _super.apply(this, arguments);
-	        this.GetUsers = this.graph.GETCOLLECTION(this.pathWithQuery);
-	    }
-	    return UsersEndpoint;
+	    return User;
 	}(Node));
-	exports.UsersEndpoint = UsersEndpoint;
-	var UsersNode = (function (_super) {
-	    __extends(UsersNode, _super);
-	    function UsersNode(graph, path) {
+	exports.User = User;
+	var Users = (function (_super) {
+	    __extends(Users, _super);
+	    function Users(graph, path) {
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/users");
+	        this.GetUsers = this.graph.GETCOLLECTION(this.pathWithQuery);
 	    }
-	    return UsersNode;
+	    return Users;
 	}(Node));
-	exports.UsersNode = UsersNode;
+	exports.Users = Users;
 
 
 /***/ }

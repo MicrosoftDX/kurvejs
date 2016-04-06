@@ -3,7 +3,7 @@
 import { Deferred, Promise, PromiseCallback } from "./promises";
 import { Identity, OAuthVersion, Error } from "./identity";
 import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from "./models"
-import { Collection, UserNode, UsersNode } from "./requestbuilder";
+import { Collection, User, Users } from "./requestbuilder";
 /*
     export module Scopes {
         class Util {
@@ -112,9 +112,9 @@ import { Collection, UserNode, UsersNode } from "./requestbuilder";
         GET = <Model>(pathWithQuery:PathWithQuery, scopes?:string[]) => () => this.Get<Model>(pathWithQuery(), scopes);
         GETCOLLECTION = <Model>(pathWithQuery:PathWithQuery, scopes?:string[]) => () => this.GetCollection<Model>(pathWithQuery(), scopes);
 
-        me = new UserNode(this, this.baseUrl);
-        user = (userId:string) => new UserNode(this, this.baseUrl, userId);
-        users = new UsersNode(this, this.baseUrl);
+        me = new User(this, this.baseUrl);
+        user = (userId:string) => new User(this, this.baseUrl, userId);
+        users = new Users(this, this.baseUrl);
 
         public Get<Model>(path:string, scopes?:string[]): Promise<Model, Error> {
             console.log("GET", path);
@@ -318,10 +318,5 @@ import { Collection, UserNode, UsersNode } from "./requestbuilder";
 //
 //*********************************************************
 
-
-/*
-var graph = new Graph(new Identity({}));
-
-graph.me.message("123").attachment("123").odata("foo==bar").GetAttachment()
-.then(object => object.contentBytes)
-*/
+// Uncomment the next line for quick testing
+//var graph = new Graph(new Identity({}));

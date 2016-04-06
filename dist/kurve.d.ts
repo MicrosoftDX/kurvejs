@@ -278,84 +278,64 @@ declare module 'Kurve/src/requestbuilder' {
 	    expand: (...fields: string[]) => this;
 	    select: (...fields: string[]) => this;
 	}
-	export class AttachmentEndpoint extends Node {
+	export class Attachment extends Node {
+	    constructor(graph: Graph, path: string, attachmentId: string);
 	    GetAttachment: () => Promise<AttachmentDataModel, Error>;
 	}
-	export class AttachmentNode extends AttachmentEndpoint {
-	    constructor(graph: Graph, path: string, attachmentId: string);
-	}
-	export class AttachmentsEndpoint extends Node {
+	export class Attachments extends Node {
+	    constructor(graph: Graph, path: string);
 	    GetAttachments: () => Promise<Collection<AttachmentDataModel>, Error>;
 	}
-	export class AttachmentsNode extends AttachmentsEndpoint {
-	    constructor(graph: Graph, path: string);
-	}
-	export class MessageEndpoint extends Node {
+	export class Message extends Node {
+	    constructor(graph: Graph, path: string, messageId: string);
+	    attachment: (attachmentId: string) => Attachment;
+	    attachments: Attachments;
 	    GetMessage: () => Promise<MessageDataModel, Error>;
 	}
-	export class MessageNode extends MessageEndpoint {
-	    constructor(graph: Graph, path: string, messageId: string);
-	    attachment: (attachmentId: string) => AttachmentNode;
-	    attachments: AttachmentsNode;
-	}
-	export class MessagesEndpoint extends Node {
+	export class Messages extends Node {
+	    constructor(graph: Graph, path: string);
 	    GetMessages: () => Promise<Collection<MessageDataModel>, Error>;
 	}
-	export class MessagesNode extends MessagesEndpoint {
-	    constructor(graph: Graph, path: string);
-	}
-	export class EventEndpoint extends Node {
+	export class Event extends Node {
+	    constructor(graph: Graph, path: string, eventId: string);
+	    attachment: (attachmentId: string) => Attachment;
+	    attachments: Attachments;
 	    GetEvent: () => Promise<EventDataModel, Error>;
 	}
-	export class EventNode extends EventEndpoint {
-	    constructor(graph: Graph, path: string, eventId: string);
-	    attachment: (attachmentId: string) => AttachmentNode;
-	    attachments: AttachmentsNode;
-	}
-	export class EventsEndpoint extends Node {
+	export class Events extends Node {
+	    constructor(graph: Graph, path: string);
 	    GetEvents: () => Promise<Collection<EventDataModel>, Error>;
 	}
-	export class EventsNode extends EventsEndpoint {
+	export class CalendarView extends Node {
 	    constructor(graph: Graph, path: string);
-	}
-	export class CalendarViewEndpoint extends Node {
 	    GetCalendarView: () => Promise<Collection<EventDataModel>, Error>;
 	    dateRange: (startDate: Date, endDate: Date) => this;
 	}
-	export class CalendarViewNode extends CalendarViewEndpoint {
+	export class MailFolders extends Node {
 	    constructor(graph: Graph, path: string);
-	}
-	export class MailFoldersEndpoint extends Node {
 	    GetMailFolders: () => Promise<Collection<MailFolderDataModel>, Error>;
 	}
-	export class MailFoldersNode extends MailFoldersEndpoint {
-	    constructor(graph: Graph, path: string);
-	}
-	export class UserEndpoint extends Node {
-	    GetUser: () => Promise<UserDataModel, Error>;
-	}
-	export class UserNode extends UserEndpoint {
+	export class User extends Node {
 	    protected graph: Graph;
 	    constructor(graph: Graph, path?: string, userId?: string);
-	    message: (messageId: string) => MessageNode;
-	    messages: MessagesNode;
-	    event: (eventId: string) => EventNode;
-	    events: EventsNode;
-	    calendarView: CalendarViewNode;
-	    mailFolders: MailFoldersNode;
+	    message: (messageId: string) => Message;
+	    messages: Messages;
+	    event: (eventId: string) => Event;
+	    events: Events;
+	    calendarView: CalendarView;
+	    mailFolders: MailFolders;
+	    GetUser: () => Promise<UserDataModel, Error>;
 	}
-	export class UsersEndpoint extends Node {
-	    GetUsers: () => Promise<Collection<UserDataModel>, Error>;
-	}
-	export class UsersNode extends Node {
+	export class Users extends Node {
 	    constructor(graph: Graph, path?: string);
+	    GetUsers: () => Promise<Collection<UserDataModel>, Error>;
 	}
 
 }
 declare module 'Kurve/src/graph' {
 	import { Promise, PromiseCallback } from 'Kurve/src/promises';
 	import { Identity, Error } from 'Kurve/src/identity';
-	import { Collection, UserNode, UsersNode } from 'Kurve/src/requestbuilder';
+	import { Collection, User, Users } from 'Kurve/src/requestbuilder';
 	export class Graph {
 	    private req;
 	    private accessToken;
@@ -370,9 +350,9 @@ declare module 'Kurve/src/graph' {
 	    });
 	    GET: <Model>(pathWithQuery: () => string, scopes?: string[]) => () => Promise<Model, Error>;
 	    GETCOLLECTION: <Model>(pathWithQuery: () => string, scopes?: string[]) => () => Promise<Collection<Model>, Error>;
-	    me: UserNode;
-	    user: (userId: string) => UserNode;
-	    users: UsersNode;
+	    me: User;
+	    user: (userId: string) => User;
+	    users: Users;
 	    Get<Model>(path: string, scopes?: string[]): Promise<Model, Error>;
 	    GetCollection<Model>(path: string, scopes?: string[]): Promise<Collection<Model>, Error>;
 	    private scopesForV2(scopes);
