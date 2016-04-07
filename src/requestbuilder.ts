@@ -2,43 +2,73 @@
 
 RequestBuilder allows you to discover and access the Microsoft Graph using Visual Studio Code intellisense.
 
-Just start typing at the bottom of this file and see how intellisense helps you explore the graph:
-    graph.                     me, user, users
-    graph.me                   event, events, message, messages, calendarView, GET, PATCH, DELETE
-    graph.me.event             event(eventId:string) => Event
-    graph.me.event("123")      attachment, attachments, GET, PATCH, DELETE
+Just start typing and see how intellisense helps you explore the graph:
+    graph.                          me, users
+    graph.me().                     events, messages, calendarView, mailFolders, GetUser, odata, select, ...
+    graph.me().events().            GetEvents, id, odata, select, ...
+    graph.me().events().id          (eventId:string) => Event
+    graph.me().events().id("123").  GetEvent, odata, select, ...
 
-Each endpoint exposes the set of available REST verbs through strongly typed methods:
-    graph.me.GET():UserDataModel
-    graph.me.events.GETCOLLECTION():EventDataModel
-    graph.me.events.POST(event:EventDataModel):EventDataModel
+Each endpoint exposes the set of available Graph operations through strongly typed methods:
+    graph.me().GetUser()
+        GET "/me"" => UserDataModel
+    graph.me().events().GetEvents()
+        GET "/me/events"" => EventDataModel[]
+    graph.me().events().CreateEvent(event:EventDataModel) 
+        POST "/me/events"" => EventDataModel
 
-Certain endpoints have parameters that are encoded into the request either in the path or the querystring:
-    graph.me.event("123")
-    -> /me/events/123
-    graph.me.calendarView([startDate],[endDate])
-    -> /me/calendarView?startDate=[startDate]&endDate=[endDate]
+Endpoints can be decorated with ODATA helpers, which can be chained:
+    graph.me().messages().select("subject", "id")
+        /me/messages/$select=subject,id
+    graph.me().messages().select("subject", "id").orderby("id")
+        /me/messages/$select=subject,id&$orderby=id
 
-You can add ODATA queries through the REST methods:
-    graph.me.messages("123").GET("$select=id,subject")
-    -> GET "/me/messages/123?$select=id,subject""
-    graph.me.calendarView([startDate],[endDate]).GETCOLLECTION("$select=organizer")
-    -> GETCOLLECTION "/me/calendarView?startDate=[startDate]&endDate=[endDate]&$select=organizer""
+Or live close to the metal by writing your own ODATA:
+    graph.me().messages().odata("$select=subject,id&$orderby=id"")
 
-The API mirrors the structure of the Graph paths:
-    to access:
-        /users/billba@microsoft.com/messages/123-456-789/attachments
-    we do:
-        graph.user("billba@microsoft.com").message("1234").attachments("6789")
-    compare to the old Kurve-y way of doing things:
-        graph.messageAttachmentForUser("billba@microsoft.com", "12345", "6789")
+ODATA queries are only applied if they are at the end of the path:
+    graph.me().messages().select("subject", "id")
+        /me/messages/$select=subject,id
+    graph.me().select("name").messages()
+        /me/messages/
+    graph.me().select("name").messages().select("subject", "id")
+        /me/messages/$select=subject,id
 
-In this proof-of-concept the path building works, but the REST methods are stubs, and greatly simplified ones at that.
-In a real version we'd add Async versions and incorporate identity handling.
+This is handy when you reuse requests stored in variables:
+    let message = graph.me().messages().id("123").select("subject", "id")
+    message.GetMessage().then(...)
+    message.attachments().select("contentBytes").GetAttachments().then(...) // message ODATA is ignored
 
-Finally this initial stab only includes a few familiar pieces of the Microsoft Graph.
-However I have examined the 1.0 and Beta docs closely and I believe that this approach is extensible to the full graph.
+Graph operations are exposed through Promises:
+    graph.me().messages()
+    .GetMessages()
+    .then(collection =>
+        collection.objects.forEach(message =>
+            console.log(message.subject)
+        )
+    )
 
+All operations return a "self" property which allows you to continue along the Graph path from the point where you left off:
+    graph.me().messages().id("123").GetMessage().then(response =>
+        console.log(response.object.subject);
+        response.self.attachments().GetAttachments().then(collection => // response.self === graph.me().messages().id("123")
+            collection.objects.forEach(attachment => 
+                console.log(attachment.contentBytes)
+            )
+        )
+    )
+
+Operations which return paginated collections can return a "next" request object. This can be utilized in a recursive function:
+    ListMessageSubjects(messages:Messages) {
+        messages.GetMessages().then(collection => {
+            collection.objects.forEach(message => console.log(message.subject));
+            if (collection.next)
+                ListMessageSubjects(collection.next);
+        })
+    }
+    ListMessageSubjects(graph.me().messages());
+
+This initial stab only includes a few familiar pieces of the Microsoft Graph.
 */
 
 import { Promise } from "./promises";
