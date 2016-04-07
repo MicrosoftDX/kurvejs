@@ -15,7 +15,7 @@ Each endpoint exposes the set of available Graph operations through strongly typ
     graph.me().events().GetEvents()
         GET "/me/events"" => EventDataModel[]
     graph.me().events().CreateEvent(event:EventDataModel) 
-        POST "/me/events"" => EventDataModel
+        POST EventDataModel => "/me/events" 
         
 Graph operations are exposed through Promises:
     graph.me().messages()
