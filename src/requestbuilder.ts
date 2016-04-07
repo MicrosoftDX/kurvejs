@@ -148,6 +148,8 @@ export class Message extends Node {
     attachments = _attachments;
 
     GetMessage = () => this.graph.Get<MessageDataModel, Message>(this.pathWithQuery, this);
+    SendMessage = () => this.graph.Post<MessageDataModel, Message>(null, pathWithQuery(this.path + "/microsoft.graph.sendMail", this.query), this);
+
 /*
     PATCH = this.graph.PATCH<MessageDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<MessageDataModel>(this.path, this.query);
@@ -169,6 +171,7 @@ export class Messages extends Node {
     }
 
     GetMessages = () => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery, this, new Messages(this.graph));
+    CreateMessage = (object:MessageDataModel) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery, this);
 /*
     CreateMessage = this.graph.POST<MessageDataModel>(this.path, this.query);
 */

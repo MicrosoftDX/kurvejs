@@ -152,6 +152,27 @@ import { Response, Collection, Node, User, Users } from "./requestbuilder";
 
             return d.promise;
          }
+
+        public Post<Model, N extends Node>(object:Model, path:string, self:N, scopes?:string[]): Promise<Response<Model, N>, Error> {
+            console.log("POST", path);
+            var d = new Deferred<Response<Model, N>, Error>();
+            
+/*
+            this.post(object, path, (error, result) => {
+                var jsonResult = JSON.parse(result) ;
+
+                if (jsonResult.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = jsonResult.error;
+                    d.reject(errorODATA);
+                    return;
+                }
+
+                d.resolve(new Response<Model, N>({}, self));
+            });
+*/
+            return d.promise;
+         }
  
         //Only adds scopes when linked to a v2 Oauth of kurve identity
         private scopesForV2(scopes: string[]): string[] {
@@ -181,6 +202,28 @@ import { Response, Collection, Node, User, Users } from "./requestbuilder";
                 }
             }, scopes);
         }
+
+        public post(object:string, url: string, callback: PromiseCallback<string>, responseType?: string, scopes?:string[]): void {
+            var xhr = new XMLHttpRequest();
+            if (responseType)
+                xhr.responseType = responseType;
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState === 4)
+                    if (xhr.status === 202)
+                        callback(null, responseType ? xhr.response : xhr.responseText);
+                    else
+                        callback(this.generateError(xhr));
+            }
+            xhr.send(object)
+            xhr.open("GET", url);
+            this.addAccessTokenAndSend(xhr, (addTokenError: Error) => {
+                if (addTokenError) {
+                    callback(addTokenError);
+                }
+            }, scopes);
+        }
+
+
 
         private generateError(xhr: XMLHttpRequest): Error {
             var response = new Error();

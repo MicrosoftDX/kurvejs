@@ -301,12 +301,14 @@ declare module 'Kurve/src/requestbuilder' {
 	    constructor(graph: Graph, path: string, messageId: string);
 	    attachments: typeof _attachments;
 	    GetMessage: () => Promise<Response<MessageDataModel, Message>, Error>;
+	    SendMessage: () => Promise<Response<MessageDataModel, Message>, Error>;
 	}
 	export function _messages(): Messages;
 	export function _messages(messageId: string): Message;
 	export class Messages extends Node {
 	    constructor(graph: Graph, path?: string);
 	    GetMessages: () => Promise<Collection<MessageDataModel, Messages>, Error>;
+	    CreateMessage: (object: MessageDataModel) => Promise<Response<MessageDataModel, Messages>, Error>;
 	}
 	export class Event extends Node {
 	    constructor(graph: Graph, path: string, eventId: string);
@@ -364,8 +366,10 @@ declare module 'Kurve/src/graph' {
 	    users: () => Users;
 	    Get<Model, N extends Node>(path: string, self: N, scopes?: string[]): Promise<Response<Model, N>, Error>;
 	    GetCollection<Model, N extends Node>(path: string, self: N, next: N, scopes?: string[]): Promise<Collection<Model, N>, Error>;
+	    Post<Model, N extends Node>(object: Model, path: string, self: N, scopes?: string[]): Promise<Response<Model, N>, Error>;
 	    private scopesForV2(scopes);
 	    get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
+	    post(object: string, url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
 	    private generateError(xhr);
 	    private addAccessTokenAndSend(xhr, callback, scopes?);
 	}

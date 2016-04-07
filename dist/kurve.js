@@ -119,6 +119,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        });
 	        return d.promise;
 	    };
+	    Graph.prototype.Post = function (object, path, self, scopes) {
+	        console.log("POST", path);
+	        var d = new promises_1.Deferred();
+	        return d.promise;
+	    };
 	    Graph.prototype.scopesForV2 = function (scopes) {
 	        if (!this.KurveIdentity)
 	            return null;
@@ -139,6 +144,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	                else
 	                    callback(_this.generateError(xhr));
 	        };
+	        xhr.open("GET", url);
+	        this.addAccessTokenAndSend(xhr, function (addTokenError) {
+	            if (addTokenError) {
+	                callback(addTokenError);
+	            }
+	        }, scopes);
+	    };
+	    Graph.prototype.post = function (object, url, callback, responseType, scopes) {
+	        var _this = this;
+	        var xhr = new XMLHttpRequest();
+	        if (responseType)
+	            xhr.responseType = responseType;
+	        xhr.onreadystatechange = function () {
+	            if (xhr.readyState === 4)
+	                if (xhr.status === 202)
+	                    callback(null, responseType ? xhr.response : xhr.responseText);
+	                else
+	                    callback(_this.generateError(xhr));
+	        };
+	        xhr.send(object);
 	        xhr.open("GET", url);
 	        this.addAccessTokenAndSend(xhr, function (addTokenError) {
 	            if (addTokenError) {
@@ -993,6 +1018,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        _super.call(this, graph, path + "/messages/" + messageId);
 	        this.attachments = _attachments;
 	        this.GetMessage = function () { return _this.graph.Get(_this.pathWithQuery, _this); };
+	        this.SendMessage = function () { return _this.graph.Post(null, pathWithQuery(_this.path + "/microsoft.graph.sendMail", _this.query), _this); };
 	    }
 	    return Message;
 	}(Node));
@@ -1009,8 +1035,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function Messages(graph, path) {
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
-	        _super.call(this, graph, path + "/messages/");
+	        _super.call(this, graph, path + "/messages");
 	        this.GetMessages = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Messages(_this.graph)); };
+	        this.CreateMessage = function (object) { return _this.graph.Post(object, _this.pathWithQuery, _this); };
 	    }
 	    return Messages;
 	}(Node));
@@ -1020,7 +1047,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function Event(graph, path, eventId) {
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
-	        _super.call(this, graph, path + "/events/");
+	        _super.call(this, graph, path + "/events/" + eventId);
 	        this.attachments = _attachments;
 	        this.GetEvent = function () { return _this.graph.Get(_this.pathWithQuery, _this); };
 	    }
@@ -1032,7 +1059,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function Events(graph, path) {
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
-	        _super.call(this, graph, path + "/events/");
+	        _super.call(this, graph, path + "/events");
 	        this.GetEvents = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Events(_this.graph)); };
 	    }
 	    return Events;
