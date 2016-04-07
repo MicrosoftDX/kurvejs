@@ -291,56 +291,59 @@ declare module 'Kurve/src/requestbuilder' {
 	    constructor(graph: Graph, path: string, attachmentId: string);
 	    GetAttachment: () => Promise<Response<AttachmentDataModel, Attachment>, Error>;
 	}
-	export function _attachments(): Attachments;
-	export function _attachments(attachmentId: string): Attachment;
 	export class Attachments extends Node {
 	    constructor(graph: Graph, path?: string);
+	    id: (attachmentId: string) => Attachment;
 	    GetAttachments: () => Promise<Collection<AttachmentDataModel, Attachments>, Error>;
 	}
 	export class Message extends Node {
 	    constructor(graph: Graph, path: string, messageId: string);
-	    attachments: typeof _attachments;
+	    attachments: () => Attachments;
 	    GetMessage: () => Promise<Response<MessageDataModel, Message>, Error>;
 	    SendMessage: () => Promise<Response<MessageDataModel, Message>, Error>;
 	}
-	export function _messages(): Messages;
-	export function _messages(messageId: string): Message;
 	export class Messages extends Node {
 	    constructor(graph: Graph, path?: string);
+	    id: (messageId: string) => Message;
 	    GetMessages: () => Promise<Collection<MessageDataModel, Messages>, Error>;
 	    CreateMessage: (object: MessageDataModel) => Promise<Response<MessageDataModel, Messages>, Error>;
 	}
 	export class Event extends Node {
 	    constructor(graph: Graph, path: string, eventId: string);
-	    attachments: typeof _attachments;
+	    attachments: () => Attachments;
 	    GetEvent: () => Promise<Response<EventDataModel, Event>, Error>;
 	}
 	export class Events extends Node {
 	    constructor(graph: Graph, path?: string);
+	    id: (eventId: string) => Event;
 	    GetEvents: () => Promise<Collection<EventDataModel, Events>, Error>;
 	}
-	export function _events(): Events;
-	export function _events(eventId: string): Event;
 	export class CalendarView extends Node {
 	    constructor(graph: Graph, path?: string);
-	    GetCalendarView: () => Promise<Collection<EventDataModel, CalendarView>, Error>;
 	    dateRange: (startDate: Date, endDate: Date) => this;
+	    GetCalendarView: () => Promise<Collection<EventDataModel, CalendarView>, Error>;
+	}
+	export class MailFolder extends Node {
+	    constructor(graph: Graph, path: string, mailFolderId: string);
+	    GetMailFolder: () => Promise<Response<MailFolderDataModel, MailFolder>, Error>;
 	}
 	export class MailFolders extends Node {
 	    constructor(graph: Graph, path?: string);
+	    id: (mailFolderId: string) => MailFolder;
 	    GetMailFolders: () => Promise<Collection<MailFolderDataModel, MailFolders>, Error>;
 	}
 	export class User extends Node {
 	    protected graph: Graph;
 	    constructor(graph: Graph, path?: string, userId?: string);
-	    messages: typeof _messages;
-	    events: typeof _events;
+	    messages: () => Messages;
+	    events: () => Events;
 	    calendarView: () => CalendarView;
 	    mailFolders: () => MailFolders;
 	    GetUser: () => Promise<Response<UserDataModel, User>, Error>;
 	}
 	export class Users extends Node {
 	    constructor(graph: Graph, path?: string);
+	    id: (userId: string) => User;
 	    GetUsers: () => Promise<Collection<UserDataModel, Users>, Error>;
 	}
 
@@ -362,7 +365,6 @@ declare module 'Kurve/src/graph' {
 	        defaultAccessToken: string;
 	    });
 	    me: () => User;
-	    user: (userId: string) => User;
 	    users: () => Users;
 	    Get<Model, N extends Node>(path: string, self: N, scopes?: string[]): Promise<Response<Model, N>, Error>;
 	    GetCollection<Model, N extends Node>(path: string, self: N, next: N, scopes?: string[]): Promise<Collection<Model, N>, Error>;

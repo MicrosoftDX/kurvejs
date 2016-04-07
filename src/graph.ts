@@ -110,7 +110,6 @@ import { Response, Collection, Node, User, Users } from "./requestbuilder";
         }
 
         me = () => new User(this, this.baseUrl);
-        user = (userId:string) => new User(this, this.baseUrl, userId);
         users = () => new Users(this, this.baseUrl);
 
         public Get<Model, N extends Node>(path:string, self:N, scopes?:string[]): Promise<Response<Model, N>, Error> {
@@ -312,3 +311,17 @@ import { Response, Collection, Node, User, Users } from "./requestbuilder";
 
 // Uncomment the next line for quick testing
 //var graph = new Graph(new Identity({}));
+
+/*
+graph.me().messages()
+.GetMessages()
+.then(response =>
+    response.objects.forEach(message =>
+        response.self.id(message.id)
+        .GetMessage()
+        .then(response =>
+            console.log(response.object.subject)
+        )
+    )
+)
+*/

@@ -110,7 +110,7 @@ export abstract class Node {
 
 export class Attachment extends Node {
     constructor(graph:Graph, path:string="", attachmentId:string) {
-        super(graph, path + "/attachments/" + attachmentId);
+        super(graph, path + "/" + attachmentId);
     }
 
     GetAttachment = () => this.graph.Get<AttachmentDataModel, Attachment>(this.pathWithQuery, this);
@@ -120,19 +120,12 @@ export class Attachment extends Node {
 */
 }
 
-export function _attachments():Attachments;
-export function _attachments(attachmentId:string):Attachment;
-export function _attachments(arg?:any):any {
-    if (arg)
-        return new Attachment(this.graph, this.path, arg);
-    else
-        return new Attachments(this.graph, this.path);
-}
-
 export class Attachments extends Node {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/attachments");
     }
+
+    id = (attachmentId:string) => new Attachment(this.graph, this.path, attachmentId);
 
     GetAttachments = () => this.graph.GetCollection<AttachmentDataModel, Attachments>(this.pathWithQuery, this, new Attachments(this.graph));
 /*
@@ -142,27 +135,17 @@ export class Attachments extends Node {
 
 export class Message extends Node {
     constructor(graph:Graph, path:string="", messageId:string) {
-        super(graph, path + "/messages/" + messageId);
+        super(graph, path + "/" + messageId);
     }
-
-    attachments = _attachments;
+    
+    attachments = () => new Attachments(this.graph, this.path);
 
     GetMessage = () => this.graph.Get<MessageDataModel, Message>(this.pathWithQuery, this);
     SendMessage = () => this.graph.Post<MessageDataModel, Message>(null, pathWithQuery(this.path + "/microsoft.graph.sendMail", this.query), this);
-
 /*
     PATCH = this.graph.PATCH<MessageDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<MessageDataModel>(this.path, this.query);
 */
-}
-
-export function _messages():Messages;
-export function _messages(messageId:string):Message;
-export function _messages(arg?:any):any {
-    if (arg)
-        return new Message(this.graph, this.path, arg);
-    else
-        return new Messages(this.graph, this.path);
 }
 
 export class Messages extends Node {
@@ -170,19 +153,18 @@ export class Messages extends Node {
         super(graph, path + "/messages");
     }
 
+    id = (messageId:string) => new Message(this.graph, this.path, messageId);
+
     GetMessages = () => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery, this, new Messages(this.graph));
     CreateMessage = (object:MessageDataModel) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery, this);
-/*
-    CreateMessage = this.graph.POST<MessageDataModel>(this.path, this.query);
-*/
 }
 
 export class Event extends Node {
     constructor(graph:Graph, path:string="", eventId:string) {
-        super(graph, path + "/events/" + eventId);
+        super(graph, path + "/" + eventId);
     }
 
-    attachments = _attachments;
+    attachments = () => new Attachments(this.graph, this.path);
 
     GetEvent = () => this.graph.Get<EventDataModel, Event>(this.pathWithQuery, this);
 /*
@@ -196,19 +178,12 @@ export class Events extends Node {
         super(graph, path + "/events");
     }
 
+    id = (eventId:string) => new Event(this.graph, this.path, eventId);
+
     GetEvents = () => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery, this, new Events(this.graph));
 /*
     POST = this.graph.POST<EventDataModel>(this.path, this.query);
 */
-}
-
-export function _events():Events;
-export function _events(eventId:string):Event;
-export function _events(arg?:any):any {
-    if (arg)
-        return new Event(this.graph, this.path, arg);
-    else
-        return new Events(this.graph, this.path);
 }
 
 export class CalendarView extends Node {
@@ -216,9 +191,17 @@ export class CalendarView extends Node {
         super(graph, path + "/calendarView");
     }
 
-    GetCalendarView = () => this.graph.GetCollection<EventDataModel, CalendarView>(this.pathWithQuery, this, new CalendarView(this.graph));
-
     dateRange = (startDate:Date, endDate:Date) => this.odata(`startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`);
+
+    GetCalendarView = () => this.graph.GetCollection<EventDataModel, CalendarView>(this.pathWithQuery, this, new CalendarView(this.graph));
+}
+
+export class MailFolder extends Node {
+    constructor(graph:Graph, path:string="", mailFolderId:string) {
+        super(graph, path + "/" + mailFolderId);
+    }
+
+    GetMailFolder = () => this.graph.Get<MailFolderDataModel, MailFolder>(this.pathWithQuery, this);
 }
 
 export class MailFolders extends Node {
@@ -226,16 +209,18 @@ export class MailFolders extends Node {
         super(graph, path + "/mailFolders");
     }
 
+    id = (mailFolderId:string) => new MailFolder(this.graph, this.path, mailFolderId);
+
     GetMailFolders = () => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery, this, new MailFolders(this.graph));
 }
 
 export class User extends Node {
     constructor(protected graph:Graph, path:string="", userId?:string) {
-        super(graph, userId ? path + "/users/" + userId : path + "/me");
+        super(graph, userId ? path + "/" + userId : path + "/me");
     }
 
-    messages = _messages;
-    events = _events;
+    messages = () => new Messages(this.graph, this.path);
+    events = () => new Events(this.graph, this.path);
     calendarView = () => new CalendarView(this.graph, this.path);
     mailFolders = () => new MailFolders(this.graph, this.path)
 
@@ -250,6 +235,8 @@ export class Users extends Node {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/users");
     }
+
+    id = (userId:string) => new User(this.graph, this.path, userId);
 
     GetUsers = () => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery, this, new Users(this.graph));
 /*
