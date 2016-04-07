@@ -16,29 +16,7 @@ Each endpoint exposes the set of available Graph operations through strongly typ
         GET "/me/events"" => EventDataModel[]
     graph.me().events().CreateEvent(event:EventDataModel) 
         POST "/me/events"" => EventDataModel
-
-Endpoints can be decorated with ODATA helpers, which can be chained:
-    graph.me().messages().select("subject", "id")
-        /me/messages/$select=subject,id
-    graph.me().messages().select("subject", "id").orderby("id")
-        /me/messages/$select=subject,id&$orderby=id
-
-Or live close to the metal by writing your own ODATA:
-    graph.me().messages().odata("$select=subject,id&$orderby=id"")
-
-ODATA queries are only applied if they are at the end of the path:
-    graph.me().messages().select("subject", "id")
-        /me/messages/$select=subject,id
-    graph.me().select("name").messages()
-        /me/messages/
-    graph.me().select("name").messages().select("subject", "id")
-        /me/messages/$select=subject,id
-
-This is handy when you reuse requests stored in variables:
-    let message = graph.me().messages().id("123").select("subject", "id")
-    message.GetMessage().then(...)
-    message.attachments().select("contentBytes").GetAttachments().then(...) // message ODATA is ignored
-
+        
 Graph operations are exposed through Promises:
     graph.me().messages()
     .GetMessages()
@@ -67,6 +45,38 @@ Operations which return paginated collections can return a "next" request object
         })
     }
     ListMessageSubjects(graph.me().messages());
+
+Endpoints can be decorated with ODATA helpers, which can be chained:
+    graph.me().messages().select("subject", "id")
+        /me/messages/$select=subject,id
+    graph.me().messages().select("subject", "id").orderby("id")
+        /me/messages/$select=subject,id&$orderby=id
+
+Or live close to the metal by writing your own ODATA directly:
+    graph.me().messages().odata("$select=subject,id&$orderby=id"")
+
+These helpers are a little quirky.
+
+Quirk 1: ODATA helpers are only applied if they are at the end of the request:
+    graph.me().messages().select("subject", "id")
+        /me/messages/$select=subject,id
+    graph.me().select("name").messages()
+        /me/messages/
+    graph.me().select("name").messages().select("subject", "id")
+        /me/messages/$select=subject,id
+
+This shows up (in a handy way) when you reuse requests stored in variables:
+    let message = graph.me().messages().id("123").select("subject", "id")
+    message.GetMessage().then(...)
+    message.attachments().select("contentBytes").GetAttachments().then(...) // message's ODATA is ignored
+
+Quirk 2: ODATA helpers change the object they decorate:
+    let foo = graph.me()
+        foo.pathWithQuery => "/me"
+    foo.select("name").GetUser()
+        foo.pathWithQuery => "/me?$select=name"
+        
+[I can't figure out how to fix this. An ugly workaround is to add a helper to revert the object, e.g. foo.clearQuery()]
 
 This initial stab only includes a few familiar pieces of the Microsoft Graph.
 */
