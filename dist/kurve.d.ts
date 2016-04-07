@@ -260,7 +260,7 @@ declare module 'Kurve/src/requestbuilder' {
 	import { Graph } from 'Kurve/src/graph';
 	import { Error } from 'Kurve/src/identity';
 	import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel, MailFolderDataModel } from 'Kurve/src/models';
-	export class Response<Model, N extends Node> {
+	export class Singleton<Model, N extends Node> {
 	    raw: any;
 	    self: N;
 	    constructor(raw: any, self: N);
@@ -289,7 +289,7 @@ declare module 'Kurve/src/requestbuilder' {
 	}
 	export class Attachment extends Node {
 	    constructor(graph: Graph, path: string, attachmentId: string);
-	    GetAttachment: () => Promise<Response<AttachmentDataModel, Attachment>, Error>;
+	    GetAttachment: () => Promise<Singleton<AttachmentDataModel, Attachment>, Error>;
 	}
 	export class Attachments extends Node {
 	    constructor(graph: Graph, path?: string);
@@ -299,19 +299,19 @@ declare module 'Kurve/src/requestbuilder' {
 	export class Message extends Node {
 	    constructor(graph: Graph, path: string, messageId: string);
 	    attachments: () => Attachments;
-	    GetMessage: () => Promise<Response<MessageDataModel, Message>, Error>;
-	    SendMessage: () => Promise<Response<MessageDataModel, Message>, Error>;
+	    GetMessage: () => Promise<Singleton<MessageDataModel, Message>, Error>;
+	    SendMessage: () => Promise<Singleton<MessageDataModel, Message>, Error>;
 	}
 	export class Messages extends Node {
 	    constructor(graph: Graph, path?: string);
 	    id: (messageId: string) => Message;
 	    GetMessages: () => Promise<Collection<MessageDataModel, Messages>, Error>;
-	    CreateMessage: (object: MessageDataModel) => Promise<Response<MessageDataModel, Messages>, Error>;
+	    CreateMessage: (object: MessageDataModel) => Promise<Singleton<MessageDataModel, Messages>, Error>;
 	}
 	export class Event extends Node {
 	    constructor(graph: Graph, path: string, eventId: string);
 	    attachments: () => Attachments;
-	    GetEvent: () => Promise<Response<EventDataModel, Event>, Error>;
+	    GetEvent: () => Promise<Singleton<EventDataModel, Event>, Error>;
 	}
 	export class Events extends Node {
 	    constructor(graph: Graph, path?: string);
@@ -325,7 +325,7 @@ declare module 'Kurve/src/requestbuilder' {
 	}
 	export class MailFolder extends Node {
 	    constructor(graph: Graph, path: string, mailFolderId: string);
-	    GetMailFolder: () => Promise<Response<MailFolderDataModel, MailFolder>, Error>;
+	    GetMailFolder: () => Promise<Singleton<MailFolderDataModel, MailFolder>, Error>;
 	}
 	export class MailFolders extends Node {
 	    constructor(graph: Graph, path?: string);
@@ -339,7 +339,7 @@ declare module 'Kurve/src/requestbuilder' {
 	    events: () => Events;
 	    calendarView: () => CalendarView;
 	    mailFolders: () => MailFolders;
-	    GetUser: () => Promise<Response<UserDataModel, User>, Error>;
+	    GetUser: () => Promise<Singleton<UserDataModel, User>, Error>;
 	}
 	export class Users extends Node {
 	    constructor(graph: Graph, path?: string);
@@ -351,7 +351,7 @@ declare module 'Kurve/src/requestbuilder' {
 declare module 'Kurve/src/graph' {
 	import { Promise, PromiseCallback } from 'Kurve/src/promises';
 	import { Identity, Error } from 'Kurve/src/identity';
-	import { Response, Collection, Node, User, Users } from 'Kurve/src/requestbuilder';
+	import { Singleton, Collection, Node, User, Users } from 'Kurve/src/requestbuilder';
 	export class Graph {
 	    private req;
 	    private accessToken;
@@ -366,9 +366,9 @@ declare module 'Kurve/src/graph' {
 	    });
 	    me: () => User;
 	    users: () => Users;
-	    Get<Model, N extends Node>(path: string, self: N, scopes?: string[]): Promise<Response<Model, N>, Error>;
+	    Get<Model, N extends Node>(path: string, self: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
 	    GetCollection<Model, N extends Node>(path: string, self: N, next: N, scopes?: string[]): Promise<Collection<Model, N>, Error>;
-	    Post<Model, N extends Node>(object: Model, path: string, self: N, scopes?: string[]): Promise<Response<Model, N>, Error>;
+	    Post<Model, N extends Node>(object: Model, path: string, self: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
 	    private scopesForV2(scopes);
 	    get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
 	    post(object: string, url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;

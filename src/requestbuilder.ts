@@ -53,7 +53,7 @@ Endpoints can be decorated with ODATA helpers, which can be chained:
         /me/messages/$select=subject,id&$orderby=id
 
 Or live close to the metal by writing your own ODATA directly:
-    graph.me().messages().odata("$select=subject,id&$orderby=id"")
+    graph.me().messages().odata("$select=subject,id&$orderby=id")
 
 These helpers are a little quirky.
 
@@ -86,7 +86,7 @@ import { Graph } from "./graph";
 import { Error } from "./identity";
 import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel, MailFolderDataModel } from './models';
 
-export class Response<Model, N extends Node> {
+export class Singleton<Model, N extends Node> {
     constructor(public raw:any, public self:N) {
     }
 

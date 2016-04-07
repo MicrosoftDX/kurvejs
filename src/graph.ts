@@ -3,7 +3,7 @@
 import { Deferred, Promise, PromiseCallback } from "./promises";
 import { Identity, OAuthVersion, Error } from "./identity";
 import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from "./models"
-import { Response, Collection, Node, User, Users } from "./requestbuilder";
+import { Singleton, Collection, Node, User, Users } from "./requestbuilder";
 /*
     export module Scopes {
         class Util {
@@ -65,11 +65,6 @@ import { Response, Collection, Node, User, Users } from "./requestbuilder";
             public static ReadWriteAll: string = Util.rootUrl + "Notes.ReadWrite.All";
         }
     }
-*/
-/*
-    export interface NextLink<T> {
-        (callback? : PromiseCallback<T>): Promise<T, Error>;
-    }
 
 	export enum AttachmentType {
 		fileAttachment,
@@ -90,7 +85,6 @@ import { Response, Collection, Node, User, Users } from "./requestbuilder";
         }
     }
 */
-    type PathWithQuery = () => string;
 
     export class Graph {
         private req: XMLHttpRequest = null;
@@ -112,9 +106,9 @@ import { Response, Collection, Node, User, Users } from "./requestbuilder";
         me = () => new User(this, this.baseUrl);
         users = () => new Users(this, this.baseUrl);
 
-        public Get<Model, N extends Node>(path:string, self:N, scopes?:string[]): Promise<Response<Model, N>, Error> {
+        public Get<Model, N extends Node>(path:string, self:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
             console.log("GET", path);
-            var d = new Deferred<Response<Model, N>, Error>();
+            var d = new Deferred<Singleton<Model, N>, Error>();
 
             this.get(path, (error, result) => {
                 var jsonResult = JSON.parse(result) ;
@@ -126,7 +120,7 @@ import { Response, Collection, Node, User, Users } from "./requestbuilder";
                     return;
                 }
 
-                d.resolve(new Response<Model, N>(jsonResult, self));
+                d.resolve(new Singleton<Model, N>(jsonResult, self));
             });
 
             return d.promise;
@@ -152,9 +146,9 @@ import { Response, Collection, Node, User, Users } from "./requestbuilder";
             return d.promise;
          }
 
-        public Post<Model, N extends Node>(object:Model, path:string, self:N, scopes?:string[]): Promise<Response<Model, N>, Error> {
+        public Post<Model, N extends Node>(object:Model, path:string, self:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
             console.log("POST", path);
-            var d = new Deferred<Response<Model, N>, Error>();
+            var d = new Deferred<Singleton<Model, N>, Error>();
             
 /*
             this.post(object, path, (error, result) => {

@@ -99,7 +99,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                d.reject(errorODATA);
 	                return;
 	            }
-	            d.resolve(new requestbuilder_1.Response(jsonResult, self));
+	            d.resolve(new requestbuilder_1.Singleton(jsonResult, self));
 	        });
 	        return d.promise;
 	    };
@@ -881,21 +881,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
-	var Response = (function () {
-	    function Response(raw, self) {
+	var Singleton = (function () {
+	    function Singleton(raw, self) {
 	        this.raw = raw;
 	        this.self = self;
 	    }
-	    Object.defineProperty(Response.prototype, "object", {
+	    Object.defineProperty(Singleton.prototype, "object", {
 	        get: function () {
 	            return this.raw;
 	        },
 	        enumerable: true,
 	        configurable: true
 	    });
-	    return Response;
+	    return Singleton;
 	}());
-	exports.Response = Response;
+	exports.Singleton = Singleton;
 	var Collection = (function () {
 	    function Collection(raw, self, next) {
 	        this.raw = raw;
