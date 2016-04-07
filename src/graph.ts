@@ -3,7 +3,7 @@
 import { Deferred, Promise, PromiseCallback } from "./promises";
 import { Identity, OAuthVersion, Error } from "./identity";
 import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from "./models"
-import { Collection, User, Users } from "./requestbuilder";
+import { Response, Collection, Node, User, Users } from "./requestbuilder";
 /*
     export module Scopes {
         class Util {
@@ -109,16 +109,13 @@ import { Collection, User, Users } from "./requestbuilder";
             }
         }
 
-        GET = <Model>(pathWithQuery:PathWithQuery, scopes?:string[]) => () => this.Get<Model>(pathWithQuery(), scopes);
-        GETCOLLECTION = <Model>(pathWithQuery:PathWithQuery, scopes?:string[]) => () => this.GetCollection<Model>(pathWithQuery(), scopes);
-
         me = () => new User(this, this.baseUrl);
         user = (userId:string) => new User(this, this.baseUrl, userId);
         users = () => new Users(this, this.baseUrl);
 
-        public Get<Model>(path:string, scopes?:string[]): Promise<Model, Error> {
+        public Get<Model, N extends Node>(path:string, self:N, scopes?:string[]): Promise<Response<Model, N>, Error> {
             console.log("GET", path);
-            var d = new Deferred<Model, Error>();
+            var d = new Deferred<Response<Model, N>, Error>();
 
             this.get(path, (error, result) => {
                 var jsonResult = JSON.parse(result) ;
@@ -130,15 +127,15 @@ import { Collection, User, Users } from "./requestbuilder";
                     return;
                 }
 
-                d.resolve(jsonResult);
+                d.resolve(new Response<Model, N>(jsonResult, self));
             });
 
             return d.promise;
          }
 
-        public GetCollection<Model>(path:string, scopes?:string[]): Promise<Collection<Model>, Error> {
-            console.log("GETCOLLECTION", path);
-            var d = new Deferred<Collection<Model>, Error>();
+        public GetCollection<Model, N extends Node>(path:string, self:N, next:N, scopes?:string[]): Promise<Collection<Model, N>, Error> {
+            console.log("GET collection", path);
+            var d = new Deferred<Collection<Model, N>, Error>();
 
             this.get(path, (error, result) => {
                 var jsonResult = JSON.parse(result) ;
@@ -150,9 +147,7 @@ import { Collection, User, Users } from "./requestbuilder";
                     return;
                 }
 
-                var resultsArray = (jsonResult.value ? jsonResult.value : [jsonResult]) as any[];
-
-                d.resolve({objects:resultsArray});
+                d.resolve(new Collection<Model,N>(jsonResult, self, next))
             });
 
             return d.promise;
@@ -198,46 +193,7 @@ import { Collection, User, Users } from "./requestbuilder";
             return response;
 
         }
-/*
-        //Private methods
 
-        private getUsers(urlString, callback: PromiseCallback<Users>, scopes?: string[], basicProfileOnly = true): void {
-            this.get(urlString, (errorGet: Error, result: string) => {
-                if (errorGet) {
-                    callback(errorGet);
-                    return;
-                }
-
-                var usersODATA = JSON.parse(result);
-                if (usersODATA.error) {
-                    var errorODATA = new Error();
-                    errorODATA.other = usersODATA.error;
-                    callback(errorODATA);
-                    return;
-                }
-
-                var resultsArray = (usersODATA.value ? usersODATA.value : [usersODATA]) as any[];
-                var users = new Users(this, resultsArray.map(o => new User(this, o)));
-                var nextLink = usersODATA['@odata.nextLink'];
-                if (nextLink) {
-                    users.nextLink = (callback?: PromiseCallback<Users>) => {
-                        var scopes = basicProfileOnly ? [Scopes.User.ReadBasicAll] : [Scopes.User.ReadAll];
-                        var d = new Deferred<Users,Error>();
-                        this.getUsers(nextLink, (error: Error, result: Users) => {
-                            if (callback)
-                                callback(error, result);
-                            else
-                                error ? d.reject(error) : d.resolve(result);
-                        }, this.scopesForV2(scopes), basicProfileOnly);
-                        return d.promise;
-                    }
-                }
-
-                callback(null, users);
-            },null,scopes);
-        }
-
-*/
         private addAccessTokenAndSend(xhr: XMLHttpRequest, callback: (error: Error) => void, scopes?:string[]): void {
             if (this.accessToken) {
                 //Using default access token

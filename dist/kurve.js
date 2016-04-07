@@ -79,8 +79,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.KurveIdentity = null;
 	        this.defaultResourceID = "https://graph.microsoft.com";
 	        this.baseUrl = "https://graph.microsoft.com/v1.0";
-	        this.GET = function (pathWithQuery, scopes) { return function () { return _this.Get(pathWithQuery(), scopes); }; };
-	        this.GETCOLLECTION = function (pathWithQuery, scopes) { return function () { return _this.GetCollection(pathWithQuery(), scopes); }; };
 	        this.me = function () { return new requestbuilder_1.User(_this, _this.baseUrl); };
 	        this.user = function (userId) { return new requestbuilder_1.User(_this, _this.baseUrl, userId); };
 	        this.users = function () { return new requestbuilder_1.Users(_this, _this.baseUrl); };
@@ -91,7 +89,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.KurveIdentity = identityInfo.identity;
 	        }
 	    }
-	    Graph.prototype.Get = function (path, scopes) {
+	    Graph.prototype.Get = function (path, self, scopes) {
 	        console.log("GET", path);
 	        var d = new promises_1.Deferred();
 	        this.get(path, function (error, result) {
@@ -102,12 +100,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	                d.reject(errorODATA);
 	                return;
 	            }
-	            d.resolve(jsonResult);
+	            d.resolve(new requestbuilder_1.Response(jsonResult, self));
 	        });
 	        return d.promise;
 	    };
-	    Graph.prototype.GetCollection = function (path, scopes) {
-	        console.log("GETCOLLECTION", path);
+	    Graph.prototype.GetCollection = function (path, self, next, scopes) {
+	        console.log("GET collection", path);
 	        var d = new promises_1.Deferred();
 	        this.get(path, function (error, result) {
 	            var jsonResult = JSON.parse(result);
@@ -117,8 +115,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                d.reject(errorODATA);
 	                return;
 	            }
-	            var resultsArray = (jsonResult.value ? jsonResult.value : [jsonResult]);
-	            d.resolve({ objects: resultsArray });
+	            d.resolve(new requestbuilder_1.Collection(jsonResult, self, next));
 	        });
 	        return d.promise;
 	    };
@@ -860,6 +857,44 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
+	var Response = (function () {
+	    function Response(raw, self) {
+	        this.raw = raw;
+	        this.self = self;
+	    }
+	    Object.defineProperty(Response.prototype, "object", {
+	        get: function () {
+	            return this.raw;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    return Response;
+	}());
+	exports.Response = Response;
+	var Collection = (function () {
+	    function Collection(raw, self, next) {
+	        this.raw = raw;
+	        this.self = self;
+	        this.next = next;
+	        var nextLink = this.raw["@odata.nextLink"];
+	        if (nextLink) {
+	            this.next.pathWithQuery = nextLink;
+	        }
+	        else {
+	            this.next = undefined;
+	        }
+	    }
+	    Object.defineProperty(Collection.prototype, "objects", {
+	        get: function () {
+	            return (this.raw.value ? this.raw.value : [this.raw]);
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    return Collection;
+	}());
+	exports.Collection = Collection;
 	var queryUnion = function (query1, query2) { return (query1 ? query1 + (query2 ? "&" + query2 : "") : query2); };
 	var pathWithQuery = function (path, query1, query2) {
 	    var query = queryUnion(query1, query2);
@@ -871,7 +906,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.graph = graph;
 	        this.path = path;
 	        this.query = query;
-	        this.pathWithQuery = function () { return pathWithQuery(_this.path, _this.query); };
 	        this.odata = function (query) {
 	            _this.query = queryUnion(_this.query, query);
 	            return _this;
@@ -883,8 +917,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	            return _this.odata("$orderby=" + fields.join(","));
 	        };
-	        this.top = function (items) { return _this.odata("$top=" + items.toString); };
-	        this.skip = function (items) { return _this.odata("$skip=" + items.toString); };
+	        this.top = function (items) { return _this.odata("$top=" + items.toString()); };
+	        this.skip = function (items) { return _this.odata("$skip=" + items.toString()); };
 	        this.filter = function (query) { return _this.odata("$filter=" + query); };
 	        this.expand = function () {
 	            var fields = [];
@@ -901,14 +935,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	            return _this.odata("$select=" + fields.join(","));
 	        };
 	    }
+	    Object.defineProperty(Node.prototype, "pathWithQuery", {
+	        get: function () {
+	            return pathWithQuery(this.path, this.query);
+	        },
+	        set: function (pathWithQuery) {
+	            var i = pathWithQuery.indexOf("?");
+	            if (i == -1) {
+	                this.path = pathWithQuery;
+	                this.query = undefined;
+	            }
+	            else {
+	                this.path = pathWithQuery.substring(0, i);
+	                this.query = pathWithQuery.substring(i + 1);
+	            }
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
 	    return Node;
 	}());
 	exports.Node = Node;
 	var Attachment = (function (_super) {
 	    __extends(Attachment, _super);
 	    function Attachment(graph, path, attachmentId) {
+	        var _this = this;
+	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/attachments/" + attachmentId);
-	        this.GetAttachment = this.graph.GET(this.pathWithQuery);
+	        this.GetAttachment = function () { return _this.graph.Get(_this.pathWithQuery, _this); };
 	    }
 	    return Attachment;
 	}(Node));
@@ -923,8 +977,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Attachments = (function (_super) {
 	    __extends(Attachments, _super);
 	    function Attachments(graph, path) {
+	        var _this = this;
+	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/attachments");
-	        this.GetAttachments = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.GetAttachments = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Attachments(_this.graph)); };
 	    }
 	    return Attachments;
 	}(Node));
@@ -932,9 +988,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Message = (function (_super) {
 	    __extends(Message, _super);
 	    function Message(graph, path, messageId) {
+	        var _this = this;
+	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/messages/" + messageId);
 	        this.attachments = _attachments;
-	        this.GetMessage = this.graph.GET(this.pathWithQuery);
+	        this.GetMessage = function () { return _this.graph.Get(_this.pathWithQuery, _this); };
 	    }
 	    return Message;
 	}(Node));
@@ -949,8 +1007,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Messages = (function (_super) {
 	    __extends(Messages, _super);
 	    function Messages(graph, path) {
+	        var _this = this;
+	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/messages/");
-	        this.GetMessages = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.GetMessages = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Messages(_this.graph)); };
 	    }
 	    return Messages;
 	}(Node));
@@ -958,9 +1018,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Event = (function (_super) {
 	    __extends(Event, _super);
 	    function Event(graph, path, eventId) {
+	        var _this = this;
+	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/events/");
 	        this.attachments = _attachments;
-	        this.GetEvent = this.graph.GET(this.pathWithQuery);
+	        this.GetEvent = function () { return _this.graph.Get(_this.pathWithQuery, _this); };
 	    }
 	    return Event;
 	}(Node));
@@ -968,8 +1030,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Events = (function (_super) {
 	    __extends(Events, _super);
 	    function Events(graph, path) {
+	        var _this = this;
+	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/events/");
-	        this.GetEvents = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.GetEvents = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Events(_this.graph)); };
 	    }
 	    return Events;
 	}(Node));
@@ -985,8 +1049,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    __extends(CalendarView, _super);
 	    function CalendarView(graph, path) {
 	        var _this = this;
+	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/calendarView");
-	        this.GetCalendarView = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.GetCalendarView = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new CalendarView(_this.graph)); };
 	        this.dateRange = function (startDate, endDate) { return _this.odata("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString()); };
 	    }
 	    return CalendarView;
@@ -995,8 +1060,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var MailFolders = (function (_super) {
 	    __extends(MailFolders, _super);
 	    function MailFolders(graph, path) {
+	        var _this = this;
+	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/mailFolders");
-	        this.GetMailFolders = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.GetMailFolders = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new MailFolders(_this.graph)); };
 	    }
 	    return MailFolders;
 	}(Node));
@@ -1012,7 +1079,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.events = _events;
 	        this.calendarView = function () { return new CalendarView(_this.graph, _this.path); };
 	        this.mailFolders = function () { return new MailFolders(_this.graph, _this.path); };
-	        this.GetUser = this.graph.GET(this.pathWithQuery);
+	        this.GetUser = function () { return _this.graph.Get(_this.pathWithQuery, _this); };
 	    }
 	    return User;
 	}(Node));
@@ -1020,9 +1087,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Users = (function (_super) {
 	    __extends(Users, _super);
 	    function Users(graph, path) {
+	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/users");
-	        this.GetUsers = this.graph.GETCOLLECTION(this.pathWithQuery);
+	        this.GetUsers = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Users(_this.graph)); };
 	    }
 	    return Users;
 	}(Node));

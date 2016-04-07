@@ -46,15 +46,34 @@ import { Graph } from "./graph";
 import { Error } from "./identity";
 import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel, MailFolderDataModel } from './models';
 
-export interface Collection<Model> {
-    objects:Model[];
-    nextLink?:any;
+export class Response<Model, N extends Node> {
+    constructor(public raw:any, public self:N) {
+    }
+
+    get object() {
+        return this.raw as Model;
+    }
 }
 
-var queryUnion = (query1:string, query2:string) => (query1 ? query1 + (query2 ? "&" + query2 : "" ) : query2); 
+export class Collection<Model, N extends Node> {
+    constructor(public raw:any, public self:N, public next:N) {
+        let nextLink = this.raw["@odata.nextLink"];
+        if (nextLink) {
+            this.next.pathWithQuery = nextLink; 
+        } else {
+            this.next = undefined;
+        }
+    }
 
-var pathWithQuery = (path:string, query1?:string, query2?:string) => {
-    var query = queryUnion(query1, query2); 
+    get objects() {
+        return (this.raw.value ? this.raw.value : [this.raw]) as Model[];
+    }
+}
+
+let queryUnion = (query1:string, query2:string) => (query1 ? query1 + (query2 ? "&" + query2 : "" ) : query2); 
+
+let pathWithQuery = (path:string, query1?:string, query2?:string) => {
+    let query = queryUnion(query1, query2); 
     return path + (query ? "?" + query : "");
 }
 
@@ -62,26 +81,39 @@ export abstract class Node {
     constructor(protected graph:Graph, protected path:string, protected query?:string) {
     }
 
-    protected pathWithQuery = () => pathWithQuery(this.path, this.query);
+    get pathWithQuery() {
+        return pathWithQuery(this.path, this.query);
+    }
 
+    set pathWithQuery(pathWithQuery:string) {
+        let i = pathWithQuery.indexOf("?");
+        if (i == -1) {
+            this.path = pathWithQuery;
+            this.query = undefined;    
+        } else {
+            this.path = pathWithQuery.substring(0, i);
+            this.query = pathWithQuery.substring(i + 1);
+        }
+    }
+    
     odata = (query:string) => {
         this.query = queryUnion(this.query, query);
         return this;
     }
     orderby = (...fields:string[]) => this.odata(`$orderby=${fields.join(",")}`);
-    top = (items:Number) => this.odata(`$top=${items.toString}`);
-    skip = (items:Number) => this.odata(`$skip=${items.toString}`);
+    top = (items:Number) => this.odata(`$top=${items.toString()}`);
+    skip = (items:Number) => this.odata(`$skip=${items.toString()}`);
     filter = (query:string) => this.odata(`$filter=${query}`);
     expand = (...fields:string[]) => this.odata(`$expand=${fields.join(",")}`);
     select = (...fields:string[]) => this.odata(`$select=${fields.join(",")}`);
 }
 
 export class Attachment extends Node {
-    constructor(graph:Graph, path:string, attachmentId:string) {
+    constructor(graph:Graph, path:string="", attachmentId:string) {
         super(graph, path + "/attachments/" + attachmentId);
     }
 
-    GetAttachment = this.graph.GET<AttachmentDataModel>(this.pathWithQuery);
+    GetAttachment = () => this.graph.Get<AttachmentDataModel, Attachment>(this.pathWithQuery, this);
 /*    
     PATCH = this.graph.PATCH<AttachmentDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<AttachmentDataModel>(this.path, this.query);
@@ -98,24 +130,24 @@ export function _attachments(arg?:any):any {
 }
 
 export class Attachments extends Node {
-    constructor(graph:Graph, path:string) {
+    constructor(graph:Graph, path:string="") {
         super(graph, path + "/attachments");
     }
 
-    GetAttachments = this.graph.GETCOLLECTION<AttachmentDataModel>(this.pathWithQuery);
+    GetAttachments = () => this.graph.GetCollection<AttachmentDataModel, Attachments>(this.pathWithQuery, this, new Attachments(this.graph));
 /*
     POST = this.graph.POST<AttachmentDataModel>(this.path, this.query);
 */
 }
 
 export class Message extends Node {
-    constructor(graph:Graph, path:string, messageId:string) {
+    constructor(graph:Graph, path:string="", messageId:string) {
         super(graph, path + "/messages/" + messageId);
     }
 
     attachments = _attachments;
 
-    GetMessage = this.graph.GET<MessageDataModel>(this.pathWithQuery);
+    GetMessage = () => this.graph.Get<MessageDataModel, Message>(this.pathWithQuery, this);
 /*
     PATCH = this.graph.PATCH<MessageDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<MessageDataModel>(this.path, this.query);
@@ -132,24 +164,24 @@ export function _messages(arg?:any):any {
 }
 
 export class Messages extends Node {
-    constructor(graph:Graph, path:string) {
+    constructor(graph:Graph, path:string="") {
         super(graph, path + "/messages/");
     }
 
-    GetMessages = this.graph.GETCOLLECTION<MessageDataModel>(this.pathWithQuery);
+    GetMessages = () => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery, this, new Messages(this.graph));
 /*
     CreateMessage = this.graph.POST<MessageDataModel>(this.path, this.query);
 */
 }
 
 export class Event extends Node {
-    constructor(graph:Graph, path:string, eventId:string) {
+    constructor(graph:Graph, path:string="", eventId:string) {
         super(graph, path + "/events/");
     }
 
     attachments = _attachments;
 
-    GetEvent = this.graph.GET<EventDataModel>(this.pathWithQuery);
+    GetEvent = () => this.graph.Get<EventDataModel, Event>(this.pathWithQuery, this);
 /*
     PATCH = this.graph.PATCH<EventDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<EventDataModel>(this.path, this.query);
@@ -157,11 +189,11 @@ export class Event extends Node {
 }
 
 export class Events extends Node {
-    constructor(graph:Graph, path:string) {
+    constructor(graph:Graph, path:string="") {
         super(graph, path + "/events/");
     }
 
-    GetEvents = this.graph.GETCOLLECTION<EventDataModel>(this.pathWithQuery);
+    GetEvents = () => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery, this, new Events(this.graph));
 /*
     POST = this.graph.POST<EventDataModel>(this.path, this.query);
 */
@@ -177,25 +209,25 @@ export function _events(arg?:any):any {
 }
 
 export class CalendarView extends Node {
-    constructor(graph:Graph, path:string) {
+    constructor(graph:Graph, path:string="") {
         super(graph, path + "/calendarView");
     }
 
-    GetCalendarView = this.graph.GETCOLLECTION<EventDataModel>(this.pathWithQuery);
+    GetCalendarView = () => this.graph.GetCollection<EventDataModel, CalendarView>(this.pathWithQuery, this, new CalendarView(this.graph));
 
     dateRange = (startDate:Date, endDate:Date) => this.odata(`startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`);
 }
 
 export class MailFolders extends Node {
-    constructor(graph:Graph, path:string) {
+    constructor(graph:Graph, path:string="") {
         super(graph, path + "/mailFolders");
     }
 
-    GetMailFolders = this.graph.GETCOLLECTION<MailFolderDataModel>(this.pathWithQuery);
+    GetMailFolders = () => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery, this, new MailFolders(this.graph));
 }
 
 export class User extends Node {
-    constructor(protected graph:Graph, path:string = "", userId?:string) {
+    constructor(protected graph:Graph, path:string="", userId?:string) {
         super(graph, userId ? path + "/users/" + userId : path + "/me");
     }
 
@@ -204,7 +236,7 @@ export class User extends Node {
     calendarView = () => new CalendarView(this.graph, this.path);
     mailFolders = () => new MailFolders(this.graph, this.path)
 
-    GetUser = this.graph.GET<UserDataModel>(this.pathWithQuery); // REVIEW what about GetMe?
+    GetUser = () => this.graph.Get<UserDataModel, User>(this.pathWithQuery, this); // REVIEW what about GetMe?
 /*
     PATCH = this.graph.PATCH<UserDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<UserDataModel>(this.path, this.query);
@@ -212,11 +244,11 @@ export class User extends Node {
 }
 
 export class Users extends Node {
-    constructor(graph:Graph, path:string = "") {
+    constructor(graph:Graph, path:string="") {
         super(graph, path + "/users");
     }
 
-    GetUsers = this.graph.GETCOLLECTION<UserDataModel>(this.pathWithQuery);
+    GetUsers = () => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery, this, new Users(this.graph));
 /*
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */
