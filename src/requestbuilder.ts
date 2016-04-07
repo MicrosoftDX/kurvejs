@@ -165,7 +165,7 @@ export function _messages(arg?:any):any {
 
 export class Messages extends Node {
     constructor(graph:Graph, path:string="") {
-        super(graph, path + "/messages/");
+        super(graph, path + "/messages");
     }
 
     GetMessages = () => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery, this, new Messages(this.graph));
@@ -176,7 +176,7 @@ export class Messages extends Node {
 
 export class Event extends Node {
     constructor(graph:Graph, path:string="", eventId:string) {
-        super(graph, path + "/events/");
+        super(graph, path + "/events/" + eventId);
     }
 
     attachments = _attachments;
@@ -190,7 +190,7 @@ export class Event extends Node {
 
 export class Events extends Node {
     constructor(graph:Graph, path:string="") {
-        super(graph, path + "/events/");
+        super(graph, path + "/events");
     }
 
     GetEvents = () => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery, this, new Events(this.graph));
