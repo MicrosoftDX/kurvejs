@@ -283,15 +283,17 @@ declare module 'Kurve/src/requestbuilder' {
 	    orderby: (...fields: string[]) => this;
 	    top: (items: Number) => this;
 	    skip: (items: Number) => this;
-	    filter: (query: string) => this;
 	    expand: (...fields: string[]) => this;
 	    select: (...fields: string[]) => this;
+	}
+	export abstract class CollectionNode extends Node {
+	    filter: (query: string) => this;
 	}
 	export class Attachment extends Node {
 	    constructor(graph: Graph, path: string, attachmentId: string);
 	    GetAttachment: () => Promise<Singleton<AttachmentDataModel, Attachment>, Error>;
 	}
-	export class Attachments extends Node {
+	export class Attachments extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
 	    id: (attachmentId: string) => Attachment;
 	    GetAttachments: () => Promise<Collection<AttachmentDataModel, Attachments>, Error>;
@@ -302,7 +304,7 @@ declare module 'Kurve/src/requestbuilder' {
 	    GetMessage: () => Promise<Singleton<MessageDataModel, Message>, Error>;
 	    SendMessage: () => Promise<Singleton<MessageDataModel, Message>, Error>;
 	}
-	export class Messages extends Node {
+	export class Messages extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
 	    id: (messageId: string) => Message;
 	    GetMessages: () => Promise<Collection<MessageDataModel, Messages>, Error>;
@@ -313,12 +315,12 @@ declare module 'Kurve/src/requestbuilder' {
 	    attachments: () => Attachments;
 	    GetEvent: () => Promise<Singleton<EventDataModel, Event>, Error>;
 	}
-	export class Events extends Node {
+	export class Events extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
 	    id: (eventId: string) => Event;
 	    GetEvents: () => Promise<Collection<EventDataModel, Events>, Error>;
 	}
-	export class CalendarView extends Node {
+	export class CalendarView extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
 	    dateRange: (startDate: Date, endDate: Date) => this;
 	    GetCalendarView: () => Promise<Collection<EventDataModel, CalendarView>, Error>;
@@ -327,7 +329,7 @@ declare module 'Kurve/src/requestbuilder' {
 	    constructor(graph: Graph, path: string, mailFolderId: string);
 	    GetMailFolder: () => Promise<Singleton<MailFolderDataModel, MailFolder>, Error>;
 	}
-	export class MailFolders extends Node {
+	export class MailFolders extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
 	    id: (mailFolderId: string) => MailFolder;
 	    GetMailFolders: () => Promise<Collection<MailFolderDataModel, MailFolders>, Error>;
@@ -341,7 +343,7 @@ declare module 'Kurve/src/requestbuilder' {
 	    mailFolders: () => MailFolders;
 	    GetUser: () => Promise<Singleton<UserDataModel, User>, Error>;
 	}
-	export class Users extends Node {
+	export class Users extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
 	    id: (userId: string) => User;
 	    GetUsers: () => Promise<Collection<UserDataModel, Users>, Error>;

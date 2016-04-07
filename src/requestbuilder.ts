@@ -11,12 +11,12 @@ Just start typing and see how intellisense helps you explore the graph:
 
 Each endpoint exposes the set of available Graph operations through strongly typed methods:
     graph.me().GetUser()
-        GET "/me"" => UserDataModel
+        GET "/me" => UserDataModel
     graph.me().events().GetEvents()
-        GET "/me/events"" => EventDataModel[]
+        GET "/me/events" => EventDataModel[]
     graph.me().events().CreateEvent(event:EventDataModel) 
-        POST EventDataModel => "/me/events" 
-        
+        POST(EventDataModel) "/me/events"
+
 Graph operations are exposed through Promises:
     graph.me().messages()
     .GetMessages()
@@ -46,14 +46,21 @@ Operations which return paginated collections can return a "next" request object
     }
     ListMessageSubjects(graph.me().messages());
 
-Endpoints can be decorated with ODATA helpers, which can be chained:
+Any endpoints can be decorated with ODATA helpers, which can be chained:
     graph.me().messages().select("subject", "id")
         /me/messages/$select=subject,id
     graph.me().messages().select("subject", "id").orderby("id")
         /me/messages/$select=subject,id&$orderby=id
 
+In addition to these broad helpers, some endpoints expose context-appropriate helpers:
+    graph.me().calendarView().dateRange([start],[end])
+        /me/calendarView?startDateTime=[start]&endDateTime=[end]
+    graph.users().filter("mail eq 'billba@microsoft.com'")
+        /users?$filter=mail eq 'billba@microsoft.com'
+
 Or live close to the metal by writing your own ODATA directly:
     graph.me().messages().odata("$select=subject,id&$orderby=id")
+        /me/messages?$select=subject,id&$orderby=id
 
 These helpers are a little quirky.
 
@@ -78,7 +85,7 @@ Quirk 2: ODATA helpers change the object they decorate:
         
 [I can't figure out how to fix this. An ugly workaround is to add a helper to revert the object, e.g. foo.clearQuery()]
 
-This initial stab only includes a few familiar pieces of the Microsoft Graph.
+Note: This initial stab only includes a few familiar pieces of the Microsoft Graph.
 */
 
 import { Promise } from "./promises";
@@ -143,9 +150,12 @@ export abstract class Node {
     orderby = (...fields:string[]) => this.odata(`$orderby=${fields.join(",")}`);
     top = (items:Number) => this.odata(`$top=${items.toString()}`);
     skip = (items:Number) => this.odata(`$skip=${items.toString()}`);
-    filter = (query:string) => this.odata(`$filter=${query}`);
     expand = (...fields:string[]) => this.odata(`$expand=${fields.join(",")}`);
     select = (...fields:string[]) => this.odata(`$select=${fields.join(",")}`);
+}
+
+export abstract class CollectionNode extends Node {
+    filter = (query:string) => this.odata(`$filter=${query}`);
 }
 
 export class Attachment extends Node {
@@ -160,7 +170,7 @@ export class Attachment extends Node {
 */
 }
 
-export class Attachments extends Node {
+export class Attachments extends CollectionNode {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/attachments");
     }
@@ -188,7 +198,7 @@ export class Message extends Node {
 */
 }
 
-export class Messages extends Node {
+export class Messages extends CollectionNode {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/messages");
     }
@@ -213,7 +223,7 @@ export class Event extends Node {
 */
 }
 
-export class Events extends Node {
+export class Events extends CollectionNode {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/events");
     }
@@ -226,7 +236,7 @@ export class Events extends Node {
 */
 }
 
-export class CalendarView extends Node {
+export class CalendarView extends CollectionNode {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/calendarView");
     }
@@ -244,7 +254,7 @@ export class MailFolder extends Node {
     GetMailFolder = () => this.graph.Get<MailFolderDataModel, MailFolder>(this.pathWithQuery, this);
 }
 
-export class MailFolders extends Node {
+export class MailFolders extends CollectionNode {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/mailFolders");
     }
@@ -264,14 +274,14 @@ export class User extends Node {
     calendarView = () => new CalendarView(this.graph, this.path);
     mailFolders = () => new MailFolders(this.graph, this.path)
 
-    GetUser = () => this.graph.Get<UserDataModel, User>(this.pathWithQuery, this); // REVIEW what about GetMe?
+    GetUser = () => this.graph.Get<UserDataModel, User>(this.pathWithQuery, this); // Sorry, no GetMe()
 /*
     PATCH = this.graph.PATCH<UserDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<UserDataModel>(this.path, this.query);
 */
 }
 
-export class Users extends Node {
+export class Users extends CollectionNode {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/users");
     }

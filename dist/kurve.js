@@ -943,7 +943,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        };
 	        this.top = function (items) { return _this.odata("$top=" + items.toString()); };
 	        this.skip = function (items) { return _this.odata("$skip=" + items.toString()); };
-	        this.filter = function (query) { return _this.odata("$filter=" + query); };
 	        this.expand = function () {
 	            var fields = [];
 	            for (var _i = 0; _i < arguments.length; _i++) {
@@ -980,6 +979,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Node;
 	}());
 	exports.Node = Node;
+	var CollectionNode = (function (_super) {
+	    __extends(CollectionNode, _super);
+	    function CollectionNode() {
+	        var _this = this;
+	        _super.apply(this, arguments);
+	        this.filter = function (query) { return _this.odata("$filter=" + query); };
+	    }
+	    return CollectionNode;
+	}(Node));
+	exports.CollectionNode = CollectionNode;
 	var Attachment = (function (_super) {
 	    __extends(Attachment, _super);
 	    function Attachment(graph, path, attachmentId) {
@@ -1001,7 +1010,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.GetAttachments = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Attachments(_this.graph)); };
 	    }
 	    return Attachments;
-	}(Node));
+	}(CollectionNode));
 	exports.Attachments = Attachments;
 	var Message = (function (_super) {
 	    __extends(Message, _super);
@@ -1027,7 +1036,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.CreateMessage = function (object) { return _this.graph.Post(object, _this.pathWithQuery, _this); };
 	    }
 	    return Messages;
-	}(Node));
+	}(CollectionNode));
 	exports.Messages = Messages;
 	var Event = (function (_super) {
 	    __extends(Event, _super);
@@ -1051,7 +1060,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.GetEvents = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Events(_this.graph)); };
 	    }
 	    return Events;
-	}(Node));
+	}(CollectionNode));
 	exports.Events = Events;
 	var CalendarView = (function (_super) {
 	    __extends(CalendarView, _super);
@@ -1063,7 +1072,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.GetCalendarView = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new CalendarView(_this.graph)); };
 	    }
 	    return CalendarView;
-	}(Node));
+	}(CollectionNode));
 	exports.CalendarView = CalendarView;
 	var MailFolder = (function (_super) {
 	    __extends(MailFolder, _super);
@@ -1086,7 +1095,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.GetMailFolders = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new MailFolders(_this.graph)); };
 	    }
 	    return MailFolders;
-	}(Node));
+	}(CollectionNode));
 	exports.MailFolders = MailFolders;
 	var User = (function (_super) {
 	    __extends(User, _super);
@@ -1114,7 +1123,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.GetUsers = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Users(_this.graph)); };
 	    }
 	    return Users;
-	}(Node));
+	}(CollectionNode));
 	exports.Users = Users;
 
 
