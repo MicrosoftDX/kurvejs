@@ -285,6 +285,7 @@ declare module 'Kurve/src/requestbuilder' {
 	    skip: (items: Number) => this;
 	    expand: (...fields: string[]) => this;
 	    select: (...fields: string[]) => this;
+	    protected queryGuard: boolean;
 	}
 	export abstract class CollectionNode extends Node {
 	    filter: (query: string) => this;

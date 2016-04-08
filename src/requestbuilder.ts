@@ -147,15 +147,21 @@ export abstract class Node {
         this.query = queryUnion(this.query, query);
         return this;
     }
-    orderby = (...fields:string[]) => this.odata(`$orderby=${fields.join(",")}`);
-    top = (items:Number) => this.odata(`$top=${items.toString()}`);
-    skip = (items:Number) => this.odata(`$skip=${items.toString()}`);
-    expand = (...fields:string[]) => this.odata(`$expand=${fields.join(",")}`);
-    select = (...fields:string[]) => this.odata(`$select=${fields.join(",")}`);
+    expand  = (...fields:string[])  => this.odata(`$expand=${fields.join(",")}`);
+    select  = (...fields:string[])  => this.odata(`$select=${fields.join(",")}`);
+
+    protected get queryGuard() {
+        if (this.query)
+            throw(`You are attempting to add a child to a request object with an ODATA query. ODATA queries only apply to endpoints. The request so far: ${this.pathWithQuery}`);
+        return true;
+    }
 }
 
 export abstract class CollectionNode extends Node {
-    filter = (query:string) => this.odata(`$filter=${query}`);
+    filter  = (query:string)        => this.odata(`$filter=${query}`);
+    orderby = (...fields:string[])  => this.odata(`$orderby=${fields.join(",")}`);
+    top     = (items:Number)        => this.odata(`$top=${items}`);
+    skip    = (items:Number)        => this.odata(`$skip=${items}`);
 }
 
 export class Attachment extends Node {
@@ -163,7 +169,7 @@ export class Attachment extends Node {
         super(graph, path + "/" + attachmentId);
     }
 
-    GetAttachment = () => this.graph.Get<AttachmentDataModel, Attachment>(this.pathWithQuery, this);
+    GetAttachment = () => this.graph.Get<AttachmentDataModel, Attachment>(this.pathWithQuery, this, null);
 /*    
     PATCH = this.graph.PATCH<AttachmentDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<AttachmentDataModel>(this.path, this.query);
@@ -175,7 +181,7 @@ export class Attachments extends CollectionNode {
         super(graph, path + "/attachments");
     }
 
-    id = (attachmentId:string) => new Attachment(this.graph, this.path, attachmentId);
+    id = (attachmentId:string) => this.queryGuard && new Attachment(this.graph, this.path, attachmentId);
 
     GetAttachments = () => this.graph.GetCollection<AttachmentDataModel, Attachments>(this.pathWithQuery, this, new Attachments(this.graph));
 /*
@@ -188,9 +194,9 @@ export class Message extends Node {
         super(graph, path + "/" + messageId);
     }
     
-    attachments = () => new Attachments(this.graph, this.path);
+    attachments = () => this.queryGuard && new Attachments(this.graph, this.path);
 
-    GetMessage = () => this.graph.Get<MessageDataModel, Message>(this.pathWithQuery, this);
+    GetMessage  = () => this.graph.Get<MessageDataModel, Message>(this.pathWithQuery, this);
     SendMessage = () => this.graph.Post<MessageDataModel, Message>(null, pathWithQuery(this.path + "/microsoft.graph.sendMail", this.query), this);
 /*
     PATCH = this.graph.PATCH<MessageDataModel>(this.path, this.query);
@@ -203,10 +209,10 @@ export class Messages extends CollectionNode {
         super(graph, path + "/messages");
     }
 
-    id = (messageId:string) => new Message(this.graph, this.path, messageId);
+    id = (messageId:string) => this.queryGuard && new Message(this.graph, this.path, messageId);
 
-    GetMessages = () => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery, this, new Messages(this.graph));
-    CreateMessage = (object:MessageDataModel) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery, this);
+    GetMessages     = () => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery, this, new Messages(this.graph));
+    CreateMessage   = (object:MessageDataModel) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery, this);
 }
 
 export class Event extends Node {
@@ -214,7 +220,7 @@ export class Event extends Node {
         super(graph, path + "/" + eventId);
     }
 
-    attachments = () => new Attachments(this.graph, this.path);
+    attachments = () => this.queryGuard && new Attachments(this.graph, this.path);
 
     GetEvent = () => this.graph.Get<EventDataModel, Event>(this.pathWithQuery, this);
 /*
@@ -228,7 +234,7 @@ export class Events extends CollectionNode {
         super(graph, path + "/events");
     }
 
-    id = (eventId:string) => new Event(this.graph, this.path, eventId);
+    id = (eventId:string) => this.queryGuard && new Event(this.graph, this.path, eventId);
 
     GetEvents = () => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery, this, new Events(this.graph));
 /*
@@ -259,7 +265,7 @@ export class MailFolders extends CollectionNode {
         super(graph, path + "/mailFolders");
     }
 
-    id = (mailFolderId:string) => new MailFolder(this.graph, this.path, mailFolderId);
+    id = (mailFolderId:string) => this.queryGuard && new MailFolder(this.graph, this.path, mailFolderId);
 
     GetMailFolders = () => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery, this, new MailFolders(this.graph));
 }
@@ -269,10 +275,10 @@ export class User extends Node {
         super(graph, userId ? path + "/" + userId : path + "/me");
     }
 
-    messages = () => new Messages(this.graph, this.path);
-    events = () => new Events(this.graph, this.path);
-    calendarView = () => new CalendarView(this.graph, this.path);
-    mailFolders = () => new MailFolders(this.graph, this.path)
+    messages        = () => this.queryGuard && new Messages(this.graph, this.path);
+    events          = () => this.queryGuard && new Events(this.graph, this.path);
+    calendarView    = () => this.queryGuard && new CalendarView(this.graph, this.path);
+    mailFolders     = () => this.queryGuard && new MailFolders(this.graph, this.path)
 
     GetUser = () => this.graph.Get<UserDataModel, User>(this.pathWithQuery, this); // Sorry, no GetMe()
 /*
@@ -286,10 +292,11 @@ export class Users extends CollectionNode {
         super(graph, path + "/users");
     }
 
-    id = (userId:string) => new User(this.graph, this.path, userId);
+    id = (userId:string) => this.queryGuard && new User(this.graph, this.path, userId);
 
     GetUsers = () => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery, this, new Users(this.graph));
 /*
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */
 }
+
