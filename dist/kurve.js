@@ -881,6 +881,48 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
+	var queryUnion = function (query1, query2) { return (query1 ? query1 + (query2 ? "&" + query2 : "") : query2); };
+	var OData = (function () {
+	    function OData(query) {
+	        var _this = this;
+	        this.query = query;
+	        this.toString = function () { return _this.query; };
+	        this.odata = function (query) {
+	            _this.query = queryUnion(_this.query, query);
+	            return _this;
+	        };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.odata("$select=" + fields.join(","));
+	        };
+	        this.expand = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.odata("$expand=" + fields.join(","));
+	        };
+	        this.filter = function (query) { return _this.odata("$filter=" + query); };
+	        this.orderby = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.odata("$orderby=" + fields.join(","));
+	        };
+	        this.top = function (items) { return _this.odata("$top=" + items); };
+	        this.skip = function (items) { return _this.odata("$skip=" + items); };
+	    }
+	    return OData;
+	}());
+	exports.OData = OData;
+	var pathWithQuery = function (path, odataQuery) {
+	    var query = odataQuery && odataQuery.toString();
+	    return path + (query ? "?" + query : "");
+	};
 	var Singleton = (function () {
 	    function Singleton(raw, self) {
 	        this.raw = raw;
@@ -903,7 +945,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.next = next;
 	        var nextLink = this.raw["@odata.nextLink"];
 	        if (nextLink) {
-	            this.next.pathWithQuery = nextLink;
+	            this.next.nextLink = nextLink;
 	        }
 	        else {
 	            this.next = undefined;
@@ -919,72 +961,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Collection;
 	}());
 	exports.Collection = Collection;
-	var queryUnion = function (query1, query2) { return (query1 ? query1 + (query2 ? "&" + query2 : "") : query2); };
-	var pathWithQuery = function (path, query1, query2) {
-	    var query = queryUnion(query1, query2);
-	    return path + (query ? "?" + query : "");
-	};
 	var Node = (function () {
-	    function Node(graph, path, query) {
+	    function Node(graph, path) {
 	        var _this = this;
 	        this.graph = graph;
 	        this.path = path;
-	        this.query = query;
-	        this.odata = function (query) {
-	            _this.query = queryUnion(_this.query, query);
-	            return _this;
-	        };
-	        this.orderby = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.odata("$orderby=" + fields.join(","));
-	        };
-	        this.top = function (items) { return _this.odata("$top=" + items); };
-	        this.skip = function (items) { return _this.odata("$skip=" + items); };
-	        this.expand = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.odata("$expand=" + fields.join(","));
-	        };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.odata("$select=" + fields.join(","));
+	        this.pathWithQuery = function (odataQuery, pathSuffix) {
+	            if (pathSuffix === void 0) { pathSuffix = ""; }
+	            return pathWithQuery(_this.path + pathSuffix, odataQuery);
 	        };
 	    }
-	    Object.defineProperty(Node.prototype, "pathWithQuery", {
-	        get: function () {
-	            return pathWithQuery(this.path, this.query);
-	        },
-	        set: function (pathWithQuery) {
-	            var i = pathWithQuery.indexOf("?");
-	            if (i == -1) {
-	                this.path = pathWithQuery;
-	                this.query = undefined;
-	            }
-	            else {
-	                this.path = pathWithQuery.substring(0, i);
-	                this.query = pathWithQuery.substring(i + 1);
-	            }
-	        },
-	        enumerable: true,
-	        configurable: true
-	    });
-	    Object.defineProperty(Node.prototype, "queryGuard", {
-	        get: function () {
-	            if (this.query)
-	                throw ("You are attempting to add a child to a request object with an ODATA query. ODATA queries only apply to endpoints. The request so far: " + this.pathWithQuery);
-	            return true;
-	        },
-	        enumerable: true,
-	        configurable: true
-	    });
 	    return Node;
 	}());
 	exports.Node = Node;
@@ -993,8 +979,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function CollectionNode() {
 	        var _this = this;
 	        _super.apply(this, arguments);
-	        this.filter = function (query) { return _this.odata("$filter=" + query); };
+	        this.pathWithQuery = function (odataQuery, pathSuffix) {
+	            if (pathSuffix === void 0) { pathSuffix = ""; }
+	            return _this._nextLink || pathWithQuery(_this.path + pathSuffix, odataQuery);
+	        };
 	    }
+	    Object.defineProperty(CollectionNode.prototype, "nextLink", {
+	        set: function (pathWithQuery) {
+	            this._nextLink = pathWithQuery;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
 	    return CollectionNode;
 	}(Node));
 	exports.CollectionNode = CollectionNode;
@@ -1003,8 +999,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function Attachment(graph, path, attachmentId) {
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
-	        _super.call(this, graph, path + "/" + attachmentId);
-	        this.GetAttachment = function () { return _this.graph.Get(_this.pathWithQuery, _this, null); };
+	        _super.call(this, graph, path + (attachmentId ? "/" + attachmentId : ""));
+	        this.GetAttachment = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, null); };
 	    }
 	    return Attachment;
 	}(Node));
@@ -1015,8 +1011,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/attachments");
-	        this.id = function (attachmentId) { return _this.queryGuard && new Attachment(_this.graph, _this.path, attachmentId); };
-	        this.GetAttachments = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Attachments(_this.graph)); };
+	        this.attachment = function (attachmentId) { return new Attachment(_this.graph, _this.path, attachmentId); };
+	        this.GetAttachments = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Attachments(_this.graph)); };
 	    }
 	    return Attachments;
 	}(CollectionNode));
@@ -1026,10 +1022,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function Message(graph, path, messageId) {
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
-	        _super.call(this, graph, path + "/" + messageId);
-	        this.attachments = function () { return _this.queryGuard && new Attachments(_this.graph, _this.path); };
-	        this.GetMessage = function () { return _this.graph.Get(_this.pathWithQuery, _this); };
-	        this.SendMessage = function () { return _this.graph.Post(null, pathWithQuery(_this.path + "/microsoft.graph.sendMail", _this.query), _this); };
+	        _super.call(this, graph, path + (messageId ? "/" + messageId : ""));
+	        this.attachments = function () { return new Attachments(_this.graph, _this.path); };
+	        this.GetMessage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this); };
+	        this.SendMessage = function (odataQuery) { return _this.graph.Post(null, _this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), _this); };
 	    }
 	    return Message;
 	}(Node));
@@ -1040,9 +1036,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/messages");
-	        this.id = function (messageId) { return _this.queryGuard && new Message(_this.graph, _this.path, messageId); };
-	        this.GetMessages = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Messages(_this.graph)); };
-	        this.CreateMessage = function (object) { return _this.graph.Post(object, _this.pathWithQuery, _this); };
+	        this.message = function (messageId) { return new Message(_this.graph, _this.path, messageId); };
+	        this.GetMessages = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Messages(_this.graph)); };
+	        this.CreateMessage = function (object, odataQuery) { return _this.graph.Post(object, _this.pathWithQuery(odataQuery), _this); };
 	    }
 	    return Messages;
 	}(CollectionNode));
@@ -1052,9 +1048,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function Event(graph, path, eventId) {
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
-	        _super.call(this, graph, path + "/" + eventId);
-	        this.attachments = function () { return _this.queryGuard && new Attachments(_this.graph, _this.path); };
-	        this.GetEvent = function () { return _this.graph.Get(_this.pathWithQuery, _this); };
+	        _super.call(this, graph, path + (eventId ? "/" + eventId : ""));
+	        this.attachments = function () { return new Attachments(_this.graph, _this.path); };
+	        this.GetEvent = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this); };
 	    }
 	    return Event;
 	}(Node));
@@ -1065,8 +1061,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/events");
-	        this.id = function (eventId) { return _this.queryGuard && new Event(_this.graph, _this.path, eventId); };
-	        this.GetEvents = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Events(_this.graph)); };
+	        this.event = function (eventId) { return new Event(_this.graph, _this.path, eventId); };
+	        this.GetEvents = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Events(_this.graph)); };
 	    }
 	    return Events;
 	}(CollectionNode));
@@ -1077,8 +1073,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/calendarView");
-	        this.dateRange = function (startDate, endDate) { return _this.odata("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString()); };
-	        this.GetCalendarView = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new CalendarView(_this.graph)); };
+	        this.GetCalendarView = function (startDate, endDate, odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(queryUnion("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString(), odataQuery && odataQuery.toString())), _this, new CalendarView(_this.graph)); };
 	    }
 	    return CalendarView;
 	}(CollectionNode));
@@ -1088,8 +1083,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function MailFolder(graph, path, mailFolderId) {
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
-	        _super.call(this, graph, path + "/" + mailFolderId);
-	        this.GetMailFolder = function () { return _this.graph.Get(_this.pathWithQuery, _this); };
+	        _super.call(this, graph, path + (mailFolderId ? "/" + mailFolderId : ""));
+	        this.GetMailFolder = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this); };
 	    }
 	    return MailFolder;
 	}(Node));
@@ -1100,8 +1095,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/mailFolders");
-	        this.id = function (mailFolderId) { return _this.queryGuard && new MailFolder(_this.graph, _this.path, mailFolderId); };
-	        this.GetMailFolders = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new MailFolders(_this.graph)); };
+	        this.mailFolder = function (mailFolderId) { return new MailFolder(_this.graph, _this.path, mailFolderId); };
+	        this.GetMailFolders = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new MailFolders(_this.graph)); };
 	    }
 	    return MailFolders;
 	}(CollectionNode));
@@ -1113,11 +1108,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, userId ? path + "/" + userId : path + "/me");
 	        this.graph = graph;
-	        this.messages = function () { return _this.queryGuard && new Messages(_this.graph, _this.path); };
-	        this.events = function () { return _this.queryGuard && new Events(_this.graph, _this.path); };
-	        this.calendarView = function () { return _this.queryGuard && new CalendarView(_this.graph, _this.path); };
-	        this.mailFolders = function () { return _this.queryGuard && new MailFolders(_this.graph, _this.path); };
-	        this.GetUser = function () { return _this.graph.Get(_this.pathWithQuery, _this); };
+	        this.messages = function () { return new Messages(_this.graph, _this.path); };
+	        this.events = function () { return new Events(_this.graph, _this.path); };
+	        this.calendarView = function () { return new CalendarView(_this.graph, _this.path); };
+	        this.mailFolders = function () { return new MailFolders(_this.graph, _this.path); };
+	        this.GetUser = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this); };
 	    }
 	    return User;
 	}(Node));
@@ -1128,8 +1123,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/users");
-	        this.id = function (userId) { return _this.queryGuard && new User(_this.graph, _this.path, userId); };
-	        this.GetUsers = function () { return _this.graph.GetCollection(_this.pathWithQuery, _this, new Users(_this.graph)); };
+	        this.user = function (userId) { return new User(_this.graph, _this.path, userId); };
+	        this.GetUsers = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Users(_this.graph)); };
 	    }
 	    return Users;
 	}(CollectionNode));

@@ -3,7 +3,7 @@
 import { Deferred, Promise, PromiseCallback } from "./promises";
 import { Identity, OAuthVersion, Error } from "./identity";
 import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from "./models"
-import { Singleton, Collection, Node, User, Users } from "./requestbuilder";
+import { Singleton, Collection, Node, CollectionNode, User, Users } from "./requestbuilder";
 /*
     export module Scopes {
         class Util {
@@ -126,7 +126,7 @@ import { Singleton, Collection, Node, User, Users } from "./requestbuilder";
             return d.promise;
          }
 
-        public GetCollection<Model, N extends Node>(path:string, self:N, next:N, scopes?:string[]): Promise<Collection<Model, N>, Error> {
+        public GetCollection<Model, N extends CollectionNode>(path:string, self:N, next:N, scopes?:string[]): Promise<Collection<Model, N>, Error> {
             console.log("GET collection", path);
             var d = new Deferred<Collection<Model, N>, Error>();
 
