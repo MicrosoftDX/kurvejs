@@ -103,8 +103,8 @@ import { Singleton, Collection, Node, CollectionNode, User, Users } from "./requ
             }
         }
 
-        me = () => new User(this, this.baseUrl);
-        users = () => new Users(this, this.baseUrl);
+        get me() { return new User(this, this.baseUrl); }
+        get users() { return new Users(this, this.baseUrl); }
 
         public Get<Model, N extends Node>(path:string, self:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
             console.log("GET", path);

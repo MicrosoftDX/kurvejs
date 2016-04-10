@@ -73,14 +73,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	var requestbuilder_1 = __webpack_require__(4);
 	var Graph = (function () {
 	    function Graph(identityInfo) {
-	        var _this = this;
 	        this.req = null;
 	        this.accessToken = null;
 	        this.KurveIdentity = null;
 	        this.defaultResourceID = "https://graph.microsoft.com";
 	        this.baseUrl = "https://graph.microsoft.com/v1.0";
-	        this.me = function () { return new requestbuilder_1.User(_this, _this.baseUrl); };
-	        this.users = function () { return new requestbuilder_1.Users(_this, _this.baseUrl); };
 	        if (identityInfo.defaultAccessToken) {
 	            this.accessToken = identityInfo.defaultAccessToken;
 	        }
@@ -88,6 +85,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.KurveIdentity = identityInfo.identity;
 	        }
 	    }
+	    Object.defineProperty(Graph.prototype, "me", {
+	        get: function () { return new requestbuilder_1.User(this, this.baseUrl); },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(Graph.prototype, "users", {
+	        get: function () { return new requestbuilder_1.Users(this, this.baseUrl); },
+	        enumerable: true,
+	        configurable: true
+	    });
 	    Graph.prototype.Get = function (path, self, scopes) {
 	        console.log("GET", path);
 	        var d = new promises_1.Deferred();
@@ -891,19 +898,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	            _this.query = queryUnion(_this.query, query);
 	            return _this;
 	        };
-	        this.select = function () {
-	            var fields = [];
-	            for (var _i = 0; _i < arguments.length; _i++) {
-	                fields[_i - 0] = arguments[_i];
-	            }
-	            return _this.odata("$select=" + fields.join(","));
-	        };
 	        this.expand = function () {
 	            var fields = [];
 	            for (var _i = 0; _i < arguments.length; _i++) {
 	                fields[_i - 0] = arguments[_i];
 	            }
 	            return _this.odata("$expand=" + fields.join(","));
+	        };
+	        this.select = function () {
+	            var fields = [];
+	            for (var _i = 0; _i < arguments.length; _i++) {
+	                fields[_i - 0] = arguments[_i];
+	            }
+	            return _this.odata("$select=" + fields.join(","));
 	        };
 	        this.filter = function (query) { return _this.odata("$filter=" + query); };
 	        this.orderby = function () {
@@ -1011,7 +1018,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/attachments");
-	        this.attachment = function (attachmentId) { return new Attachment(_this.graph, _this.path, attachmentId); };
+	        this._ = function (attachmentId) { return new Attachment(_this.graph, _this.path, attachmentId); };
 	        this.GetAttachments = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Attachments(_this.graph)); };
 	    }
 	    return Attachments;
@@ -1023,10 +1030,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + (messageId ? "/" + messageId : ""));
-	        this.attachments = function () { return new Attachments(_this.graph, _this.path); };
 	        this.GetMessage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this); };
 	        this.SendMessage = function (odataQuery) { return _this.graph.Post(null, _this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), _this); };
 	    }
+	    Object.defineProperty(Message.prototype, "attachments", {
+	        get: function () { return new Attachments(this.graph, this.path); },
+	        enumerable: true,
+	        configurable: true
+	    });
 	    return Message;
 	}(Node));
 	exports.Message = Message;
@@ -1036,7 +1047,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/messages");
-	        this.message = function (messageId) { return new Message(_this.graph, _this.path, messageId); };
+	        this._ = function (messageId) { return new Message(_this.graph, _this.path, messageId); };
 	        this.GetMessages = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Messages(_this.graph)); };
 	        this.CreateMessage = function (object, odataQuery) { return _this.graph.Post(object, _this.pathWithQuery(odataQuery), _this); };
 	    }
@@ -1049,9 +1060,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + (eventId ? "/" + eventId : ""));
-	        this.attachments = function () { return new Attachments(_this.graph, _this.path); };
 	        this.GetEvent = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this); };
 	    }
+	    Object.defineProperty(Event.prototype, "attachments", {
+	        get: function () { return new Attachments(this.graph, this.path); },
+	        enumerable: true,
+	        configurable: true
+	    });
 	    return Event;
 	}(Node));
 	exports.Event = Event;
@@ -1061,7 +1076,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/events");
-	        this.event = function (eventId) { return new Event(_this.graph, _this.path, eventId); };
+	        this._ = function (eventId) { return new Event(_this.graph, _this.path, eventId); };
 	        this.GetEvents = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Events(_this.graph)); };
 	    }
 	    return Events;
@@ -1095,7 +1110,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/mailFolders");
-	        this.mailFolder = function (mailFolderId) { return new MailFolder(_this.graph, _this.path, mailFolderId); };
+	        this._ = function (mailFolderId) { return new MailFolder(_this.graph, _this.path, mailFolderId); };
 	        this.GetMailFolders = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new MailFolders(_this.graph)); };
 	    }
 	    return MailFolders;
@@ -1108,12 +1123,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, userId ? path + "/" + userId : path + "/me");
 	        this.graph = graph;
-	        this.messages = function () { return new Messages(_this.graph, _this.path); };
-	        this.events = function () { return new Events(_this.graph, _this.path); };
-	        this.calendarView = function () { return new CalendarView(_this.graph, _this.path); };
-	        this.mailFolders = function () { return new MailFolders(_this.graph, _this.path); };
 	        this.GetUser = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this); };
 	    }
+	    Object.defineProperty(User.prototype, "messages", {
+	        get: function () { return new Messages(this.graph, this.path); },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(User.prototype, "events", {
+	        get: function () { return new Events(this.graph, this.path); },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(User.prototype, "calendarView", {
+	        get: function () { return new CalendarView(this.graph, this.path); },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    Object.defineProperty(User.prototype, "mailFolders", {
+	        get: function () { return new MailFolders(this.graph, this.path); },
+	        enumerable: true,
+	        configurable: true
+	    });
 	    return User;
 	}(Node));
 	exports.User = User;
@@ -1123,7 +1154,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/users");
-	        this.user = function (userId) { return new User(_this.graph, _this.path, userId); };
+	        this._ = function (userId) { return new User(_this.graph, _this.path, userId); };
 	        this.GetUsers = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Users(_this.graph)); };
 	    }
 	    return Users;

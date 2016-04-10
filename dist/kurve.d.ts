@@ -265,8 +265,8 @@ declare module 'Kurve/src/requestbuilder' {
 	    constructor(query?: string);
 	    toString: () => string;
 	    odata: (query: string) => this;
-	    select: (...fields: string[]) => this;
 	    expand: (...fields: string[]) => this;
+	    select: (...fields: string[]) => this;
 	    filter: (query: string) => this;
 	    orderby: (...fields: string[]) => this;
 	    top: (items: Number) => this;
@@ -302,29 +302,29 @@ declare module 'Kurve/src/requestbuilder' {
 	}
 	export class Attachments extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
-	    attachment: (attachmentId: string) => Attachment;
+	    _: (attachmentId: string) => Attachment;
 	    GetAttachments: (odataQuery?: OData | string) => Promise<Collection<AttachmentDataModel, Attachments>, Error>;
 	}
 	export class Message extends Node {
 	    constructor(graph: Graph, path?: string, messageId?: string);
-	    attachments: () => Attachments;
+	    attachments: Attachments;
 	    GetMessage: (odataQuery?: OData | string) => Promise<Singleton<MessageDataModel, Message>, Error>;
 	    SendMessage: (odataQuery?: OData | string) => Promise<Singleton<MessageDataModel, Message>, Error>;
 	}
 	export class Messages extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
-	    message: (messageId: string) => Message;
+	    _: (messageId: string) => Message;
 	    GetMessages: (odataQuery?: OData | string) => Promise<Collection<MessageDataModel, Messages>, Error>;
 	    CreateMessage: (object: MessageDataModel, odataQuery?: OData | string) => Promise<Singleton<MessageDataModel, Messages>, Error>;
 	}
 	export class Event extends Node {
 	    constructor(graph: Graph, path: string, eventId: string);
-	    attachments: () => Attachments;
+	    attachments: Attachments;
 	    GetEvent: (odataQuery?: OData | string) => Promise<Singleton<EventDataModel, Event>, Error>;
 	}
 	export class Events extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
-	    event: (eventId: string) => Event;
+	    _: (eventId: string) => Event;
 	    GetEvents: (odataQuery?: OData | string) => Promise<Collection<EventDataModel, Events>, Error>;
 	}
 	export class CalendarView extends CollectionNode {
@@ -337,21 +337,21 @@ declare module 'Kurve/src/requestbuilder' {
 	}
 	export class MailFolders extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
-	    mailFolder: (mailFolderId: string) => MailFolder;
+	    _: (mailFolderId: string) => MailFolder;
 	    GetMailFolders: (odataQuery?: OData | string) => Promise<Collection<MailFolderDataModel, MailFolders>, Error>;
 	}
 	export class User extends Node {
 	    protected graph: Graph;
 	    constructor(graph: Graph, path?: string, userId?: string);
-	    messages: () => Messages;
-	    events: () => Events;
-	    calendarView: () => CalendarView;
-	    mailFolders: () => MailFolders;
+	    messages: Messages;
+	    events: Events;
+	    calendarView: CalendarView;
+	    mailFolders: MailFolders;
 	    GetUser: (odataQuery?: OData | string) => Promise<Singleton<UserDataModel, User>, Error>;
 	}
 	export class Users extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
-	    user: (userId: string) => User;
+	    _: (userId: string) => User;
 	    GetUsers: (odataQuery: OData | string) => Promise<Collection<UserDataModel, Users>, Error>;
 	}
 
@@ -372,8 +372,8 @@ declare module 'Kurve/src/graph' {
 	    constructor(identityInfo: {
 	        defaultAccessToken: string;
 	    });
-	    me: () => User;
-	    users: () => Users;
+	    me: User;
+	    users: Users;
 	    Get<Model, N extends Node>(path: string, self: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
 	    GetCollection<Model, N extends CollectionNode>(path: string, self: N, next: N, scopes?: string[]): Promise<Collection<Model, N>, Error>;
 	    Post<Model, N extends Node>(object: Model, path: string, self: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;

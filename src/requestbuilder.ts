@@ -179,7 +179,7 @@ export class Attachments extends CollectionNode {
         super(graph, path + "/attachments");
     }
 
-    attachment = (attachmentId:string) => new Attachment(this.graph, this.path, attachmentId);
+    _ = (attachmentId:string) => new Attachment(this.graph, this.path, attachmentId);
 
     GetAttachments = (odataQuery?:ODataQuery) => this.graph.GetCollection<AttachmentDataModel, Attachments>(this.pathWithQuery(odataQuery), this, new Attachments(this.graph));
 /*
@@ -192,7 +192,7 @@ export class Message extends Node {
         super(graph, path + (messageId ? "/" + messageId : ""));
     }
     
-    attachments = () => new Attachments(this.graph, this.path);
+    get attachments() { return new Attachments(this.graph, this.path); }
 
     GetMessage  = (odataQuery?:ODataQuery) => this.graph.Get<MessageDataModel, Message>(this.pathWithQuery(odataQuery), this);
     SendMessage = (odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Message>(null, this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), this);
@@ -207,7 +207,7 @@ export class Messages extends CollectionNode {
         super(graph, path + "/messages");
     }
 
-    message = (messageId:string) => new Message(this.graph, this.path, messageId);
+    _ = (messageId:string) => new Message(this.graph, this.path, messageId);
 
     GetMessages     = (odataQuery?:ODataQuery) => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery(odataQuery), this, new Messages(this.graph));
     CreateMessage   = (object:MessageDataModel, odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery(odataQuery), this);
@@ -218,7 +218,7 @@ export class Event extends Node {
         super(graph, path + (eventId ? "/" + eventId : ""));
     }
 
-    attachments = () => new Attachments(this.graph, this.path);
+    get attachments() { return new Attachments(this.graph, this.path); }
 
     GetEvent = (odataQuery?:ODataQuery) => this.graph.Get<EventDataModel, Event>(this.pathWithQuery(odataQuery), this);
 /*
@@ -232,7 +232,7 @@ export class Events extends CollectionNode {
         super(graph, path + "/events");
     }
 
-    event = (eventId:string) => new Event(this.graph, this.path, eventId);
+    _ = (eventId:string) => new Event(this.graph, this.path, eventId);
 
     GetEvents = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery(odataQuery), this, new Events(this.graph));
 /*
@@ -261,7 +261,7 @@ export class MailFolders extends CollectionNode {
         super(graph, path + "/mailFolders");
     }
 
-    mailFolder = (mailFolderId:string) => new MailFolder(this.graph, this.path, mailFolderId);
+    _ = (mailFolderId:string) => new MailFolder(this.graph, this.path, mailFolderId);
 
     GetMailFolders = (odataQuery?:ODataQuery) => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery(odataQuery), this, new MailFolders(this.graph));
 }
@@ -271,10 +271,10 @@ export class User extends Node {
         super(graph, userId ? path + "/" + userId : path + "/me");
     }
 
-    messages        = () => new Messages(this.graph, this.path);
-    events          = () => new Events(this.graph, this.path);
-    calendarView    = () => new CalendarView(this.graph, this.path);
-    mailFolders     = () => new MailFolders(this.graph, this.path)
+    get messages()      { return new Messages(this.graph, this.path); }
+    get events()        { return new Events(this.graph, this.path); }
+    get calendarView()  { return new CalendarView(this.graph, this.path); }
+    get mailFolders()   { return new MailFolders(this.graph, this.path) }
 
     GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, User>(this.pathWithQuery(odataQuery), this); // Sorry, no GetMe()
 /*
@@ -288,7 +288,7 @@ export class Users extends CollectionNode {
         super(graph, path + "/users");
     }
 
-    user = (userId:string) => new User(this.graph, this.path, userId);
+    _ = (userId:string) => new User(this.graph, this.path, userId);
 
     GetUsers = (odataQuery:ODataQuery) => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery(odataQuery), this, new Users(this.graph));
 /*
