@@ -29,17 +29,17 @@ Graph operations are exposed through Promises:
     graph.me.messages
     .GetMessages()
     .then(collection =>
-        collection.objects.forEach(message =>
+        collection.items.forEach(message =>
             console.log(message.subject)
         )
     )
 
 All operations return a "self" property which allows you to continue along the Graph path from the point where you left off:
 
-    graph.me.messages.$("123").GetMessage().then($singleton =>
-        console.log($singleton.object.subject);
-        $singleton.self.attachments.GetAttachments().then(collection => // $singleton.self === graph.me.messages.$("123")
-            collection.objects.forEach(attachment => 
+    graph.me.messages.$("123").GetMessage().then(singleton =>
+        console.log(singleton.item.subject);
+        singleton.self.attachments.GetAttachments().then(collection => // singleton.self === graph.me.messages.$("123")
+            collection.items.forEach(attachment => 
                 console.log(attachment.contentBytes)
             )
         )
@@ -49,7 +49,7 @@ Operations which return paginated collections can return a "next" request object
 
     ListMessageSubjects(messages:Messages) {
         messages.GetMessages().then(collection => {
-            collection.objects.forEach(message => console.log(message.subject));
+            collection.items.forEach(message => console.log(message.subject));
             if (collection.next)
                 ListMessageSubjects(collection.next);
         })
@@ -114,7 +114,7 @@ export class Singleton<Model, N extends Node> {
     constructor(public raw:any, public self:N) {
     }
 
-    get object() {
+    get item() {
         return this.raw as Model;
     }
 }
@@ -129,7 +129,7 @@ export class Collection<Model, N extends CollectionNode> {
         }
     }
 
-    get objects() {
+    get items() {
         return (this.raw.value ? this.raw.value : [this.raw]) as Model[];
     }
 }
