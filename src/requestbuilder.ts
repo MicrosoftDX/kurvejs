@@ -3,6 +3,7 @@
 RequestBuilder allows you to discover and access the Microsoft Graph using Visual Studio Code intellisense.
 
 Just start typing and see how intellisense helps you explore the graph:
+
     graph.                      me, users
     graph.me.                   events, messages, calendarView, mailFolders, GetUser, odata, select, ...
     graph.me.events.            GetEvents, $, odata, select, ...
@@ -10,6 +11,7 @@ Just start typing and see how intellisense helps you explore the graph:
     graph.me.events.$("123").   GetEvent, odata, select, ...
 
 Each endpoint exposes the set of available Graph operations through strongly typed methods:
+
     graph.me.GetUser() => UserDataModel
         GET "/me"
     graph.me.events.GetEvents => EventDataModel[]
@@ -17,7 +19,13 @@ Each endpoint exposes the set of available Graph operations through strongly typ
     graph.me.events.CreateEvent(event:EventDataModel) 
         POST "/me/events"
 
+Certain Graph endpoints are implemented as OData "Functions". These are not treated as Graph nodes. They're just methods: 
+
+    graph.me.events.$("123").DeclineEvent(eventResponse:EventResponse)
+        POST "/me/events/123/microsoft.graph.decline
+
 Graph operations are exposed through Promises:
+
     graph.me.messages
     .GetMessages()
     .then(collection =>
@@ -27,9 +35,10 @@ Graph operations are exposed through Promises:
     )
 
 All operations return a "self" property which allows you to continue along the Graph path from the point where you left off:
-    graph.me.messages.$("123").GetMessage().then(response =>
-        console.log(response.object.subject);
-        response.self.attachments.GetAttachments().then(collection => // response.self === graph.me.messages.$("123")
+
+    graph.me.messages.$("123").GetMessage().then($singleton =>
+        console.log($singleton.object.subject);
+        $singleton.self.attachments.GetAttachments().then(collection => // $singleton.self === graph.me.messages.$("123")
             collection.objects.forEach(attachment => 
                 console.log(attachment.contentBytes)
             )
@@ -37,6 +46,7 @@ All operations return a "self" property which allows you to continue along the G
     )
 
 Operations which return paginated collections can return a "next" request object. This can be utilized in a recursive function:
+
     ListMessageSubjects(messages:Messages) {
         messages.GetMessages().then(collection => {
             collection.objects.forEach(message => console.log(message.subject));
@@ -47,10 +57,12 @@ Operations which return paginated collections can return a "next" request object
     ListMessageSubjects(graph.me.messages);
 
 Every Graph operation may include OData queries:
+
     graph.me.messages.GetMessages("$select=subject,id&$orderby=id")
         /me/messages/$select=subject,id&$orderby=id
 
 There is an optional OData helper to aid in constructing more complex queries:
+
     graph.me.messages.GetMessages(new OData()
         .select("subject", "id")
         .orderby("id")
@@ -58,6 +70,7 @@ There is an optional OData helper to aid in constructing more complex queries:
         /me/messages/$select=subject,id&$orderby=id
 
 Some operations include parameters which transform into OData queries 
+
     graph.me.calendarView.GetCalendarView([start],[end], [odataQuery])
         /me/calendarView?startDateTime=[start]&endDateTime=[end]&[odataQuery]
 
@@ -271,4 +284,3 @@ export class Users extends CollectionNode {
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */
 }
-
