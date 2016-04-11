@@ -5,9 +5,9 @@ RequestBuilder allows you to discover and access the Microsoft Graph using Visua
 Just start typing and see how intellisense helps you explore the graph:
     graph.                      me, users
     graph.me.                   events, messages, calendarView, mailFolders, GetUser, odata, select, ...
-    graph.me.events.            GetEvents, _, odata, select, ...
-    graph.me.events._           (eventId:string) => Event
-    graph.me.events._("123").   GetEvent, odata, select, ...
+    graph.me.events.            GetEvents, $, odata, select, ...
+    graph.me.events.$           (eventId:string) => Event
+    graph.me.events.$("123").   GetEvent, odata, select, ...
 
 Each endpoint exposes the set of available Graph operations through strongly typed methods:
     graph.me.GetUser() => UserDataModel
@@ -27,9 +27,9 @@ Graph operations are exposed through Promises:
     )
 
 All operations return a "self" property which allows you to continue along the Graph path from the point where you left off:
-    graph.me.messages._("123").GetMessage().then(response =>
+    graph.me.messages.$("123").GetMessage().then(response =>
         console.log(response.object.subject);
-        response.self.attachments.GetAttachments().then(collection => // response.self === graph.me.messages._("123")
+        response.self.attachments.GetAttachments().then(collection => // response.self === graph.me.messages.$("123")
             collection.objects.forEach(attachment => 
                 console.log(attachment.contentBytes)
             )
@@ -155,7 +155,7 @@ export class Attachments extends CollectionNode {
         super(graph, path + "/attachments");
     }
 
-    _ = (attachmentId:string) => new Attachment(this.graph, this.path, attachmentId);
+    $ = (attachmentId:string) => new Attachment(this.graph, this.path, attachmentId);
 
     GetAttachments = (odataQuery?:ODataQuery) => this.graph.GetCollection<AttachmentDataModel, Attachments>(this.pathWithQuery(odataQuery), this, new Attachments(this.graph));
 /*
@@ -183,7 +183,7 @@ export class Messages extends CollectionNode {
         super(graph, path + "/messages");
     }
 
-    _ = (messageId:string) => new Message(this.graph, this.path, messageId);
+    $ = (messageId:string) => new Message(this.graph, this.path, messageId);
 
     GetMessages     = (odataQuery?:ODataQuery) => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery(odataQuery), this, new Messages(this.graph));
     CreateMessage   = (object:MessageDataModel, odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery(odataQuery), this);
@@ -208,7 +208,7 @@ export class Events extends CollectionNode {
         super(graph, path + "/events");
     }
 
-    _ = (eventId:string) => new Event(this.graph, this.path, eventId);
+    $ = (eventId:string) => new Event(this.graph, this.path, eventId);
 
     GetEvents = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery(odataQuery), this, new Events(this.graph));
 /*
@@ -237,7 +237,7 @@ export class MailFolders extends CollectionNode {
         super(graph, path + "/mailFolders");
     }
 
-    _ = (mailFolderId:string) => new MailFolder(this.graph, this.path, mailFolderId);
+    $ = (mailFolderId:string) => new MailFolder(this.graph, this.path, mailFolderId);
 
     GetMailFolders = (odataQuery?:ODataQuery) => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery(odataQuery), this, new MailFolders(this.graph));
 }
@@ -264,7 +264,7 @@ export class Users extends CollectionNode {
         super(graph, path + "/users");
     }
 
-    _ = (userId:string) => new User(this.graph, this.path, userId);
+    $ = (userId:string) => new User(this.graph, this.path, userId);
 
     GetUsers = (odataQuery:ODataQuery) => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery(odataQuery), this, new Users(this.graph));
 /*
