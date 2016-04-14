@@ -138,6 +138,7 @@ import { Singleton, Collection, Node, CollectionNode, User, Users } from "./requ
         }
 
         public post(object:string, url: string, callback: PromiseCallback<string>, responseType?: string, scopes?:string[]): void {
+/*
             var xhr = new XMLHttpRequest();
             if (responseType)
                 xhr.responseType = responseType;
@@ -155,9 +156,8 @@ import { Singleton, Collection, Node, CollectionNode, User, Users } from "./requ
                     callback(addTokenError);
                 }
             }, scopes);
+*/
         }
-
-
 
         private generateError(xhr: XMLHttpRequest): Error {
             var response = new Error();
