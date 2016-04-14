@@ -82,6 +82,65 @@ import { Graph } from "./graph";
 import { Error } from "./identity";
 import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel, MailFolderDataModel } from './models';
 
+class Scopes {
+    private static rootUrl = "https://graph.microsoft.com/";
+    static General = {
+        OpenId: "openid",
+        OfflineAccess: "offline_access",
+    }
+    static User = {
+        Read: Scopes.rootUrl + "User.Read",
+        ReadAll: Scopes.rootUrl + "User.Read.All",
+        ReadWrite: Scopes.rootUrl + "User.ReadWrite",
+        ReadWriteAll: Scopes.rootUrl + "User.ReadWrite.All",
+        ReadBasicAll: Scopes.rootUrl + "User.ReadBasic.All",
+    }
+    static Contacts = {
+        Read: Scopes.rootUrl + "Contacts.Read",
+        ReadWrite: Scopes.rootUrl + "Contacts.ReadWrite",
+    }
+    static Directory = {
+        ReadAll: Scopes.rootUrl + "Directory.Read.All",
+        ReadWriteAll: Scopes.rootUrl + "Directory.ReadWrite.All",
+        AccessAsUserAll: Scopes.rootUrl + "Directory.AccessAsUser.All",
+    }
+    static Group = {
+        ReadAll: Scopes.rootUrl + "Group.Read.All",
+        ReadWriteAll: Scopes.rootUrl + "Group.ReadWrite.All",
+        AccessAsUserAll: Scopes.rootUrl + "Directory.AccessAsUser.All"
+    }
+    static Mail = {
+        Read: Scopes.rootUrl + "Mail.Read",
+        ReadWrite: Scopes.rootUrl + "Mail.ReadWrite",
+        Send: Scopes.rootUrl + "Mail.Send",
+    }
+    static Calendars = {
+        Read: Scopes.rootUrl + "Calendars.Read",
+        ReadWrite: Scopes.rootUrl + "Calendars.ReadWrite",
+    }
+    static Files = {
+        Read: Scopes.rootUrl + "Files.Read",
+        ReadAll: Scopes.rootUrl + "Files.Read.All",
+        ReadWrite: Scopes.rootUrl + "Files.ReadWrite",
+        ReadWriteAppFolder: Scopes.rootUrl + "Files.ReadWrite.AppFolder",
+        ReadWriteSelected: Scopes.rootUrl + "Files.ReadWrite.Selected",
+    }
+    static Tasks = {
+        ReadWrite: Scopes.rootUrl + "Tasks.ReadWrite",
+    }
+    static People = {
+        Read: Scopes.rootUrl + "People.Read",
+        ReadWrite: Scopes.rootUrl + "People.ReadWrite",
+    }
+    static Notes = {
+        Create: Scopes.rootUrl + "Notes.Create",
+        ReadWriteCreatedByApp: Scopes.rootUrl + "Notes.ReadWrite.CreatedByApp",
+        Read: Scopes.rootUrl + "Notes.Read",
+        ReadAll: Scopes.rootUrl + "Notes.Read.All",
+        ReadWriteAll: Scopes.rootUrl + "Notes.ReadWrite.All",
+    }
+}
+
 let queryUnion = (query1:string, query2:string) => (query1 ? query1 + (query2 ? "&" + query2 : "" ) : query2); 
 
 export class OData {
@@ -152,11 +211,16 @@ export abstract class CollectionNode extends Node {
 }
 
 export class Attachment extends Node {
-    constructor(graph:Graph, path:string="", attachmentId?:string) {
+    constructor(graph:Graph, path:string="", private context:string, attachmentId?:string) {
         super(graph, path + (attachmentId ? "/" + attachmentId : ""));
     }
 
-    GetAttachment = (odataQuery?:ODataQuery) => this.graph.Get<AttachmentDataModel, Attachment>(this.pathWithQuery(odataQuery), this, null);
+    static scopes = {
+        messages: [Scopes.Mail.Read],
+        events: [Scopes.Calendars.Read],
+    }
+
+    GetAttachment = (odataQuery?:ODataQuery) => this.graph.Get<AttachmentDataModel, Attachment>(this.pathWithQuery(odataQuery), this, Attachment.scopes[this.context]);
 /*    
     PATCH = this.graph.PATCH<AttachmentDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<AttachmentDataModel>(this.path, this.query);
@@ -164,13 +228,13 @@ export class Attachment extends Node {
 }
 
 export class Attachments extends CollectionNode {
-    constructor(graph:Graph, path:string="") {
+    constructor(graph:Graph, path:string="", private context:string) {
         super(graph, path + "/attachments");
     }
 
-    $ = (attachmentId:string) => new Attachment(this.graph, this.path, attachmentId);
-
-    GetAttachments = (odataQuery?:ODataQuery) => this.graph.GetCollection<AttachmentDataModel, Attachments>(this.pathWithQuery(odataQuery), this, new Attachments(this.graph));
+    $ = (attachmentId:string) => new Attachment(this.graph, this.path, this.context, attachmentId);
+    
+    GetAttachments = (odataQuery?:ODataQuery) => this.graph.GetCollection<AttachmentDataModel, Attachments>(this.pathWithQuery(odataQuery), this, new Attachments(this.graph, null, this.context), Attachment.scopes[this.context]);
 /*
     POST = this.graph.POST<AttachmentDataModel>(this.path, this.query);
 */
@@ -181,10 +245,10 @@ export class Message extends Node {
         super(graph, path + (messageId ? "/" + messageId : ""));
     }
     
-    get attachments() { return new Attachments(this.graph, this.path); }
+    get attachments() { return new Attachments(this.graph, this.path, "messages"); }
 
-    GetMessage  = (odataQuery?:ODataQuery) => this.graph.Get<MessageDataModel, Message>(this.pathWithQuery(odataQuery), this);
-    SendMessage = (odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Message>(null, this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), this);
+    GetMessage  = (odataQuery?:ODataQuery) => this.graph.Get<MessageDataModel, Message>(this.pathWithQuery(odataQuery), this, [Scopes.Mail.Read]);
+    SendMessage = (odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Message>(null, this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), this, [Scopes.Mail.Send]);
 /*
     PATCH = this.graph.PATCH<MessageDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<MessageDataModel>(this.path, this.query);
@@ -198,8 +262,8 @@ export class Messages extends CollectionNode {
 
     $ = (messageId:string) => new Message(this.graph, this.path, messageId);
 
-    GetMessages     = (odataQuery?:ODataQuery) => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery(odataQuery), this, new Messages(this.graph));
-    CreateMessage   = (object:MessageDataModel, odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery(odataQuery), this);
+    GetMessages     = (odataQuery?:ODataQuery) => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery(odataQuery), this, new Messages(this.graph), [Scopes.Mail.Read, Scopes.Mail.ReadWrite]);
+    CreateMessage   = (object:MessageDataModel, odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery(odataQuery), this, [Scopes.Mail.ReadWrite]);
 }
 
 export class Event extends Node {
@@ -207,14 +271,16 @@ export class Event extends Node {
         super(graph, path + (eventId ? "/" + eventId : ""));
     }
 
-    get attachments() { return new Attachments(this.graph, this.path); }
+    get attachments() { return new Attachments(this.graph, this.path, "events"); }
 
-    GetEvent = (odataQuery?:ODataQuery) => this.graph.Get<EventDataModel, Event>(this.pathWithQuery(odataQuery), this);
+    GetEvent = (odataQuery?:ODataQuery) => this.graph.Get<EventDataModel, Event>(this.pathWithQuery(odataQuery), this, [Scopes.Calendars.Read]);
 /*
     PATCH = this.graph.PATCH<EventDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<EventDataModel>(this.path, this.query);
 */
 }
+
+let eventsScopes = [Scopes.Calendars.Read, Scopes.Calendars.ReadWrite];
 
 export class Events extends CollectionNode {
     constructor(graph:Graph, path:string="") {
@@ -223,7 +289,7 @@ export class Events extends CollectionNode {
 
     $ = (eventId:string) => new Event(this.graph, this.path, eventId);
 
-    GetEvents = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery(odataQuery), this, new Events(this.graph));
+    GetEvents = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery(odataQuery), this, new Events(this.graph), eventsScopes);
 /*
     POST = this.graph.POST<EventDataModel>(this.path, this.query);
 */
@@ -233,16 +299,21 @@ export class CalendarView extends CollectionNode {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/calendarView");
     }
+    
+    dateRange = (startDate:Date, endDate:Date) => `startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`
 
-    GetCalendarView = (startDate?:Date, endDate?:Date, odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, CalendarView>(this.pathWithQuery(queryUnion(`startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`, odataQuery && odataQuery.toString())), this, new CalendarView(this.graph));
+    GetCalendarView = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, CalendarView>(this.pathWithQuery(odataQuery), this, new CalendarView(this.graph), eventsScopes);
 }
+
+let mailFolderScopes = [Scopes.Mail.Read, Scopes.Mail.ReadWrite];
 
 export class MailFolder extends Node {
     constructor(graph:Graph, path:string="", mailFolderId:string) {
         super(graph, path + (mailFolderId ? "/" + mailFolderId : ""));
     }
 
-    GetMailFolder = (odataQuery?:ODataQuery) => this.graph.Get<MailFolderDataModel, MailFolder>(this.pathWithQuery(odataQuery), this);
+
+    GetMailFolder = (odataQuery?:ODataQuery) => this.graph.Get<MailFolderDataModel, MailFolder>(this.pathWithQuery(odataQuery), this, mailFolderScopes);
 }
 
 export class MailFolders extends CollectionNode {
@@ -252,12 +323,16 @@ export class MailFolders extends CollectionNode {
 
     $ = (mailFolderId:string) => new MailFolder(this.graph, this.path, mailFolderId);
 
-    GetMailFolders = (odataQuery?:ODataQuery) => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery(odataQuery), this, new MailFolders(this.graph));
+    GetMailFolders = (odataQuery?:ODataQuery) => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery(odataQuery), this, new MailFolders(this.graph), mailFolderScopes);
 }
+
+let usersScopes = [Scopes.User.ReadBasicAll, Scopes.User.ReadAll, Scopes.User.ReadWriteAll, Scopes.Directory.ReadAll, Scopes.Directory.ReadWriteAll, Scopes.Directory.AccessAsUserAll];
+let userScopes = usersScopes.concat([Scopes.User.Read, Scopes.User.ReadWrite]);
 
 export class User extends Node {
     constructor(protected graph:Graph, path:string="", userId?:string) {
         super(graph, userId ? path + "/" + userId : path + "/me");
+        console.log("Graph.foo", Graph.foo);
     }
 
     get messages()      { return new Messages(this.graph, this.path); }
@@ -265,7 +340,7 @@ export class User extends Node {
     get calendarView()  { return new CalendarView(this.graph, this.path); }
     get mailFolders()   { return new MailFolders(this.graph, this.path) }
 
-    GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, User>(this.pathWithQuery(odataQuery), this); // Sorry, no GetMe()
+    GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, User>(this.pathWithQuery(odataQuery), this, userScopes);
 /*
     PATCH = this.graph.PATCH<UserDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<UserDataModel>(this.path, this.query);
@@ -279,7 +354,7 @@ export class Users extends CollectionNode {
 
     $ = (userId:string) => new User(this.graph, this.path, userId);
 
-    GetUsers = (odataQuery:ODataQuery) => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery(odataQuery), this, new Users(this.graph));
+    GetUsers = (odataQuery:ODataQuery) => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery(odataQuery), this, new Users(this.graph), userScopes);
 /*
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */

@@ -96,7 +96,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        configurable: true
 	    });
 	    Graph.prototype.Get = function (path, self, scopes) {
-	        console.log("GET", path);
+	        console.log("GET", path, scopes);
 	        var d = new promises_1.Deferred();
 	        this.get(path, function (error, result) {
 	            var jsonResult = JSON.parse(result);
@@ -111,7 +111,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return d.promise;
 	    };
 	    Graph.prototype.GetCollection = function (path, self, next, scopes) {
-	        console.log("GET collection", path);
+	        console.log("GET collection", path, scopes);
 	        var d = new promises_1.Deferred();
 	        this.get(path, function (error, result) {
 	            var jsonResult = JSON.parse(result);
@@ -126,7 +126,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return d.promise;
 	    };
 	    Graph.prototype.Post = function (object, path, self, scopes) {
-	        console.log("POST", path);
+	        console.log("POST", path, scopes);
 	        var d = new promises_1.Deferred();
 	        return d.promise;
 	    };
@@ -217,6 +217,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            }
 	        }
 	    };
+	    Graph.foo = function () { return "test"; };
 	    return Graph;
 	}());
 	exports.Graph = Graph;
@@ -880,7 +881,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 /***/ },
 /* 4 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	var __extends = (this && this.__extends) || function (d, b) {
@@ -888,6 +889,68 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function __() { this.constructor = d; }
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
+	var graph_1 = __webpack_require__(1);
+	var Scopes = (function () {
+	    function Scopes() {
+	    }
+	    Scopes.rootUrl = "https://graph.microsoft.com/";
+	    Scopes.General = {
+	        OpenId: "openid",
+	        OfflineAccess: "offline_access",
+	    };
+	    Scopes.User = {
+	        Read: Scopes.rootUrl + "User.Read",
+	        ReadAll: Scopes.rootUrl + "User.Read.All",
+	        ReadWrite: Scopes.rootUrl + "User.ReadWrite",
+	        ReadWriteAll: Scopes.rootUrl + "User.ReadWrite.All",
+	        ReadBasicAll: Scopes.rootUrl + "User.ReadBasic.All",
+	    };
+	    Scopes.Contacts = {
+	        Read: Scopes.rootUrl + "Contacts.Read",
+	        ReadWrite: Scopes.rootUrl + "Contacts.ReadWrite",
+	    };
+	    Scopes.Directory = {
+	        ReadAll: Scopes.rootUrl + "Directory.Read.All",
+	        ReadWriteAll: Scopes.rootUrl + "Directory.ReadWrite.All",
+	        AccessAsUserAll: Scopes.rootUrl + "Directory.AccessAsUser.All",
+	    };
+	    Scopes.Group = {
+	        ReadAll: Scopes.rootUrl + "Group.Read.All",
+	        ReadWriteAll: Scopes.rootUrl + "Group.ReadWrite.All",
+	        AccessAsUserAll: Scopes.rootUrl + "Directory.AccessAsUser.All"
+	    };
+	    Scopes.Mail = {
+	        Read: Scopes.rootUrl + "Mail.Read",
+	        ReadWrite: Scopes.rootUrl + "Mail.ReadWrite",
+	        Send: Scopes.rootUrl + "Mail.Send",
+	    };
+	    Scopes.Calendars = {
+	        Read: Scopes.rootUrl + "Calendars.Read",
+	        ReadWrite: Scopes.rootUrl + "Calendars.ReadWrite",
+	    };
+	    Scopes.Files = {
+	        Read: Scopes.rootUrl + "Files.Read",
+	        ReadAll: Scopes.rootUrl + "Files.Read.All",
+	        ReadWrite: Scopes.rootUrl + "Files.ReadWrite",
+	        ReadWriteAppFolder: Scopes.rootUrl + "Files.ReadWrite.AppFolder",
+	        ReadWriteSelected: Scopes.rootUrl + "Files.ReadWrite.Selected",
+	    };
+	    Scopes.Tasks = {
+	        ReadWrite: Scopes.rootUrl + "Tasks.ReadWrite",
+	    };
+	    Scopes.People = {
+	        Read: Scopes.rootUrl + "People.Read",
+	        ReadWrite: Scopes.rootUrl + "People.ReadWrite",
+	    };
+	    Scopes.Notes = {
+	        Create: Scopes.rootUrl + "Notes.Create",
+	        ReadWriteCreatedByApp: Scopes.rootUrl + "Notes.ReadWrite.CreatedByApp",
+	        Read: Scopes.rootUrl + "Notes.Read",
+	        ReadAll: Scopes.rootUrl + "Notes.Read.All",
+	        ReadWriteAll: Scopes.rootUrl + "Notes.ReadWrite.All",
+	    };
+	    return Scopes;
+	}());
 	var queryUnion = function (query1, query2) { return (query1 ? query1 + (query2 ? "&" + query2 : "") : query2); };
 	var OData = (function () {
 	    function OData(query) {
@@ -935,7 +998,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.raw = raw;
 	        this.self = self;
 	    }
-	    Object.defineProperty(Singleton.prototype, "object", {
+	    Object.defineProperty(Singleton.prototype, "item", {
 	        get: function () {
 	            return this.raw;
 	        },
@@ -958,7 +1021,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            this.next = undefined;
 	        }
 	    }
-	    Object.defineProperty(Collection.prototype, "objects", {
+	    Object.defineProperty(Collection.prototype, "items", {
 	        get: function () {
 	            return (this.raw.value ? this.raw.value : [this.raw]);
 	        },
@@ -1003,23 +1066,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.CollectionNode = CollectionNode;
 	var Attachment = (function (_super) {
 	    __extends(Attachment, _super);
-	    function Attachment(graph, path, attachmentId) {
+	    function Attachment(graph, path, context, attachmentId) {
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + (attachmentId ? "/" + attachmentId : ""));
-	        this.GetAttachment = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, null); };
+	        this.context = context;
+	        this.GetAttachment = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, Attachment.scopes[_this.context]); };
 	    }
+	    Attachment.scopes = {
+	        messages: [Scopes.Mail.Read],
+	        events: [Scopes.Calendars.Read],
+	    };
 	    return Attachment;
 	}(Node));
 	exports.Attachment = Attachment;
 	var Attachments = (function (_super) {
 	    __extends(Attachments, _super);
-	    function Attachments(graph, path) {
+	    function Attachments(graph, path, context) {
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/attachments");
-	        this.$ = function (attachmentId) { return new Attachment(_this.graph, _this.path, attachmentId); };
-	        this.GetAttachments = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Attachments(_this.graph)); };
+	        this.context = context;
+	        this.$ = function (attachmentId) { return new Attachment(_this.graph, _this.path, _this.context, attachmentId); };
+	        this.GetAttachments = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Attachments(_this.graph, null, _this.context), Attachment.scopes[_this.context]); };
 	    }
 	    return Attachments;
 	}(CollectionNode));
@@ -1030,11 +1099,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + (messageId ? "/" + messageId : ""));
-	        this.GetMessage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this); };
-	        this.SendMessage = function (odataQuery) { return _this.graph.Post(null, _this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), _this); };
+	        this.GetMessage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, [Scopes.Mail.Read]); };
+	        this.SendMessage = function (odataQuery) { return _this.graph.Post(null, _this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), _this, [Scopes.Mail.Send]); };
 	    }
 	    Object.defineProperty(Message.prototype, "attachments", {
-	        get: function () { return new Attachments(this.graph, this.path); },
+	        get: function () { return new Attachments(this.graph, this.path, "messages"); },
 	        enumerable: true,
 	        configurable: true
 	    });
@@ -1048,8 +1117,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/messages");
 	        this.$ = function (messageId) { return new Message(_this.graph, _this.path, messageId); };
-	        this.GetMessages = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Messages(_this.graph)); };
-	        this.CreateMessage = function (object, odataQuery) { return _this.graph.Post(object, _this.pathWithQuery(odataQuery), _this); };
+	        this.GetMessages = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Messages(_this.graph), [Scopes.Mail.Read, Scopes.Mail.ReadWrite]); };
+	        this.CreateMessage = function (object, odataQuery) { return _this.graph.Post(object, _this.pathWithQuery(odataQuery), _this, [Scopes.Mail.ReadWrite]); };
 	    }
 	    return Messages;
 	}(CollectionNode));
@@ -1060,16 +1129,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + (eventId ? "/" + eventId : ""));
-	        this.GetEvent = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this); };
+	        this.GetEvent = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, [Scopes.Calendars.Read]); };
 	    }
 	    Object.defineProperty(Event.prototype, "attachments", {
-	        get: function () { return new Attachments(this.graph, this.path); },
+	        get: function () { return new Attachments(this.graph, this.path, "events"); },
 	        enumerable: true,
 	        configurable: true
 	    });
 	    return Event;
 	}(Node));
 	exports.Event = Event;
+	var eventsScopes = [Scopes.Calendars.Read, Scopes.Calendars.ReadWrite];
 	var Events = (function (_super) {
 	    __extends(Events, _super);
 	    function Events(graph, path) {
@@ -1077,7 +1147,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/events");
 	        this.$ = function (eventId) { return new Event(_this.graph, _this.path, eventId); };
-	        this.GetEvents = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Events(_this.graph)); };
+	        this.GetEvents = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Events(_this.graph), eventsScopes); };
 	    }
 	    return Events;
 	}(CollectionNode));
@@ -1088,18 +1158,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/calendarView");
-	        this.GetCalendarView = function (startDate, endDate, odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(queryUnion("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString(), odataQuery && odataQuery.toString())), _this, new CalendarView(_this.graph)); };
+	        this.dateRange = function (startDate, endDate) { return ("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString()); };
+	        this.GetCalendarView = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new CalendarView(_this.graph), eventsScopes); };
 	    }
 	    return CalendarView;
 	}(CollectionNode));
 	exports.CalendarView = CalendarView;
+	var mailFolderScopes = [Scopes.Mail.Read, Scopes.Mail.ReadWrite];
 	var MailFolder = (function (_super) {
 	    __extends(MailFolder, _super);
 	    function MailFolder(graph, path, mailFolderId) {
 	        var _this = this;
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + (mailFolderId ? "/" + mailFolderId : ""));
-	        this.GetMailFolder = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this); };
+	        this.GetMailFolder = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, mailFolderScopes); };
 	    }
 	    return MailFolder;
 	}(Node));
@@ -1111,11 +1183,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/mailFolders");
 	        this.$ = function (mailFolderId) { return new MailFolder(_this.graph, _this.path, mailFolderId); };
-	        this.GetMailFolders = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new MailFolders(_this.graph)); };
+	        this.GetMailFolders = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new MailFolders(_this.graph), mailFolderScopes); };
 	    }
 	    return MailFolders;
 	}(CollectionNode));
 	exports.MailFolders = MailFolders;
+	var usersScopes = [Scopes.User.ReadBasicAll, Scopes.User.ReadAll, Scopes.User.ReadWriteAll, Scopes.Directory.ReadAll, Scopes.Directory.ReadWriteAll, Scopes.Directory.AccessAsUserAll];
+	var userScopes = usersScopes.concat([Scopes.User.Read, Scopes.User.ReadWrite]);
 	var User = (function (_super) {
 	    __extends(User, _super);
 	    function User(graph, path, userId) {
@@ -1123,7 +1197,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, userId ? path + "/" + userId : path + "/me");
 	        this.graph = graph;
-	        this.GetUser = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this); };
+	        this.GetUser = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, userScopes); };
+	        console.log("Graph.foo", graph_1.Graph.foo);
 	    }
 	    Object.defineProperty(User.prototype, "messages", {
 	        get: function () { return new Messages(this.graph, this.path); },
@@ -1155,7 +1230,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (path === void 0) { path = ""; }
 	        _super.call(this, graph, path + "/users");
 	        this.$ = function (userId) { return new User(_this.graph, _this.path, userId); };
-	        this.GetUsers = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Users(_this.graph)); };
+	        this.GetUsers = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Users(_this.graph), userScopes); };
 	    }
 	    return Users;
 	}(CollectionNode));

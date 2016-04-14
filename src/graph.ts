@@ -4,68 +4,8 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
 import { Identity, OAuthVersion, Error } from "./identity";
 import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from "./models"
 import { Singleton, Collection, Node, CollectionNode, User, Users } from "./requestbuilder";
-/*
-    export module Scopes {
-        class Util {
-            static rootUrl = "https://graph.microsoft.com/";
-        }
-        export class General {
-            public static OpenId: string = "openid";
-            public static OfflineAccess: string = "offline_access";
-        }
-        export class User {
-            public static Read: string = Util.rootUrl + "User.Read";
-            public static ReadWrite: string = Util.rootUrl + "User.ReadWrite";
-            public static ReadBasicAll: string = Util.rootUrl + "User.ReadBasic.All";
-            public static ReadAll: string = Util.rootUrl + "User.Read.All";
-            public static ReadWriteAll: string = Util.rootUrl + "User.ReadWrite.All";
-        }
-        export class Contacts {
-            public static Read: string = Util.rootUrl + "Contacts.Read";
-            public static ReadWrite: string = Util.rootUrl + "Contacts.ReadWrite";
-        }
-        export class Directory {
-            public static ReadAll: string = Util.rootUrl + "Directory.Read.All";
-            public static ReadWriteAll: string = Util.rootUrl + "Directory.ReadWrite.All";
-            public static AccessAsUserAll: string = Util.rootUrl + "Directory.AccessAsUser.All";
-        }
-        export class Group {
-            public static ReadAll: string = Util.rootUrl + "Group.Read.All";
-            public static ReadWriteAll: string = Util.rootUrl + "Group.ReadWrite.All";
-            public static AccessAsUserAll: string = Util.rootUrl + "Directory.AccessAsUser.All";
-        }
-        export class Mail {
-            public static Read: string = Util.rootUrl + "Mail.Read";
-            public static ReadWrite: string = Util.rootUrl + "Mail.ReadWrite";
-            public static Send: string = Util.rootUrl + "Mail.Send";
-        }
-        export class Calendars {
-            public static Read: string = Util.rootUrl + "Calendars.Read";
-            public static ReadWrite: string = Util.rootUrl + "Calendars.ReadWrite";
-        }
-        export class Files {
-            public static Read: string = Util.rootUrl + "Files.Read";
-            public static ReadAll: string = Util.rootUrl + "Files.Read.All";
-            public static ReadWrite: string = Util.rootUrl + "Files.ReadWrite";
-            public static ReadWriteAppFolder: string = Util.rootUrl + "Files.ReadWrite.AppFolder";
-            public static ReadWriteSelected: string = Util.rootUrl + "Files.ReadWrite.Selected";
-        }
-        export class Tasks {
-            public static ReadWrite: string = Util.rootUrl + "Tasks.ReadWrite";
-        }
-        export class People {
-            public static Read: string = Util.rootUrl + "People.Read";
-            public static ReadWrite: string = Util.rootUrl + "People.ReadWrite";
-        }
-        export class Notes {
-            public static Create: string = Util.rootUrl + "Notes.Create";
-            public static ReadWriteCreatedByApp: string = Util.rootUrl + "Notes.ReadWrite.CreatedByApp";
-            public static Read: string = Util.rootUrl + "Notes.Read";
-            public static ReadAll: string = Util.rootUrl + "Notes.Read.All";
-            public static ReadWriteAll: string = Util.rootUrl + "Notes.ReadWrite.All";
-        }
-    }
 
+/*
 	export enum AttachmentType {
 		fileAttachment,
 		itemAttachment,
@@ -87,6 +27,7 @@ import { Singleton, Collection, Node, CollectionNode, User, Users } from "./requ
 */
 
     export class Graph {
+        public static foo = () => "test";
         private req: XMLHttpRequest = null;
         private accessToken: string = null;
         private KurveIdentity: Identity = null;
@@ -107,7 +48,7 @@ import { Singleton, Collection, Node, CollectionNode, User, Users } from "./requ
         get users() { return new Users(this, this.baseUrl); }
 
         public Get<Model, N extends Node>(path:string, self:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
-            console.log("GET", path);
+            console.log("GET", path, scopes);
             var d = new Deferred<Singleton<Model, N>, Error>();
 
             this.get(path, (error, result) => {
@@ -127,7 +68,7 @@ import { Singleton, Collection, Node, CollectionNode, User, Users } from "./requ
          }
 
         public GetCollection<Model, N extends CollectionNode>(path:string, self:N, next:N, scopes?:string[]): Promise<Collection<Model, N>, Error> {
-            console.log("GET collection", path);
+            console.log("GET collection", path, scopes);
             var d = new Deferred<Collection<Model, N>, Error>();
 
             this.get(path, (error, result) => {
@@ -147,7 +88,7 @@ import { Singleton, Collection, Node, CollectionNode, User, Users } from "./requ
          }
 
         public Post<Model, N extends Node>(object:Model, path:string, self:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
-            console.log("POST", path);
+            console.log("POST", path, scopes);
             var d = new Deferred<Singleton<Model, N>, Error>();
             
 /*

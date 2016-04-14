@@ -276,14 +276,14 @@ declare module 'Kurve/src/requestbuilder' {
 	    raw: any;
 	    self: N;
 	    constructor(raw: any, self: N);
-	    object: Model;
+	    item: Model;
 	}
 	export class Collection<Model, N extends CollectionNode> {
 	    raw: any;
 	    self: N;
 	    next: N;
 	    constructor(raw: any, self: N, next: N);
-	    objects: Model[];
+	    items: Model[];
 	}
 	export abstract class Node {
 	    protected graph: Graph;
@@ -297,11 +297,17 @@ declare module 'Kurve/src/requestbuilder' {
 	    nextLink: string;
 	}
 	export class Attachment extends Node {
-	    constructor(graph: Graph, path?: string, attachmentId?: string);
+	    private context;
+	    constructor(graph: Graph, path: string, context: string, attachmentId?: string);
+	    static scopes: {
+	        messages: string[];
+	        events: string[];
+	    };
 	    GetAttachment: (odataQuery?: OData | string) => Promise<Singleton<AttachmentDataModel, Attachment>, Error>;
 	}
 	export class Attachments extends CollectionNode {
-	    constructor(graph: Graph, path?: string);
+	    private context;
+	    constructor(graph: Graph, path: string, context: string);
 	    $: (attachmentId: string) => Attachment;
 	    GetAttachments: (odataQuery?: OData | string) => Promise<Collection<AttachmentDataModel, Attachments>, Error>;
 	}
@@ -329,7 +335,8 @@ declare module 'Kurve/src/requestbuilder' {
 	}
 	export class CalendarView extends CollectionNode {
 	    constructor(graph: Graph, path?: string);
-	    GetCalendarView: (startDate?: Date, endDate?: Date, odataQuery?: OData | string) => Promise<Collection<EventDataModel, CalendarView>, Error>;
+	    dateRange: (startDate: Date, endDate: Date) => string;
+	    GetCalendarView: (odataQuery?: OData | string) => Promise<Collection<EventDataModel, CalendarView>, Error>;
 	}
 	export class MailFolder extends Node {
 	    constructor(graph: Graph, path: string, mailFolderId: string);
@@ -361,6 +368,7 @@ declare module 'Kurve/src/graph' {
 	import { Identity, Error } from 'Kurve/src/identity';
 	import { Singleton, Collection, Node, CollectionNode, User, Users } from 'Kurve/src/requestbuilder';
 	export class Graph {
+	    static foo: () => string;
 	    private req;
 	    private accessToken;
 	    private KurveIdentity;
