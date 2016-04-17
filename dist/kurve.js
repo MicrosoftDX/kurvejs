@@ -404,12 +404,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	}(DataModelListWrapper));
 	exports.Attachments = Attachments;
 	var Graph = (function () {
-	    function Graph(identityInfo) {
-	        this.req = null;
+	    function Graph(identityInfo, mode, https) {
 	        this.accessToken = null;
 	        this.KurveIdentity = null;
 	        this.defaultResourceID = "https://graph.microsoft.com";
 	        this.baseUrl = "https://graph.microsoft.com/v1.0/";
+	        if (https)
+	            this.https = https;
+	        this.mode = mode;
 	        if (identityInfo.defaultAccessToken) {
 	            this.accessToken = identityInfo.defaultAccessToken;
 	        }
@@ -606,22 +608,47 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Graph.prototype.get = function (url, callback, responseType, scopes) {
 	        var _this = this;
-	        var xhr = new XMLHttpRequest();
-	        if (responseType)
-	            xhr.responseType = responseType;
-	        xhr.onreadystatechange = function () {
-	            if (xhr.readyState === 4)
-	                if (xhr.status === 200)
-	                    callback(null, responseType ? xhr.response : xhr.responseText);
-	                else
-	                    callback(_this.generateError(xhr));
-	        };
-	        xhr.open("GET", url);
-	        this.addAccessTokenAndSend(xhr, function (addTokenError) {
-	            if (addTokenError) {
-	                callback(addTokenError);
-	            }
-	        }, scopes);
+	        if (this.mode === identity_1.Mode.Client) {
+	            var xhr = new XMLHttpRequest();
+	            if (responseType)
+	                xhr.responseType = responseType;
+	            xhr.onreadystatechange = function () {
+	                if (xhr.readyState === 4)
+	                    if (xhr.status === 200)
+	                        callback(null, responseType ? xhr.response : xhr.responseText);
+	                    else
+	                        callback(_this.generateError(xhr));
+	            };
+	            xhr.open("GET", url);
+	            this.addAccessTokenAndSend(xhr, function (addTokenError) {
+	                if (addTokenError) {
+	                    callback(addTokenError);
+	                }
+	            }, scopes);
+	        }
+	        else {
+	            var token = this.findAccessToken(function (token, error) {
+	                var path = url.substr(27, url.length);
+	                var options = {
+	                    host: 'graph.microsoft.com',
+	                    port: '443',
+	                    path: path,
+	                    method: 'GET',
+	                    headers: {
+	                        'Content-Type': responseType,
+	                        accept: '*/*',
+	                        'Authorization': 'Bearer ' + token
+	                    }
+	                };
+	                var post_req = _this.https.request(options, function (response) {
+	                    response.setEncoding('utf8');
+	                    response.on('data', function (chunk) {
+	                        callback(null, chunk);
+	                    });
+	                });
+	                post_req.end();
+	            }, scopes);
+	        }
 	    };
 	    Graph.prototype.generateError = function (xhr) {
 	        var response = new identity_1.Error();
@@ -685,35 +712,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	            callback(null, user);
 	        }, null, scopes);
 	    };
-	    Graph.prototype.addAccessTokenAndSend = function (xhr, callback, scopes) {
+	    Graph.prototype.findAccessToken = function (callback, scopes) {
 	        if (this.accessToken) {
-	            xhr.setRequestHeader('Authorization', 'Bearer ' + this.accessToken);
-	            xhr.send();
+	            callback(this.accessToken, null);
 	        }
 	        else {
 	            if (scopes) {
 	                this.KurveIdentity.getAccessTokenForScopes(scopes, false, (function (token, error) {
 	                    if (error)
-	                        callback(error);
+	                        callback(null, error);
 	                    else {
-	                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-	                        xhr.send();
-	                        callback(null);
+	                        callback(token, null);
 	                    }
 	                }));
 	            }
 	            else {
 	                this.KurveIdentity.getAccessToken(this.defaultResourceID, (function (error, token) {
 	                    if (error)
-	                        callback(error);
+	                        callback(null, error);
 	                    else {
-	                        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-	                        xhr.send();
-	                        callback(null);
+	                        callback(token, null);
 	                    }
 	                }));
 	            }
 	        }
+	    };
+	    Graph.prototype.addAccessTokenAndSend = function (xhr, callback, scopes) {
+	        this.findAccessToken(function (token, error) {
+	            if (token) {
+	                xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+	                xhr.send();
+	            }
+	            else {
+	                callback(error);
+	            }
+	        }, scopes);
 	    };
 	    Graph.prototype.getMessage = function (urlString, messageId, callback, scopes) {
 	        var _this = this;
@@ -1454,33 +1487,67 @@ return /******/ (function(modules) { // webpackBootstrap
 	            callback(e);
 	            return;
 	        }
-	        var token = this.tokenCache.getForResource(resource);
-	        if (token) {
-	            return callback(null, token.token);
+	        if (this.mode === Mode.Client) {
+	            var token = this.tokenCache.getForResource(resource);
+	            if (token) {
+	                return callback(null, token.token);
+	            }
+	            this.getTokenCallback = (function (token, error) {
+	                if (error) {
+	                    callback(error);
+	                }
+	                else {
+	                    var t = _this.decodeAccessToken(token, resource);
+	                    _this.tokenCache.add(t);
+	                    callback(null, token);
+	                }
+	            });
+	            this.nonce = "token" + this.generateNonce();
+	            this.state = "token" + this.generateNonce();
+	            var iframe = document.createElement('iframe');
+	            iframe.style.display = "none";
+	            iframe.id = "tokenIFrame";
+	            iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
+	                "&resource=" + encodeURIComponent(resource) +
+	                "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
+	                "&state=" + encodeURIComponent(this.state) +
+	                "&version=" + encodeURIComponent(this.version.toString()) +
+	                "&nonce=" + encodeURIComponent(this.nonce) +
+	                "&op=token";
+	            document.body.appendChild(iframe);
 	        }
-	        this.getTokenCallback = (function (token, error) {
-	            if (error) {
-	                callback(error);
-	            }
-	            else {
-	                var t = _this.decodeAccessToken(token, resource);
-	                _this.tokenCache.add(t);
-	                callback(null, token);
-	            }
-	        });
-	        this.nonce = "token" + this.generateNonce();
-	        this.state = "token" + this.generateNonce();
-	        var iframe = document.createElement('iframe');
-	        iframe.style.display = "none";
-	        iframe.id = "tokenIFrame";
-	        iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
-	            "&resource=" + encodeURIComponent(resource) +
-	            "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
-	            "&state=" + encodeURIComponent(this.state) +
-	            "&version=" + encodeURIComponent(this.version.toString()) +
-	            "&nonce=" + encodeURIComponent(this.nonce) +
-	            "&op=token";
-	        document.body.appendChild(iframe);
+	        else {
+	            var cookies = this.parseNodeCookies(this.req);
+	            var upn = this.NodeRetrieveDataCallBack("session|" + cookies["kurveSession"]);
+	            var code = this.NodeRetrieveDataCallBack("code|" + upn);
+	            var post_data = "grant_type=authorization_code" +
+	                "&client_id=" + encodeURIComponent(this.clientId) +
+	                "&code=" + encodeURIComponent(code) +
+	                "&redirect_uri=" + encodeURIComponent(this.tokenProcessorUrl) +
+	                "&resource=" + encodeURIComponent(resource) +
+	                "&client_secret=" + encodeURIComponent(this.appSecret);
+	            var post_options = {
+	                host: 'login.microsoftonline.com',
+	                port: '443',
+	                path: '/common/oauth2/token',
+	                method: 'POST',
+	                headers: {
+	                    'Content-Type': 'application/x-www-form-urlencoded',
+	                    'Content-Length': post_data.length,
+	                    accept: '*/*'
+	                }
+	            };
+	            var post_req = this.https.request(post_options, function (response) {
+	                response.setEncoding('utf8');
+	                response.on('data', function (chunk) {
+	                    var chunkJson = JSON.parse(chunk);
+	                    var t = _this.decodeAccessToken(chunkJson.access_token, resource);
+	                    callback(null, chunkJson.access_token);
+	                });
+	            });
+	            post_req.write(post_data);
+	            post_req.end();
+	        }
 	    };
 	    Identity.prototype.parseNodeCookies = function (req) {
 	        var list = {};
@@ -1496,6 +1563,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        this.NodePersistDataCallBack = persistDataCallback;
 	        this.NodeRetrieveDataCallBack = retrieveDataCallback;
 	        var url = req.url;
+	        this.req = req;
+	        this.res = res;
+	        this.https = https;
 	        var params = this.parseQueryString(url);
 	        var code = this.token("code=", url);
 	        var accessToken = this.token("#access_token", url);
@@ -1538,12 +1608,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                var sessionID = sha.digest('hex');
 	                                var expiry = new Date(new Date().getTime() + 30 * 60 * 1000);
 	                                persistDataCallback("session|" + sessionID, upn, expiry);
+	                                persistDataCallback("code|" + upn, codeFromRequest, expiry);
 	                                res.writeHead(302, {
 	                                    'Set-Cookie': 'kurveSession=' + sessionID,
 	                                    'Location': '/'
 	                                });
 	                                res.end();
-	                                d.resolve(true);
+	                                d.resolve(false);
 	                            });
 	                        });
 	                        post_req.write(post_data);

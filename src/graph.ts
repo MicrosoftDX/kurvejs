@@ -1,9 +1,8 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 
 import { Deferred, Promise, PromiseCallback } from "./promises";
-import { Identity, EndPointVersion, Error } from "./identity";
+import { Identity, EndPointVersion, Error, Mode } from "./identity";
 import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from "./models"
-
     export module Scopes {
         class Util {
             static rootUrl = "https://graph.microsoft.com/";
@@ -235,15 +234,18 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
     }
 
     export class Graph {
-        private req: XMLHttpRequest = null;
+        private mode:Mode;
         private accessToken: string = null;
         private KurveIdentity: Identity = null;
         private defaultResourceID: string = "https://graph.microsoft.com";
         private baseUrl: string = "https://graph.microsoft.com/v1.0/";
+        private https:any;
 
-        constructor(identityInfo: { identity: Identity });
-        constructor(identityInfo: { defaultAccessToken: string });
-        constructor(identityInfo: any) {
+        constructor(identityInfo: { identity: Identity }, mode:Mode,https?:any);
+        constructor(identityInfo: { defaultAccessToken: string }, mode:Mode,https?:any);
+        constructor(identityInfo: any, mode:Mode,https?:any) {
+            if (https) this.https=https;
+            this.mode=mode;
             if (identityInfo.defaultAccessToken) {
                 this.accessToken = identityInfo.defaultAccessToken;
             } else {
@@ -479,24 +481,52 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
             return d.promise;
         }
 
+     
         public get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?:string[]): void {
-            var xhr = new XMLHttpRequest();
-            if (responseType)
-                xhr.responseType = responseType;
-            xhr.onreadystatechange = () => {
-                if (xhr.readyState === 4)
-                    if (xhr.status === 200)
-                        callback(null, responseType ? xhr.response : xhr.responseText);
-                    else
-                        callback(this.generateError(xhr));
-            }
-
-            xhr.open("GET", url);
-            this.addAccessTokenAndSend(xhr, (addTokenError: Error) => {
-                if (addTokenError) {
-                    callback(addTokenError);
+            if (this.mode===Mode.Client){
+                var xhr = new XMLHttpRequest();
+                if (responseType)
+                    xhr.responseType = responseType;
+                xhr.onreadystatechange = () => {
+                    if (xhr.readyState === 4)
+                        if (xhr.status === 200)
+                            callback(null, responseType ? xhr.response : xhr.responseText);
+                        else
+                            callback(this.generateError(xhr));
                 }
-            }, scopes);
+
+                xhr.open("GET", url);
+                this.addAccessTokenAndSend(xhr, (addTokenError: Error) => {
+                    if (addTokenError) {
+                        callback(addTokenError);
+                    }
+                }, scopes);
+            }else {
+                var token = this.findAccessToken((token,error)=>{
+                    var path=url.substr(27,url.length);
+                    var options = {
+                        host: 'graph.microsoft.com',
+                        port: '443',
+                        path: path,
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': responseType,
+                            accept: '*/*',
+                            'Authorization':'Bearer ' + token
+                        }
+                    };
+
+                    var post_req = this.https.request(options,  (response)=> {
+                        response.setEncoding('utf8');
+                        response.on('data',  (chunk)=> {
+                            callback(null, chunk);                                 
+                        });
+                    });
+                    
+                    post_req.end();
+
+                },scopes);
+            }
         }
 
         private generateError(xhr: XMLHttpRequest): Error {
@@ -569,11 +599,10 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
 
         }
 
-        private addAccessTokenAndSend(xhr: XMLHttpRequest, callback: (error: Error) => void, scopes?:string[]): void {
+
+        private findAccessToken(callback: (token: string,error:Error) => void, scopes?:string[]): void {
             if (this.accessToken) {
-                //Using default access token
-                xhr.setRequestHeader('Authorization', 'Bearer ' + this.accessToken);
-                xhr.send();
+                callback(this.accessToken,null);
             } else {
                 //Using the integrated Identity object
 
@@ -581,11 +610,9 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
                     //v2 scope based tokens
                     this.KurveIdentity.getAccessTokenForScopes(scopes,false, ((token: string, error: Error) => {
                         if (error)
-                            callback(error);
+                            callback(null, error);
                         else {
-                            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                            xhr.send();
-                            callback(null);
+                            callback(token, null);
                         }
                     }));
 
@@ -594,15 +621,25 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
                     //v1 resource based tokens
                     this.KurveIdentity.getAccessToken(this.defaultResourceID, ((error: Error, token: string) => {
                         if (error)
-                            callback(error);
+                            callback(null, error);
                         else {
-                            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                            xhr.send();
-                            callback(null);
+                            callback(token, null);
                         }
                     }));
                 }
             }
+        }
+
+
+        private addAccessTokenAndSend(xhr: XMLHttpRequest, callback: (error: Error) => void, scopes?:string[]): void {
+            this.findAccessToken((token,error)=>{
+                if (token){
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                    xhr.send();
+                } else{
+                     callback(error);
+                }
+            },scopes);
         }
 
         private getMessage(urlString: string, messageId: string, callback: PromiseCallback<Message>, scopes?:string[]): void {

@@ -152,6 +152,9 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
         private appSecret:string;
         private NodePersistDataCallBack: (key:string, value:string, expiry:Date)=>void;
         private NodeRetrieveDataCallBack: (key:string)=>string;
+        private req:any;
+        private res:any;
+        private https:any;
 
         constructor(identitySettings: IdentitySettings) {
             this.clientId = identitySettings.clientId;
@@ -340,41 +343,80 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
                 return;
             }
 
-            var token = this.tokenCache.getForResource(resource);
-            if (token) {
-                return callback(null, token.token);
+            if (this.mode===Mode.Client){
+                var token = this.tokenCache.getForResource(resource);
+                if (token) {
+                    return callback(null, token.token);
+                }
+
+                //If we got this far, we need to go get this token
+
+                //Need to create the iFrame to invoke the acquire token
+                this.getTokenCallback = ((token: string, error: Error) => {
+                    if (error) {
+                        callback(error);
+                    }
+                    else {
+                        var t = this.decodeAccessToken(token, resource);
+                        this.tokenCache.add(t);
+                        callback(null, token);
+                    }
+                });
+
+                this.nonce = "token" + this.generateNonce();
+                this.state = "token" + this.generateNonce();
+
+                var iframe = document.createElement('iframe');
+                iframe.style.display = "none";
+                iframe.id = "tokenIFrame";
+
+                iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
+                "&resource=" + encodeURIComponent(resource) +
+                    "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
+                    "&state=" + encodeURIComponent(this.state) +
+                    "&version=" + encodeURIComponent(this.version.toString()) +
+                    "&nonce=" + encodeURIComponent(this.nonce) +
+                    "&op=token";
+
+                document.body.appendChild(iframe);
+            }else{
+                 var cookies = this.parseNodeCookies(this.req);
+                 var upn = this.NodeRetrieveDataCallBack("session|" + cookies["kurveSession"]);                   
+                 var code = this.NodeRetrieveDataCallBack("code|" + upn);
+                 
+                 var post_data ="grant_type=authorization_code" +
+                            "&client_id=" + encodeURIComponent(this.clientId) + 
+                            "&code=" + encodeURIComponent(code) + 
+                            "&redirect_uri=" + encodeURIComponent(this.tokenProcessorUrl) +
+                            "&resource=" + encodeURIComponent(resource) +
+                            "&client_secret=" + encodeURIComponent(this.appSecret);
+                            
+                    var post_options = {
+                        host: 'login.microsoftonline.com',
+                        port: '443',
+                        path: '/common/oauth2/token',
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Content-Length': post_data.length,
+                                accept: '*/*'
+                        }
+                    };
+
+                    var post_req = this.https.request(post_options,  (response)=> {
+                        response.setEncoding('utf8');
+                        response.on('data',  (chunk)=> {
+                            var chunkJson = JSON.parse(chunk);
+                            var t = this.decodeAccessToken(chunkJson.access_token, resource);
+                           // this.tokenCache.add(t); //TODO: Persist/retrieve token cache no server
+                            callback(null, chunkJson.access_token);                                 
+                        });
+                    });
+                    
+                    post_req.write(post_data);
+                    post_req.end();
+
             }
-
-            //If we got this far, we need to go get this token
-
-            //Need to create the iFrame to invoke the acquire token
-            this.getTokenCallback = ((token: string, error: Error) => {
-                if (error) {
-                    callback(error);
-                }
-                else {
-                    var t = this.decodeAccessToken(token, resource);
-                    this.tokenCache.add(t);
-                    callback(null, token);
-                }
-            });
-
-            this.nonce = "token" + this.generateNonce();
-            this.state = "token" + this.generateNonce();
-
-            var iframe = document.createElement('iframe');
-            iframe.style.display = "none";
-            iframe.id = "tokenIFrame";
-
-            iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
-            "&resource=" + encodeURIComponent(resource) +
-                "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
-                "&state=" + encodeURIComponent(this.state) +
-                "&version=" + encodeURIComponent(this.version.toString()) +
-                "&nonce=" + encodeURIComponent(this.nonce) +
-                "&op=token";
-
-            document.body.appendChild(iframe);
         }
 
         private parseNodeCookies (req) {
@@ -396,15 +438,17 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
             this.NodeRetrieveDataCallBack=retrieveDataCallback;
             var url:string = <string>req.url;
             
+            this.req=req;
+            this.res=res;
+            this.https=https;
+           
             var params = this.parseQueryString(url);
             var code = this.token("code=", url);
             var accessToken =this.token("#access_token", url);
             var cookies = this.parseNodeCookies(req);
             
             var d = new Deferred<boolean, Error>();
-         
-            
-            
+
             if (this.version===EndPointVersion.v1){
                
                 if (code){
@@ -446,12 +490,13 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
 	                                var sessionID = sha.digest('hex');
 	                                var expiry = new Date(new Date().getTime() + 30 * 60 * 1000);
 	                                persistDataCallback("session|" + sessionID, upn, expiry);
+                                    persistDataCallback("code|" + upn, codeFromRequest, expiry);
 	                                res.writeHead(302, {
 	                                    'Set-Cookie': 'kurveSession=' + sessionID,
 	                                    'Location': '/' 
 	                                });
 	                                res.end();
-                                    d.resolve(true);
+                                    d.resolve(false);
                                  
 	                            });
 	                        });

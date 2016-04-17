@@ -58,6 +58,9 @@ declare module 'Kurve/src/identity' {
 	    private appSecret;
 	    private NodePersistDataCallBack;
 	    private NodeRetrieveDataCallBack;
+	    private req;
+	    private res;
+	    private https;
 	    constructor(identitySettings: IdentitySettings);
 	    private parseQueryString(str);
 	    private token(s, url);
@@ -271,7 +274,7 @@ declare module 'Kurve/src/models' {
 }
 declare module 'Kurve/src/graph' {
 	import { Promise, PromiseCallback } from 'Kurve/src/promises';
-	import { Identity, Error } from 'Kurve/src/identity';
+	import { Identity, Error, Mode } from 'Kurve/src/identity';
 	import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from 'Kurve/src/models';
 	export module Scopes {
 	    class General {
@@ -407,17 +410,18 @@ declare module 'Kurve/src/graph' {
 	export class Attachments extends DataModelListWrapper<Attachment, Attachments> {
 	}
 	export class Graph {
-	    private req;
+	    private mode;
 	    private accessToken;
 	    private KurveIdentity;
 	    private defaultResourceID;
 	    private baseUrl;
+	    private https;
 	    constructor(identityInfo: {
 	        identity: Identity;
-	    });
+	    }, mode: Mode, https?: any);
 	    constructor(identityInfo: {
 	        defaultAccessToken: string;
-	    });
+	    }, mode: Mode, https?: any);
 	    private scopesForV2(scopes);
 	    meAsync(odataQuery?: string): Promise<User, Error>;
 	    me(callback: PromiseCallback<User>, odataQuery?: string): void;
@@ -458,6 +462,7 @@ declare module 'Kurve/src/graph' {
 	    private generateError(xhr);
 	    private getUsers(urlString, callback, scopes?, basicProfileOnly?);
 	    private getUser(urlString, callback, scopes?);
+	    private findAccessToken(callback, scopes?);
 	    private addAccessTokenAndSend(xhr, callback, scopes?);
 	    private getMessage(urlString, messageId, callback, scopes?);
 	    private getMessages(urlString, callback, scopes?);
