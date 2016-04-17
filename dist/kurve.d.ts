@@ -1,8 +1,12 @@
 declare module 'Kurve/src/identity' {
 	import { Promise, PromiseCallback } from 'Kurve/src/promises';
-	export enum OAuthVersion {
+	export enum EndPointVersion {
 	    v1 = 1,
 	    v2 = 2,
+	}
+	export enum Mode {
+	    Client = 1,
+	    Node = 2,
 	}
 	export class Error {
 	    status: number;
@@ -32,9 +36,11 @@ declare module 'Kurve/src/identity' {
 	}
 	export interface IdentitySettings {
 	    clientId: string;
+	    appSecret: string;
 	    tokenProcessingUri: string;
-	    version: OAuthVersion;
+	    version: EndPointVersion;
 	    tokenStorage?: TokenStorage;
+	    mode: Mode;
 	}
 	export class Identity {
 	    clientId: string;
@@ -48,16 +54,23 @@ declare module 'Kurve/src/identity' {
 	    private tokenCache;
 	    private refreshTimer;
 	    private policy;
+	    private mode;
+	    private appSecret;
+	    private NodePersistDataCallBack;
+	    private NodeRetrieveDataCallBack;
 	    constructor(identitySettings: IdentitySettings);
+	    private parseQueryString(str);
+	    private token(s, url);
 	    checkForIdentityRedirect(): boolean;
 	    private decodeIdToken(idToken);
 	    private decodeAccessToken(accessToken, resource?, scopes?);
 	    getIdToken(): any;
 	    isLoggedIn(): boolean;
 	    private renewIdToken();
-	    getCurrentOauthVersion(): OAuthVersion;
+	    getCurrentEndPointVersion(): EndPointVersion;
 	    getAccessTokenAsync(resource: string): Promise<string, Error>;
 	    getAccessToken(resource: string, callback: PromiseCallback<string>): void;
+	    handleNodeCallback(req: any, res: any, http: any, persistDataCallback: (key: string, value: string, expiry: Date) => void, retrieveDataCallback: (key: string) => string): void;
 	    getAccessTokenForScopesAsync(scopes: string[], promptForConsent?: boolean): Promise<string, Error>;
 	    getAccessTokenForScopes(scopes: string[], promptForConsent: boolean, callback: (token: string, error: Error) => void): void;
 	    loginAsync(loginSettings?: {

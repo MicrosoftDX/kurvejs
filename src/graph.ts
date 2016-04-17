@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 
 import { Deferred, Promise, PromiseCallback } from "./promises";
-import { Identity, OAuthVersion, Error } from "./identity";
+import { Identity, EndPointVersion, Error } from "./identity";
 import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from "./models"
 
     export module Scopes {
@@ -255,7 +255,7 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
         private scopesForV2(scopes: string[]): string[] {
             if (!this.KurveIdentity)
                 return null;
-            if (this.KurveIdentity.getCurrentOauthVersion() === OAuthVersion.v1)
+            if (this.KurveIdentity.getCurrentEndPointVersion() === EndPointVersion.v1)
                 return null;
             else return scopes;
         }

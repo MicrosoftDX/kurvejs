@@ -2,9 +2,13 @@
 
 import { Deferred, Promise, PromiseCallback } from "./promises";
 
-    export enum OAuthVersion {
+    export enum EndPointVersion {
         v1=1,
         v2=2
+    }
+     export enum Mode {
+        Client=1,
+        Node=2
     }
 
     export class Error {
@@ -124,94 +128,91 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
 
     export interface IdentitySettings {
         clientId: string;
+        appSecret:string;
         tokenProcessingUri: string;
-        version: OAuthVersion;
+        version: EndPointVersion;
         tokenStorage?: TokenStorage;
+        mode:Mode;
     }
-
+  
+    
     export class Identity {
-//      public authContext: any = null;
-//      public config: any = null;
-//      public isCallback: boolean = false;
         public clientId: string;
-//      private req: XMLHttpRequest;
         private state: string;
-        private version: OAuthVersion;
+        private version: EndPointVersion;
         private nonce: string;
         private idToken: IdToken;
         private loginCallback: (error: Error) => void;
-//      private accessTokenCallback: (token: string, error: Error) => void;
         private getTokenCallback: (token: string, error: Error) => void;
         private tokenProcessorUrl: string;
         private tokenCache: TokenCache;
-//      private logonUser: any;
         private refreshTimer: any;
         private policy: string = "";
-//      private tenant: string = "";
+        private mode:Mode = Mode.Client;
+        private appSecret:string;
+        private NodePersistDataCallBack: (key:string, value:string, expiry:Date)=>void;
+        private NodeRetrieveDataCallBack: (key:string)=>string;
 
         constructor(identitySettings: IdentitySettings) {
             this.clientId = identitySettings.clientId;
             this.tokenProcessorUrl = identitySettings.tokenProcessingUri;
-//          this.req = new XMLHttpRequest();
             if (identitySettings.version)
                 this.version = identitySettings.version;
             else
-                this.version = OAuthVersion.v1;
+                this.version = EndPointVersion.v1;
 
-            this.tokenCache = new TokenCache(identitySettings.tokenStorage);
+            if (identitySettings.appSecret)
+                this.appSecret=identitySettings.appSecret;
+            
+            this.mode=identitySettings.mode;
+            
+            if (this.mode===Mode.Client){
+                this.tokenCache = new TokenCache(identitySettings.tokenStorage);
+                //Callback handler from other windows
+                window.addEventListener("message", event => {
+                    if (event.data.type === "id_token") {
+                        if (event.data.error) {
+                            var e: Error = new Error();
+                            e.text = event.data.error;
+                            this.loginCallback(e);
 
-            //Callback handler from other windows
-            window.addEventListener("message", event => {
-                if (event.data.type === "id_token") {
-                    if (event.data.error) {
-                        var e: Error = new Error();
-                        e.text = event.data.error;
-                        this.loginCallback(e);
-
-                    } else {
-                        //check for state
-                        if (this.state !== event.data.state) {
-                            var error = new Error();
-                            error.statusText = "Invalid state";
-                            this.loginCallback(error);
                         } else {
-                            this.decodeIdToken(event.data.token);
-                            this.loginCallback(null);
+                            //check for state
+                            if (this.state !== event.data.state) {
+                                var error = new Error();
+                                error.statusText = "Invalid state";
+                                this.loginCallback(error);
+                            } else {
+                                this.decodeIdToken(event.data.token);
+                                this.loginCallback(null);
+                            }
+                        }
+                    } else if (event.data.type === "access_token") {
+                        if (event.data.error) {
+                            var e: Error = new Error();
+                            e.text = event.data.error;
+                            this.getTokenCallback(null, e);
+
+                        } else {
+                            var token:string = event.data.token;
+                            var iframe = document.getElementById("tokenIFrame");
+                            iframe.parentNode.removeChild(iframe);
+
+                            if (event.data.state !== this.state) {
+                                var error = new Error();
+                                error.statusText = "Invalid state";
+                                this.getTokenCallback(null, error);
+                            }
+                            else {
+                                this.getTokenCallback(token, null);
+                            }
                         }
                     }
-                } else if (event.data.type === "access_token") {
-                    if (event.data.error) {
-                        var e: Error = new Error();
-                        e.text = event.data.error;
-                        this.getTokenCallback(null, e);
-
-                    } else {
-                        var token:string = event.data.token;
-                        var iframe = document.getElementById("tokenIFrame");
-                        iframe.parentNode.removeChild(iframe);
-
-                        if (event.data.state !== this.state) {
-                            var error = new Error();
-                            error.statusText = "Invalid state";
-                            this.getTokenCallback(null, error);
-                        }
-                        else {
-                            this.getTokenCallback(token, null);
-                        }
-                    }
-                }
-            });
+                });
+            }
         }
 
-        public checkForIdentityRedirect(): boolean {
-            function token(s: string) {
-                var start = window.location.href.indexOf(s);
-                if (start < 0) return null;
-                var end = window.location.href.indexOf("&",start + s.length);
-                return  window.location.href.substring(start,((end > 0) ? end : window.location.href.length));
-            }
-
-            function parseQueryString(str: string) {
+        private parseQueryString(str: string) {
                 var queryString = str || window.location.search || '';
                 var keyValPairs: any[] = [];
                 var params: any = {};
@@ -228,11 +229,19 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
                     }
                 }
                 return params;
-            }
-
-            var params = parseQueryString(window.location.href);
-            var idToken = token("#id_token=");
-            var accessToken = token("#access_token");
+        }
+            
+        private token(s: string, url:string) {
+            var start = url.indexOf(s);
+            if (start < 0) return null;
+            var end = url.indexOf("&",start + s.length);
+            return  url.substring(start,((end > 0) ? end : url.length));
+        }
+            
+        public checkForIdentityRedirect(): boolean {
+            var params = this.parseQueryString(window.location.href);
+            var idToken = this.token("#id_token=", window.location.href);
+            var accessToken = this.token("#access_token", window.location.href);
             if (idToken) {
                 if (true || this.state === params["state"][0]) { //BUG? When you are in a pure redirect system you don't remember your state or nonce so don't check.
                     this.decodeIdToken(idToken);
@@ -305,7 +314,7 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
             this.login(() => { });
         }
 
-        public getCurrentOauthVersion(): OAuthVersion {
+        public getCurrentEndPointVersion(): EndPointVersion {
             return this.version;
         }
 
@@ -323,9 +332,9 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
         }
 
         public getAccessToken(resource: string, callback: PromiseCallback<string>): void {
-            if (this.version !== OAuthVersion.v1) {
+            if (this.version !== EndPointVersion.v1) {
                 var e = new Error();
-                e.statusText = "Currently this identity class is using v2 OAuth mode. You need to use getAccessTokenForScopes() method";
+                e.statusText = "Currently this identity class is using v2 endpoint mode. You need to use getAccessTokenForScopes() method";
                 callback(e);
                 return;
             }
@@ -366,6 +375,57 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
             document.body.appendChild(iframe);
         }
 
+        public handleNodeCallback(req:any,res:any,http:any,persistDataCallback:(key:string,value:string, expiry:Date)=>void, retrieveDataCallback:(key:string)=>string)
+        {
+            this.NodePersistDataCallBack=persistDataCallback;
+            this.NodeRetrieveDataCallBack=retrieveDataCallback;
+            var url:string = <string>req.url;
+            
+            var params = this.parseQueryString(url);
+            var code = this.token("code=", url);
+            var accessToken =this.token("#access_token", url);
+            
+            if (this.version===EndPointVersion.v1){
+                if (code){
+                    var codeFromRequest = params["code"][0];
+                    var stateFromRequest = params["state"][0];
+                    var cachedState = retrieveDataCallback(stateFromRequest);
+                    if (cachedState){
+                        if (cachedState==="waiting"){
+                            var expiry = new Date(new Date().getTime() +  86400000);
+                            persistDataCallback("state|" + stateFromRequest,"done",expiry);
+
+                        }else {
+							res.writeHead( 500, "Replay detected", {'content-type' : 'text/plain'});
+							res.end( "Replay detected");
+	                    }
+	                }
+	                else {
+						res.writeHead( 500, "State doesn't match", {'content-type' : 'text/plain'});
+    					res.end( "State doesn't match");
+	                }
+                    
+                }else
+                {
+                    var state:string =this.generateNonce();
+                    var expiry = new Date(new Date().getTime() +  900000);
+                    
+                    persistDataCallback("state|" + state,"waiting",expiry);
+                                            
+                    var url="https://login.microsoftonline.com/common/oauth2/authorize?response_type=code&client_id=" +
+                                                        encodeURIComponent(this.clientId) + 
+                                                        "&redirect_uri=" + encodeURIComponent(this.tokenProcessorUrl) +
+                                                        "&state=" + encodeURIComponent(state);
+                        
+                    res.writeHead(302, {'Location': url});
+
+                    res.end();
+                }
+            }else {
+                //TODO: v2
+                
+            }
+        }
 
         public getAccessTokenForScopesAsync(scopes: string[], promptForConsent = false): Promise<string, Error> {
 
@@ -381,7 +441,7 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
         }
 
         public getAccessTokenForScopes(scopes: string[], promptForConsent=false, callback: (token: string, error: Error) => void): void {
-            if (this.version !== OAuthVersion.v2) {
+            if (this.version !== EndPointVersion.v2) {
                 var e = new Error();
                 e.statusText = "Dynamic scopes require v2 mode. Currently this identity class is using v1";
                 callback(null, e);
@@ -461,9 +521,9 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
             if (!loginSettings) loginSettings = {};
             if (loginSettings.policy) this.policy = loginSettings.policy;
 
-            if (loginSettings.scopes && this.version === OAuthVersion.v1) {
+            if (loginSettings.scopes && this.version === EndPointVersion.v1) {
                 var e = new Error();
-                e.text = "Scopes can only be used with OAuth v2.";
+                e.text = "Scopes can only be used with endpoint v2.";
                 callback(e);
                 return;
             }
@@ -486,7 +546,7 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
             if (loginSettings.tenant) {
                 loginURL += "&tenant=" + encodeURIComponent(loginSettings.tenant);
             }
-            if (this.version === OAuthVersion.v2) {
+            if (this.version === EndPointVersion.v2) {
                     if (!loginSettings.scopes) loginSettings.scopes = [];
                     if (loginSettings.scopes.indexOf("profile") < 0)
                         loginSettings.scopes.push("profile");

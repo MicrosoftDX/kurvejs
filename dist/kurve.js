@@ -420,7 +420,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Graph.prototype.scopesForV2 = function (scopes) {
 	        if (!this.KurveIdentity)
 	            return null;
-	        if (this.KurveIdentity.getCurrentOauthVersion() === identity_1.OAuthVersion.v1)
+	        if (this.KurveIdentity.getCurrentEndPointVersion() === identity_1.EndPointVersion.v1)
 	            return null;
 	        else
 	            return scopes;
@@ -1184,11 +1184,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	"use strict";
 	var promises_1 = __webpack_require__(2);
-	(function (OAuthVersion) {
-	    OAuthVersion[OAuthVersion["v1"] = 1] = "v1";
-	    OAuthVersion[OAuthVersion["v2"] = 2] = "v2";
-	})(exports.OAuthVersion || (exports.OAuthVersion = {}));
-	var OAuthVersion = exports.OAuthVersion;
+	(function (EndPointVersion) {
+	    EndPointVersion[EndPointVersion["v1"] = 1] = "v1";
+	    EndPointVersion[EndPointVersion["v2"] = 2] = "v2";
+	})(exports.EndPointVersion || (exports.EndPointVersion = {}));
+	var EndPointVersion = exports.EndPointVersion;
+	(function (Mode) {
+	    Mode[Mode["Client"] = 1] = "Client";
+	    Mode[Mode["Node"] = 2] = "Node";
+	})(exports.Mode || (exports.Mode = {}));
+	var Mode = exports.Mode;
 	var Error = (function () {
 	    function Error() {
 	    }
@@ -1286,83 +1291,89 @@ return /******/ (function(modules) { // webpackBootstrap
 	    function Identity(identitySettings) {
 	        var _this = this;
 	        this.policy = "";
+	        this.mode = Mode.Client;
 	        this.clientId = identitySettings.clientId;
 	        this.tokenProcessorUrl = identitySettings.tokenProcessingUri;
 	        if (identitySettings.version)
 	            this.version = identitySettings.version;
 	        else
-	            this.version = OAuthVersion.v1;
-	        this.tokenCache = new TokenCache(identitySettings.tokenStorage);
-	        window.addEventListener("message", function (event) {
-	            if (event.data.type === "id_token") {
-	                if (event.data.error) {
-	                    var e = new Error();
-	                    e.text = event.data.error;
-	                    _this.loginCallback(e);
-	                }
-	                else {
-	                    if (_this.state !== event.data.state) {
-	                        var error = new Error();
-	                        error.statusText = "Invalid state";
-	                        _this.loginCallback(error);
+	            this.version = EndPointVersion.v1;
+	        if (identitySettings.appSecret)
+	            this.appSecret = identitySettings.appSecret;
+	        this.mode = identitySettings.mode;
+	        if (this.mode === Mode.Client) {
+	            this.tokenCache = new TokenCache(identitySettings.tokenStorage);
+	            window.addEventListener("message", function (event) {
+	                if (event.data.type === "id_token") {
+	                    if (event.data.error) {
+	                        var e = new Error();
+	                        e.text = event.data.error;
+	                        _this.loginCallback(e);
 	                    }
 	                    else {
-	                        _this.decodeIdToken(event.data.token);
-	                        _this.loginCallback(null);
+	                        if (_this.state !== event.data.state) {
+	                            var error = new Error();
+	                            error.statusText = "Invalid state";
+	                            _this.loginCallback(error);
+	                        }
+	                        else {
+	                            _this.decodeIdToken(event.data.token);
+	                            _this.loginCallback(null);
+	                        }
 	                    }
 	                }
-	            }
-	            else if (event.data.type === "access_token") {
-	                if (event.data.error) {
-	                    var e = new Error();
-	                    e.text = event.data.error;
-	                    _this.getTokenCallback(null, e);
-	                }
-	                else {
-	                    var token = event.data.token;
-	                    var iframe = document.getElementById("tokenIFrame");
-	                    iframe.parentNode.removeChild(iframe);
-	                    if (event.data.state !== _this.state) {
-	                        var error = new Error();
-	                        error.statusText = "Invalid state";
-	                        _this.getTokenCallback(null, error);
+	                else if (event.data.type === "access_token") {
+	                    if (event.data.error) {
+	                        var e = new Error();
+	                        e.text = event.data.error;
+	                        _this.getTokenCallback(null, e);
 	                    }
 	                    else {
-	                        _this.getTokenCallback(token, null);
+	                        var token = event.data.token;
+	                        var iframe = document.getElementById("tokenIFrame");
+	                        iframe.parentNode.removeChild(iframe);
+	                        if (event.data.state !== _this.state) {
+	                            var error = new Error();
+	                            error.statusText = "Invalid state";
+	                            _this.getTokenCallback(null, error);
+	                        }
+	                        else {
+	                            _this.getTokenCallback(token, null);
+	                        }
 	                    }
 	                }
-	            }
-	        });
+	            });
+	        }
 	    }
-	    Identity.prototype.checkForIdentityRedirect = function () {
-	        function token(s) {
-	            var start = window.location.href.indexOf(s);
-	            if (start < 0)
-	                return null;
-	            var end = window.location.href.indexOf("&", start + s.length);
-	            return window.location.href.substring(start, ((end > 0) ? end : window.location.href.length));
-	        }
-	        function parseQueryString(str) {
-	            var queryString = str || window.location.search || '';
-	            var keyValPairs = [];
-	            var params = {};
-	            queryString = queryString.replace(/.*?\?/, "");
-	            if (queryString.length) {
-	                keyValPairs = queryString.split('&');
-	                for (var pairNum in keyValPairs) {
-	                    var key = keyValPairs[pairNum].split('=')[0];
-	                    if (!key.length)
-	                        continue;
-	                    if (typeof params[key] === 'undefined')
-	                        params[key] = [];
-	                    params[key].push(keyValPairs[pairNum].split('=')[1]);
-	                }
+	    Identity.prototype.parseQueryString = function (str) {
+	        var queryString = str || window.location.search || '';
+	        var keyValPairs = [];
+	        var params = {};
+	        queryString = queryString.replace(/.*?\?/, "");
+	        if (queryString.length) {
+	            keyValPairs = queryString.split('&');
+	            for (var pairNum in keyValPairs) {
+	                var key = keyValPairs[pairNum].split('=')[0];
+	                if (!key.length)
+	                    continue;
+	                if (typeof params[key] === 'undefined')
+	                    params[key] = [];
+	                params[key].push(keyValPairs[pairNum].split('=')[1]);
 	            }
-	            return params;
 	        }
-	        var params = parseQueryString(window.location.href);
-	        var idToken = token("#id_token=");
-	        var accessToken = token("#access_token");
+	        return params;
+	    };
+	    Identity.prototype.token = function (s, url) {
+	        var start = url.indexOf(s);
+	        if (start < 0)
+	            return null;
+	        var end = url.indexOf("&", start + s.length);
+	        return url.substring(start, ((end > 0) ? end : url.length));
+	    };
+	    Identity.prototype.checkForIdentityRedirect = function () {
+	        var params = this.parseQueryString(window.location.href);
+	        var idToken = this.token("#id_token=", window.location.href);
+	        var accessToken = this.token("#access_token", window.location.href);
 	        if (idToken) {
 	            if (true) {
 	                this.decodeIdToken(idToken);
@@ -1420,7 +1431,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        clearTimeout(this.refreshTimer);
 	        this.login(function () { });
 	    };
-	    Identity.prototype.getCurrentOauthVersion = function () {
+	    Identity.prototype.getCurrentEndPointVersion = function () {
 	        return this.version;
 	    };
 	    Identity.prototype.getAccessTokenAsync = function (resource) {
@@ -1437,9 +1448,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    };
 	    Identity.prototype.getAccessToken = function (resource, callback) {
 	        var _this = this;
-	        if (this.version !== OAuthVersion.v1) {
+	        if (this.version !== EndPointVersion.v1) {
 	            var e = new Error();
-	            e.statusText = "Currently this identity class is using v2 OAuth mode. You need to use getAccessTokenForScopes() method";
+	            e.statusText = "Currently this identity class is using v2 endpoint mode. You need to use getAccessTokenForScopes() method";
 	            callback(e);
 	            return;
 	        }
@@ -1470,6 +1481,48 @@ return /******/ (function(modules) { // webpackBootstrap
 	            "&op=token";
 	        document.body.appendChild(iframe);
 	    };
+	    Identity.prototype.handleNodeCallback = function (req, res, http, persistDataCallback, retrieveDataCallback) {
+	        this.NodePersistDataCallBack = persistDataCallback;
+	        this.NodeRetrieveDataCallBack = retrieveDataCallback;
+	        var url = req.url;
+	        var params = this.parseQueryString(url);
+	        var code = this.token("code=", url);
+	        var accessToken = this.token("#access_token", url);
+	        if (this.version === EndPointVersion.v1) {
+	            if (code) {
+	                var codeFromRequest = params["code"][0];
+	                var stateFromRequest = params["state"][0];
+	                var cachedState = retrieveDataCallback(stateFromRequest);
+	                if (cachedState) {
+	                    if (cachedState === "waiting") {
+	                        var expiry = new Date(new Date().getTime() + 86400000);
+	                        persistDataCallback("state|" + stateFromRequest, "done", expiry);
+	                    }
+	                    else {
+	                        res.writeHead(500, "Replay detected", { 'content-type': 'text/plain' });
+	                        res.end("Replay detected");
+	                    }
+	                }
+	                else {
+	                    res.writeHead(500, "State doesn't match", { 'content-type': 'text/plain' });
+	                    res.end("State doesn't match");
+	                }
+	            }
+	            else {
+	                var state = this.generateNonce();
+	                var expiry = new Date(new Date().getTime() + 900000);
+	                persistDataCallback("state|" + state, "waiting", expiry);
+	                var url = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=code&client_id=" +
+	                    encodeURIComponent(this.clientId) +
+	                    "&redirect_uri=" + encodeURIComponent(this.tokenProcessorUrl) +
+	                    "&state=" + encodeURIComponent(state);
+	                res.writeHead(302, { 'Location': url });
+	                res.end();
+	            }
+	        }
+	        else {
+	        }
+	    };
 	    Identity.prototype.getAccessTokenForScopesAsync = function (scopes, promptForConsent) {
 	        if (promptForConsent === void 0) { promptForConsent = false; }
 	        var d = new promises_1.Deferred();
@@ -1486,7 +1539,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    Identity.prototype.getAccessTokenForScopes = function (scopes, promptForConsent, callback) {
 	        var _this = this;
 	        if (promptForConsent === void 0) { promptForConsent = false; }
-	        if (this.version !== OAuthVersion.v2) {
+	        if (this.version !== EndPointVersion.v2) {
 	            var e = new Error();
 	            e.statusText = "Dynamic scopes require v2 mode. Currently this identity class is using v1";
 	            callback(null, e);
@@ -1558,9 +1611,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	            loginSettings = {};
 	        if (loginSettings.policy)
 	            this.policy = loginSettings.policy;
-	        if (loginSettings.scopes && this.version === OAuthVersion.v1) {
+	        if (loginSettings.scopes && this.version === EndPointVersion.v1) {
 	            var e = new Error();
-	            e.text = "Scopes can only be used with OAuth v2.";
+	            e.text = "Scopes can only be used with endpoint v2.";
 	            callback(e);
 	            return;
 	        }
@@ -1582,7 +1635,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if (loginSettings.tenant) {
 	            loginURL += "&tenant=" + encodeURIComponent(loginSettings.tenant);
 	        }
-	        if (this.version === OAuthVersion.v2) {
+	        if (this.version === EndPointVersion.v2) {
 	            if (!loginSettings.scopes)
 	                loginSettings.scopes = [];
 	            if (loginSettings.scopes.indexOf("profile") < 0)

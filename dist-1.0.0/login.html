@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Active Directory Helper</title>
+	<meta charset="utf-8" />
+    <meta http-equiv="cache-control" content="max-age=0" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <meta http-equiv="expires" content="0" />
+    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+    <meta http-equiv="pragma" content="no-cache" /> 
+</head>
+<body>
+    <div id="message"></div>
+
+    <script type="text/javascript">
+
+        function addEvent(element, eventName, fn) {
+            if (element.addEventListener)
+                element.addEventListener(eventName, fn, false);
+            else if (element.attachEvent)
+                element.attachEvent('on' + eventName, fn);
+        }
+
+        function parseQueryString(str) {
+            var queryString = str || window.location.search || '';
+            var keyValPairs = [];
+            var params = {};
+            queryString = queryString.replace(/.*?\?/, "");
+            if (queryString.length) {
+                keyValPairs = queryString.split('&');
+                for (var pairNum in keyValPairs) {
+                    var keyValPairs2 = keyValPairs[pairNum].split('#');
+                    for (var pairNum2 in keyValPairs2) {
+                        var key = keyValPairs2[pairNum2].split('=')[0];
+                        if (!key.length) continue;
+                        if (typeof params[key] === 'undefined')
+                            params[key] = [];
+                        params[key].push(keyValPairs2[pairNum2].split('=')[1]);
+                    }
+                }
+            }
+            return params;
+        }
+
+        function isLoginPopup() {
+            try {
+                return window.opener !== undefined && window.opener;
+            } catch (e) {
+                return true;
+            }
+            return false;
+        }
+
+        function isIFrame() {
+            try {
+                return window.parent !== window.self;
+            } catch (e) {
+                return true;
+            }
+            return false;
+        }
+        function checkParam(name, value) {
+            var params = parseQueryString(window.location.href);
+            if (!params[name])
+                return false;
+            return (params[name][0] === value);
+        }
+
+        addEvent(window, 'load', function (event)  {
+            //Read the current URL query string
+            var params = parseQueryString(window.location.href);
+
+           
+
+            if (isLoginPopup()) {
+                //We're in a popup. We may be trying to login or to acquire a token with consent
+
+                if (params["error_description"]) {
+                    //Did we just get an error?
+                    var type = "";
+                    if (params["state"][0].substr(0, 5) === "login")
+                        type = "id_token";
+                    else
+                        type = "access_token";
+
+                    window.opener.postMessage({
+                        "type":type,
+                        "error": params["error_description"][0]
+                    }, window.opener.location.href);
+                    window.close();
+                    return;
+                }
+
+                //Did we just receive an ID token? Then login completed
+                if (window.location.href.indexOf("#id_token") > 0 || params["id_token"]) {
+                    //We have the id token, hand back to the caller window
+                    var idToken = "";
+                    if (params["id_token"]) {
+                        idToken = params["id_token"][0];
+                    } else {
+                        idToken = window.location.href.substring(window.location.href.indexOf("#id_token") + 9);
+                    }
+                    if (window.opener.location.hostname !== window.location.hostname) { throw "not domain matched"; }
+                    window.opener.postMessage({
+                        "type": "id_token",
+                        "token": idToken,
+                        "state": params["state"][0]
+                    }, window.opener.location.href);
+                    window.close();
+                    return;
+                }
+
+                //Did we just receive an access token?
+                if (window.location.href.indexOf("#access_token") > 0 || params["access_token"]) {
+                    var token = "";
+                    if (params["access_token"]) {
+                        token = params["access_token"][0];
+                    } else {
+                        token=window.location.href.substring(window.location.href.indexOf("#access_token=") + 14);
+                        token = token.substr(0, token.indexOf("&"));
+                    }
+                    if (window.opener.location.hostname !== window.location.hostname) { throw "not domain matched"; }
+                    window.opener.postMessage({
+                        "type": "access_token",
+                        "token": token,
+                        "state": params["state"][0]
+                    }, window.opener.location.href);
+                    window.close();
+                    return;
+                }
+
+                //Find out whether we're here for a login or a token              
+                if (params["state"][0].substr(0,5)==="login") {
+                    //we don't have the id token, so let's go do the login
+                    if (checkParam("version", "1")) {
+                        window.location.href = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token&client_id=" + params["clientId"][0] +
+                        "&redirect_uri=" + params["redirectUri"][0] +
+                        "&state=" + params["state"][0] +
+                        "&nonce=" + params["nonce"][0];
+                    } else if (checkParam("version", "2")) {
+                        var scope = "";
+                        if (params["scopes"]) {
+                            scope = params["scopes"][0];
+                        } else {
+                            scope = "openid profile";
+                        }
+                        var url = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?response_type=id_token&client_id=" + params["clientId"][0] +
+                        "&redirect_uri=" + params["redirectUri"][0] +
+                        "&response_mode=fragment" +
+                        "&scope=" + scope +
+                        "&state=" + params["state"][0] +
+                        "&nonce=" + params["nonce"][0];
+
+                        if (params["p"][0] != "") {
+                            url += "&p=" + params["p"][0];
+                        }
+                        
+                        if (params["tenant"]) {
+                            url=url.replace("https://login.microsoftonline.com/common/", "https://login.microsoftonline.com/" + params["tenant"][0] + "/");
+                        }
+                        window.location.href = url;
+                    }
+                } else if (params["state"][0].substr(0,5)==="token"){
+                    //requesting token with consent on a popup
+
+                    window.location.href = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?response_type=token&client_id=" + params["clientId"][0] +
+                         "&redirect_uri=" + params["redirectUri"][0] +
+                         "&response_mode=fragment" +
+                         "&scope=" + params["scopes"][0] +
+                         "&state=" + params["state"][0] +
+                         "&nonce=" + params["nonce"][0];
+                }
+            }
+            else if (isIFrame()) {
+                if (params["error_description"]) {
+                    window.parent.postMessage({
+                        "type": "access_token",
+                        "error": params["error_description"][0]
+                    }, window.parent.location.href);
+                }
+
+                //We're in the iframe, this means we're going to acquire/renew a token
+                if (window.location.href.indexOf("#access_token") > 0) {
+                    //Have the token, return it
+                    var token = window.location.href.substring(window.location.href.indexOf("#access_token=") + 14);
+                    token = token.substr(0, token.indexOf("&"));
+                    if (window.parent.location.hostname !== window.location.hostname) { throw "not domain matched"; }
+                    window.parent.postMessage({
+                        "type": "access_token",
+                        "token": token,
+                        "state": params["state"][0]
+                    }, window.parent.location.href);
+                } else {
+                    //Don't have the token yet
+                    if (checkParam("version", "1")) {
+                        window.location.href = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=token&client_id=" + params["clientId"][0] +
+                        "&resource=" + params["resource"][0] +
+                        "&redirect_uri=" + params["redirectUri"][0] +
+                        "&prompt=none" +
+                        "&nonce=" + params["nonce"][0] +
+                        "&state=" + params["state"][0];
+                    } else if (checkParam("version", "2")) {
+                       
+                        var uri = "https://login.microsoftonline.com/common/oauth2/v2.0/authorize?response_type=token&client_id=" + params["clientId"][0] +
+                        "&redirect_uri=" + params["redirectUri"][0] +
+                        "&prompt=none" +
+                        "&login_hint=" + params["login_hint"][0] +
+                        "&domain_hint=" + params["domain_hint"][0] +
+                        "&nonce=" + params["nonce"][0] +
+                        "&state=" + params["state"][0] +
+                        "&scope=" + params["scopes"][0];
+                        window.location.href = uri;
+                    }
+
+                }
+            }
+            else {
+                document.getElementById("message").innerText = "Contact the application developer. Error: login page should only be used within a iframe or popup.";
+            }
+        });
+    </script>
+
+</body>
+</html>
