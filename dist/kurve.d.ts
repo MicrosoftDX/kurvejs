@@ -70,7 +70,7 @@ declare module 'Kurve/src/identity' {
 	    getCurrentEndPointVersion(): EndPointVersion;
 	    getAccessTokenAsync(resource: string): Promise<string, Error>;
 	    getAccessToken(resource: string, callback: PromiseCallback<string>): void;
-	    handleNodeCallback(req: any, res: any, http: any, persistDataCallback: (key: string, value: string, expiry: Date) => void, retrieveDataCallback: (key: string) => string): void;
+	    handleNodeCallback(req: any, res: any, https: any, persistDataCallback: (key: string, value: string, expiry: Date) => void, retrieveDataCallback: (key: string) => string): void;
 	    getAccessTokenForScopesAsync(scopes: string[], promptForConsent?: boolean): Promise<string, Error>;
 	    getAccessTokenForScopes(scopes: string[], promptForConsent: boolean, callback: (token: string, error: Error) => void): void;
 	    loginAsync(loginSettings?: {

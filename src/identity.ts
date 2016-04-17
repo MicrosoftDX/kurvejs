@@ -375,7 +375,7 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
             document.body.appendChild(iframe);
         }
 
-        public handleNodeCallback(req:any,res:any,http:any,persistDataCallback:(key:string,value:string, expiry:Date)=>void, retrieveDataCallback:(key:string)=>string)
+        public handleNodeCallback(req:any,res:any,https:any,persistDataCallback:(key:string,value:string, expiry:Date)=>void, retrieveDataCallback:(key:string)=>string)
         {
             this.NodePersistDataCallBack=persistDataCallback;
             this.NodeRetrieveDataCallBack=retrieveDataCallback;
@@ -389,18 +389,49 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
                 if (code){
                     var codeFromRequest = params["code"][0];
                     var stateFromRequest = params["state"][0];
-                    var cachedState = retrieveDataCallback(stateFromRequest);
+                    var cachedState = retrieveDataCallback("state|" + stateFromRequest);
                     if (cachedState){
                         if (cachedState==="waiting"){
                             var expiry = new Date(new Date().getTime() +  86400000);
                             persistDataCallback("state|" + stateFromRequest,"done",expiry);
 
+                            var post_data ="grant_type=authorization_code" +
+                            "&client_id=" + encodeURIComponent(this.clientId) + 
+                            "&code=" + encodeURIComponent(codeFromRequest) + 
+                            "&redirect_uri=" + encodeURIComponent(this.tokenProcessorUrl) +
+                            "&resource=" + encodeURIComponent("https://graph.microsoft.com") +
+                            "&client_secret=" + encodeURIComponent(this.appSecret);
+                            
+                            var post_options = {
+                                host: 'login.microsoftonline.com',
+                                port: '443',
+                                path: '/common/oauth2/token',
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'Content-Length': post_data.length,
+                                       accept: '*/*'
+                                }
+                            };
+
+                            var post_req = https.request(post_options, function(res) {
+                                res.setEncoding('utf8');
+                                res.on('data', function (chunk) {
+                                    console.log('Response: ' + chunk);
+                                });
+                            });
+                            
+                            post_req.write(post_data);
+                            post_req.end();
+
                         }else {
+                            //same state has been reused, not allowed
 							res.writeHead( 500, "Replay detected", {'content-type' : 'text/plain'});
 							res.end( "Replay detected");
 	                    }
 	                }
 	                else {
+                        //state doesn't match any of our cached ones
 						res.writeHead( 500, "State doesn't match", {'content-type' : 'text/plain'});
     					res.end( "State doesn't match");
 	                }

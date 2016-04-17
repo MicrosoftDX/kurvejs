@@ -1481,7 +1481,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	            "&op=token";
 	        document.body.appendChild(iframe);
 	    };
-	    Identity.prototype.handleNodeCallback = function (req, res, http, persistDataCallback, retrieveDataCallback) {
+	    Identity.prototype.handleNodeCallback = function (req, res, https, persistDataCallback, retrieveDataCallback) {
 	        this.NodePersistDataCallBack = persistDataCallback;
 	        this.NodeRetrieveDataCallBack = retrieveDataCallback;
 	        var url = req.url;
@@ -1492,11 +1492,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	            if (code) {
 	                var codeFromRequest = params["code"][0];
 	                var stateFromRequest = params["state"][0];
-	                var cachedState = retrieveDataCallback(stateFromRequest);
+	                var cachedState = retrieveDataCallback("state|" + stateFromRequest);
 	                if (cachedState) {
 	                    if (cachedState === "waiting") {
 	                        var expiry = new Date(new Date().getTime() + 86400000);
 	                        persistDataCallback("state|" + stateFromRequest, "done", expiry);
+	                        var post_data = "grant_type=authorization_code" +
+	                            "&client_id=" + encodeURIComponent(this.clientId) +
+	                            "&code=" + encodeURIComponent(codeFromRequest) +
+	                            "&redirect_uri=" + encodeURIComponent(this.tokenProcessorUrl) +
+	                            "&resource=" + encodeURIComponent("https://graph.microsoft.com") +
+	                            "&client_secret=" + encodeURIComponent(this.appSecret);
+	                        var post_options = {
+	                            host: 'login.microsoftonline.com',
+	                            port: '443',
+	                            path: '/common/oauth2/token',
+	                            method: 'POST',
+	                            headers: {
+	                                'Content-Type': 'application/x-www-form-urlencoded',
+	                                'Content-Length': post_data.length,
+	                                accept: '*/*'
+	                            }
+	                        };
+	                        var post_req = https.request(post_options, function (res) {
+	                            res.setEncoding('utf8');
+	                            res.on('data', function (chunk) {
+	                                console.log('Response: ' + chunk);
+	                            });
+	                        });
+	                        post_req.write(post_data);
+	                        post_req.end();
 	                    }
 	                    else {
 	                        res.writeHead(500, "Replay detected", { 'content-type': 'text/plain' });
