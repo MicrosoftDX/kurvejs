@@ -291,14 +291,15 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
             }), expiration);
         }
 
-        private decodeAccessToken(accessToken: string, resource?:string, scopes?:string[]): void {
+        private decodeAccessToken(accessToken: string, resource?:string, scopes?:string[]): CachedToken {
             var decodedToken = this.base64Decode(accessToken.substring(accessToken.indexOf('.') + 1, accessToken.lastIndexOf('.')));
             var decodedTokenJSON = JSON.parse(decodedToken);
             var expiryDate = new Date(new Date('01/01/1970 0:0 UTC').getTime() + parseInt(decodedTokenJSON.exp) * 1000);
             var key = resource || scopes.join(" ");
 
             var token = new CachedToken(key, scopes, resource, accessToken, expiryDate);
-            this.tokenCache.add(token);
+         
+            return token;
         }
 
         public getIdToken(): any {
@@ -352,7 +353,8 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
                     callback(error);
                 }
                 else {
-                    this.decodeAccessToken(token, resource);
+                    var t = this.decodeAccessToken(token, resource);
+                    this.tokenCache.add(t);
                     callback(null, token);
                 }
             });
@@ -375,7 +377,20 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
             document.body.appendChild(iframe);
         }
 
-        public handleNodeCallback(req:any,res:any,https:any,persistDataCallback:(key:string,value:string, expiry:Date)=>void, retrieveDataCallback:(key:string)=>string)
+        private parseNodeCookies (req) {
+            var list = {};
+            var rc = req.headers.cookie;
+
+            rc && rc.split(';').forEach(function( cookie ) {
+                var parts = cookie.split('=');
+                list[parts.shift().trim()] = decodeURI(parts.join('='));
+            });
+
+            return list;
+        }
+
+
+        public handleNodeCallback(req:any,res:any,https:any,crypto:any,persistDataCallback:(key:string,value:string, expiry:Date)=>void, retrieveDataCallback:(key:string)=>string): Promise<boolean, Error>
         {
             this.NodePersistDataCallBack=persistDataCallback;
             this.NodeRetrieveDataCallBack=retrieveDataCallback;
@@ -384,8 +399,14 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
             var params = this.parseQueryString(url);
             var code = this.token("code=", url);
             var accessToken =this.token("#access_token", url);
+            var cookies = this.parseNodeCookies(req);
+            
+            var d = new Deferred<boolean, Error>();
+         
+            
             
             if (this.version===EndPointVersion.v1){
+               
                 if (code){
                     var codeFromRequest = params["code"][0];
                     var stateFromRequest = params["state"][0];
@@ -414,30 +435,53 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
                                 }
                             };
 
-                            var post_req = https.request(post_options, function(res) {
-                                res.setEncoding('utf8');
-                                res.on('data', function (chunk) {
-                                    console.log('Response: ' + chunk);
-                                });
-                            });
+                           var post_req = https.request(post_options,  (response)=> {
+	                            response.setEncoding('utf8');
+	                            response.on('data',  (chunk)=> {
+	                                var chunkJson = JSON.parse(chunk);
+	                                var decodedToken = JSON.parse(this.base64Decode(chunkJson.access_token.substring(chunkJson.access_token.indexOf('.') + 1, chunkJson.access_token.lastIndexOf('.'))));
+	                                var upn = decodedToken.upn;
+	                                var sha = crypto.createHash('sha256');
+	                                sha.update(Math.random().toString());
+	                                var sessionID = sha.digest('hex');
+	                                var expiry = new Date(new Date().getTime() + 30 * 60 * 1000);
+	                                persistDataCallback("session|" + sessionID, upn, expiry);
+	                                res.writeHead(302, {
+	                                    'Set-Cookie': 'kurveSession=' + sessionID,
+	                                    'Location': '/' 
+	                                });
+	                                res.end();
+                                    d.resolve(true);
+                                 
+	                            });
+	                        });
                             
                             post_req.write(post_data);
                             post_req.end();
-
                         }else {
                             //same state has been reused, not allowed
 							res.writeHead( 500, "Replay detected", {'content-type' : 'text/plain'});
 							res.end( "Replay detected");
+                            d.resolve(false);  
 	                    }
 	                }
 	                else {
                         //state doesn't match any of our cached ones
 						res.writeHead( 500, "State doesn't match", {'content-type' : 'text/plain'});
     					res.end( "State doesn't match");
+                        d.resolve(false);
 	                }
+                    return d.promise;
                     
                 }else
                 {
+                    if (cookies["kurveSession"]){
+                        var upn = retrieveDataCallback("session|" + cookies["kurveSession"]);
+                        if (upn){
+                            d.resolve(true);
+                            return d.promise;
+                        }
+                    }                    
                     var state:string =this.generateNonce();
                     var expiry = new Date(new Date().getTime() +  900000);
                     
@@ -451,10 +495,13 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
                     res.writeHead(302, {'Location': url});
 
                     res.end();
+                    d.resolve(false);
+                    return d.promise;
                 }
             }else {
                 //TODO: v2
-                
+                   d.resolve(false);
+                   return d.promise;
             }
         }
 
@@ -500,7 +547,8 @@ import { Deferred, Promise, PromiseCallback } from "./promises";
                     }
                 }
                 else {
-                    this.decodeAccessToken(token, null, scopes);
+                    var t = this.decodeAccessToken(token, null, scopes);
+                    this.tokenCache.add(t);
                     callback(token, null);
                 }
             });

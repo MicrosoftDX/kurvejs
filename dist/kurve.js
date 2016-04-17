@@ -1417,7 +1417,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var expiryDate = new Date(new Date('01/01/1970 0:0 UTC').getTime() + parseInt(decodedTokenJSON.exp) * 1000);
 	        var key = resource || scopes.join(" ");
 	        var token = new CachedToken(key, scopes, resource, accessToken, expiryDate);
-	        this.tokenCache.add(token);
+	        return token;
 	    };
 	    Identity.prototype.getIdToken = function () {
 	        return this.idToken;
@@ -1463,7 +1463,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	                callback(error);
 	            }
 	            else {
-	                _this.decodeAccessToken(token, resource);
+	                var t = _this.decodeAccessToken(token, resource);
+	                _this.tokenCache.add(t);
 	                callback(null, token);
 	            }
 	        });
@@ -1481,13 +1482,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	            "&op=token";
 	        document.body.appendChild(iframe);
 	    };
-	    Identity.prototype.handleNodeCallback = function (req, res, https, persistDataCallback, retrieveDataCallback) {
+	    Identity.prototype.parseNodeCookies = function (req) {
+	        var list = {};
+	        var rc = req.headers.cookie;
+	        rc && rc.split(';').forEach(function (cookie) {
+	            var parts = cookie.split('=');
+	            list[parts.shift().trim()] = decodeURI(parts.join('='));
+	        });
+	        return list;
+	    };
+	    Identity.prototype.handleNodeCallback = function (req, res, https, crypto, persistDataCallback, retrieveDataCallback) {
+	        var _this = this;
 	        this.NodePersistDataCallBack = persistDataCallback;
 	        this.NodeRetrieveDataCallBack = retrieveDataCallback;
 	        var url = req.url;
 	        var params = this.parseQueryString(url);
 	        var code = this.token("code=", url);
 	        var accessToken = this.token("#access_token", url);
+	        var cookies = this.parseNodeCookies(req);
+	        var d = new promises_1.Deferred();
 	        if (this.version === EndPointVersion.v1) {
 	            if (code) {
 	                var codeFromRequest = params["code"][0];
@@ -1514,10 +1527,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	                                accept: '*/*'
 	                            }
 	                        };
-	                        var post_req = https.request(post_options, function (res) {
-	                            res.setEncoding('utf8');
-	                            res.on('data', function (chunk) {
-	                                console.log('Response: ' + chunk);
+	                        var post_req = https.request(post_options, function (response) {
+	                            response.setEncoding('utf8');
+	                            response.on('data', function (chunk) {
+	                                var chunkJson = JSON.parse(chunk);
+	                                var decodedToken = JSON.parse(_this.base64Decode(chunkJson.access_token.substring(chunkJson.access_token.indexOf('.') + 1, chunkJson.access_token.lastIndexOf('.'))));
+	                                var upn = decodedToken.upn;
+	                                var sha = crypto.createHash('sha256');
+	                                sha.update(Math.random().toString());
+	                                var sessionID = sha.digest('hex');
+	                                var expiry = new Date(new Date().getTime() + 30 * 60 * 1000);
+	                                persistDataCallback("session|" + sessionID, upn, expiry);
+	                                res.writeHead(302, {
+	                                    'Set-Cookie': 'kurveSession=' + sessionID,
+	                                    'Location': '/'
+	                                });
+	                                res.end();
+	                                d.resolve(true);
 	                            });
 	                        });
 	                        post_req.write(post_data);
@@ -1526,14 +1552,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    else {
 	                        res.writeHead(500, "Replay detected", { 'content-type': 'text/plain' });
 	                        res.end("Replay detected");
+	                        d.resolve(false);
 	                    }
 	                }
 	                else {
 	                    res.writeHead(500, "State doesn't match", { 'content-type': 'text/plain' });
 	                    res.end("State doesn't match");
+	                    d.resolve(false);
 	                }
+	                return d.promise;
 	            }
 	            else {
+	                if (cookies["kurveSession"]) {
+	                    var upn = retrieveDataCallback("session|" + cookies["kurveSession"]);
+	                    if (upn) {
+	                        d.resolve(true);
+	                        return d.promise;
+	                    }
+	                }
 	                var state = this.generateNonce();
 	                var expiry = new Date(new Date().getTime() + 900000);
 	                persistDataCallback("state|" + state, "waiting", expiry);
@@ -1543,9 +1579,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	                    "&state=" + encodeURIComponent(state);
 	                res.writeHead(302, { 'Location': url });
 	                res.end();
+	                d.resolve(false);
+	                return d.promise;
 	            }
 	        }
 	        else {
+	            d.resolve(false);
+	            return d.promise;
 	        }
 	    };
 	    Identity.prototype.getAccessTokenForScopesAsync = function (scopes, promptForConsent) {
@@ -1587,7 +1627,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }
 	            }
 	            else {
-	                _this.decodeAccessToken(token, null, scopes);
+	                var t = _this.decodeAccessToken(token, null, scopes);
+	                _this.tokenCache.add(t);
 	                callback(token, null);
 	            }
 	        });
