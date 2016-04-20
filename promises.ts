@@ -1,24 +1,16 @@
-module kurve {
-    
-// Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
+﻿// Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
+// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 
+module Kurve {
 
-
-  export class Error {
-        public status: number;
-        public statusText: string;
-        public text: string;
-        public other: any;
-    }
-    
     function DispatchDeferred(closure: () => void) {
         setTimeout(closure, 0);
     }
 
-     enum PromiseState { Pending, ResolutionInProgress, Resolved, Rejected }
+    enum PromiseState { Pending, ResolutionInProgress, Resolved, Rejected }
 
     export interface PromiseCallback<T> {
-        (error: Error, result?: T): void;
+        (result:T, error: Error): void;
     }
 
     class Client {
@@ -217,13 +209,13 @@ module kurve {
         private _error: any;
     }
 
-    export class Promise<T, E>  {
+    export class Promise<T, E> implements Promise<T, E> {
         constructor(private _deferred: Deferred<T, E>) { }
 
         then<R>(
             successCallback?: (result: T) => R,
             errorCallback?: (error: E) => R
-        );
+        ): Promise<R, E>;
 
         then(successCallback: any, errorCallback: any): any {
             return this._deferred.then(successCallback, errorCallback);
@@ -231,12 +223,45 @@ module kurve {
 
         fail<R>(
             errorCallback?: (error: E) => R
-        );
+        ): Promise<R, E>;
 
         fail(errorCallback: any): any {
             return this._deferred.then(undefined, errorCallback);
         }
     }
+}
 
-} //remove during bundling
+//*********************************************************   
+//   
+//Kurve js, https://github.com/microsoftdx/kurvejs
+//  
+//Copyright (c) Microsoft Corporation  
+//All rights reserved.   
+//  
+// MIT License:  
+// Permission is hereby granted, free of charge, to any person obtaining  
+// a copy of this software and associated documentation files (the  
+// ""Software""), to deal in the Software without restriction, including  
+// without limitation the rights to use, copy, modify, merge, publish,  
+// distribute, sublicense, and/or sell copies of the Software, and to  
+// permit persons to whom the Software is furnished to do so, subject to  
+// the following conditions:  
 
+
+
+
+// The above copyright notice and this permission notice shall be  
+// included in all copies or substantial portions of the Software.  
+
+
+
+
+// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,  
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF  
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND  
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE  
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION  
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION  
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
+//   
+//*********************************************************   
