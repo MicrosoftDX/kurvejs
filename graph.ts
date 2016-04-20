@@ -1,9 +1,8 @@
 module kurve {
     export class Graph {
-        public static foo = () => "test";
         private req: XMLHttpRequest = null;
         private accessToken: string = null;
-        private KurveIdentity: Identity = null;
+        KurveIdentity: Identity = null;
         private defaultResourceID: string = "https://graph.microsoft.com";
         private baseUrl: string = "https://graph.microsoft.com/v1.0";
 
@@ -81,15 +80,6 @@ module kurve {
             return d.promise;
          }
  
-        //Only adds scopes when linked to a v2 Oauth of kurve identity
-        private scopesForV2(scopes: string[]): string[] {
-            if (!this.KurveIdentity)
-                return null;
-            if (this.KurveIdentity.getCurrentOauthVersion() === OAuthVersion.v1)
-                return null;
-            else return scopes;
-        }
-
         public get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?:string[]): void {
             var xhr = new XMLHttpRequest();
             if (responseType)

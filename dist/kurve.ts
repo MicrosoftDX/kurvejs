@@ -1,22 +1,25 @@
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 module kurve  {
+    
 // Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
 
- export class Error {
+
+
+  export class Error {
         public status: number;
         public statusText: string;
         public text: string;
         public other: any;
     }
     
-     function DispatchDeferred(closure: () => void) {
+    function DispatchDeferred(closure: () => void) {
         setTimeout(closure, 0);
     }
 
-    enum PromiseState { Pending, ResolutionInProgress, Resolved, Rejected }
+     enum PromiseState { Pending, ResolutionInProgress, Resolved, Rejected }
 
     export interface PromiseCallback<T> {
-        (result:T, error: Error): void;
+        (error: Error, result?: T): void;
     }
 
     class Client {
@@ -215,13 +218,13 @@ module kurve  {
         private _error: any;
     }
 
-    export class Promise<T, E> implements Promise<T, E> {
+    export class Promise<T, E>  {
         constructor(private _deferred: Deferred<T, E>) { }
 
         then<R>(
             successCallback?: (result: T) => R,
             errorCallback?: (error: E) => R
-        ): Promise<R, E>;
+        );
 
         then(successCallback: any, errorCallback: any): any {
             return this._deferred.then(successCallback, errorCallback);
@@ -229,7 +232,7 @@ module kurve  {
 
         fail<R>(
             errorCallback?: (error: E) => R
-        ): Promise<R, E>;
+        );
 
         fail(errorCallback: any): any {
             return this._deferred.then(undefined, errorCallback);
@@ -237,40 +240,7 @@ module kurve  {
     }
 
 
-//*********************************************************   
-//   
-//Kurve js, https://github.com/microsoftdx/kurvejs
-//  
-//Copyright (c) Microsoft Corporation  
-//All rights reserved.   
-//  
-// MIT License:  
-// Permission is hereby granted, free of charge, to any person obtaining  
-// a copy of this software and associated documentation files (the  
-// ""Software""), to deal in the Software without restriction, including  
-// without limitation the rights to use, copy, modify, merge, publish,  
-// distribute, sublicense, and/or sell copies of the Software, and to  
-// permit persons to whom the Software is furnished to do so, subject to  
-// the following conditions:  
 
-
-
-
-// The above copyright notice and this permission notice shall be  
-// included in all copies or substantial portions of the Software.  
-
-
-
-
-// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,  
-// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF  
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND  
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE  
-// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION  
-// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION  
-// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
-//   
-//*********************************************************   
 
 
 
@@ -831,10 +801,9 @@ module kurve  {
 
 
     export class Graph {
-        public static foo = () => "test";
         private req: XMLHttpRequest = null;
         private accessToken: string = null;
-        private KurveIdentity: Identity = null;
+        KurveIdentity: Identity = null;
         private defaultResourceID: string = "https://graph.microsoft.com";
         private baseUrl: string = "https://graph.microsoft.com/v1.0";
 
@@ -912,15 +881,6 @@ module kurve  {
             return d.promise;
          }
  
-        //Only adds scopes when linked to a v2 Oauth of kurve identity
-        private scopesForV2(scopes: string[]): string[] {
-            if (!this.KurveIdentity)
-                return null;
-            if (this.KurveIdentity.getCurrentOauthVersion() === OAuthVersion.v1)
-                return null;
-            else return scopes;
-        }
-
         public get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?:string[]): void {
             var xhr = new XMLHttpRequest();
             if (responseType)
@@ -1260,7 +1220,7 @@ Note: This initial stab only includes a few familiar pieces of the Microsoft Gra
 */
 
 
-export class Scopes {
+class Scopes {
     private static rootUrl = "https://graph.microsoft.com/";
     static General = {
         OpenId: "openid",
@@ -1375,6 +1335,10 @@ export abstract class Node {
     constructor(protected graph:Graph, protected path:string) {
     }
 
+    //Only adds scopes when linked to a v2 Oauth of kurve identity
+    protected scopesForV2 = (scopes: string[]) =>
+        this.graph.KurveIdentity && this.graph.KurveIdentity.getCurrentOauthVersion() === OAuthVersion.v2 ? scopes : null;
+    
     pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
 }
 
@@ -1398,7 +1362,7 @@ export class Attachment extends Node {
         events: [Scopes.Calendars.Read],
     }
 
-    GetAttachment = (odataQuery?:ODataQuery) => this.graph.Get<AttachmentDataModel, Attachment>(this.pathWithQuery(odataQuery), this, Attachment.scopes[this.context]);
+    GetAttachment = (odataQuery?:ODataQuery) => this.graph.Get<AttachmentDataModel, Attachment>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Attachment.scopes[this.context]));
 /*    
     PATCH = this.graph.PATCH<AttachmentDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<AttachmentDataModel>(this.path, this.query);
@@ -1412,7 +1376,7 @@ export class Attachments extends CollectionNode {
 
     $ = (attachmentId:string) => new Attachment(this.graph, this.path, this.context, attachmentId);
     
-    GetAttachments = (odataQuery?:ODataQuery) => this.graph.GetCollection<AttachmentDataModel, Attachments>(this.pathWithQuery(odataQuery), this, new Attachments(this.graph, null, this.context), Attachment.scopes[this.context]);
+    GetAttachments = (odataQuery?:ODataQuery) => this.graph.GetCollection<AttachmentDataModel, Attachments>(this.pathWithQuery(odataQuery), this, new Attachments(this.graph, null, this.context), this.scopesForV2(Attachment.scopes[this.context]));
 /*
     POST = this.graph.POST<AttachmentDataModel>(this.path, this.query);
 */
@@ -1426,7 +1390,7 @@ export class Message extends Node {
     get attachments() { return new Attachments(this.graph, this.path, "messages"); }
 
     GetMessage  = (odataQuery?:ODataQuery) => this.graph.Get<MessageDataModel, Message>(this.pathWithQuery(odataQuery), this, [Scopes.Mail.Read]);
-    SendMessage = (odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Message>(null, this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), this, [Scopes.Mail.Send]);
+    SendMessage = (odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Message>(null, this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), this, this.scopesForV2([Scopes.Mail.Send]));
 /*
     PATCH = this.graph.PATCH<MessageDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<MessageDataModel>(this.path, this.query);
@@ -1440,8 +1404,8 @@ export class Messages extends CollectionNode {
 
     $ = (messageId:string) => new Message(this.graph, this.path, messageId);
 
-    GetMessages     = (odataQuery?:ODataQuery) => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery(odataQuery), this, new Messages(this.graph), [Scopes.Mail.Read, Scopes.Mail.ReadWrite]);
-    CreateMessage   = (object:MessageDataModel, odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery(odataQuery), this, [Scopes.Mail.ReadWrite]);
+    GetMessages     = (odataQuery?:ODataQuery) => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery(odataQuery), this, new Messages(this.graph), this.scopesForV2([Scopes.Mail.Read, Scopes.Mail.ReadWrite]));
+    CreateMessage   = (object:MessageDataModel, odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Mail.ReadWrite]));
 }
 
 export class Event extends Node {
@@ -1451,7 +1415,7 @@ export class Event extends Node {
 
     get attachments() { return new Attachments(this.graph, this.path, "events"); }
 
-    GetEvent = (odataQuery?:ODataQuery) => this.graph.Get<EventDataModel, Event>(this.pathWithQuery(odataQuery), this, [Scopes.Calendars.Read]);
+    GetEvent = (odataQuery?:ODataQuery) => this.graph.Get<EventDataModel, Event>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Calendars.Read]));
 /*
     PATCH = this.graph.PATCH<EventDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<EventDataModel>(this.path, this.query);
@@ -1467,7 +1431,7 @@ export class Events extends CollectionNode {
 
     $ = (eventId:string) => new Event(this.graph, this.path, eventId);
 
-    GetEvents = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery(odataQuery), this, new Events(this.graph), eventsScopes);
+    GetEvents = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery(odataQuery), this, new Events(this.graph), this.scopesForV2(eventsScopes));
 /*
     POST = this.graph.POST<EventDataModel>(this.path, this.query);
 */
@@ -1501,7 +1465,7 @@ export class MailFolders extends CollectionNode {
 
     $ = (mailFolderId:string) => new MailFolder(this.graph, this.path, mailFolderId);
 
-    GetMailFolders = (odataQuery?:ODataQuery) => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery(odataQuery), this, new MailFolders(this.graph), mailFolderScopes);
+    GetMailFolders = (odataQuery?:ODataQuery) => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery(odataQuery), this, new MailFolders(this.graph), this.scopesForV2(mailFolderScopes));
 }
 
 let usersScopes = [Scopes.User.ReadBasicAll, Scopes.User.ReadAll, Scopes.User.ReadWriteAll, Scopes.Directory.ReadAll, Scopes.Directory.ReadWriteAll, Scopes.Directory.AccessAsUserAll];
@@ -1510,7 +1474,6 @@ let userScopes = usersScopes.concat([Scopes.User.Read, Scopes.User.ReadWrite]);
 export class User extends Node {
     constructor(protected graph:Graph, path:string="", userId?:string) {
         super(graph, userId ? path + "/" + userId : path + "/me");
-        console.log("Graph.foo", Graph.foo);
     }
 
     get messages()      { return new Messages(this.graph, this.path); }
@@ -1518,7 +1481,7 @@ export class User extends Node {
     get calendarView()  { return new CalendarView(this.graph, this.path); }
     get mailFolders()   { return new MailFolders(this.graph, this.path) }
 
-    GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, User>(this.pathWithQuery(odataQuery), this, userScopes);
+    GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, User>(this.pathWithQuery(odataQuery), this, this.scopesForV2(userScopes));
 /*
     PATCH = this.graph.PATCH<UserDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<UserDataModel>(this.path, this.query);
@@ -1532,7 +1495,7 @@ export class Users extends CollectionNode {
 
     $ = (userId:string) => new User(this.graph, this.path, userId);
 
-    GetUsers = (odataQuery:ODataQuery) => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery(odataQuery), this, new Users(this.graph), userScopes);
+    GetUsers = (odataQuery?:ODataQuery) => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery(odataQuery), this, new Users(this.graph), this.scopesForV2(userScopes));
 /*
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */
