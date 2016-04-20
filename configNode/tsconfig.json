@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "target": "es5",
+    "sourceMap": true,
+    "noLib":false,
+    "module":"commonjs",
+    "declaration":true
+  },
+  "files": [
+	"../kurve.ts",
+	"../promises.ts",
+    "../graph.ts",
+    "../identity.ts",
+	"../reference.ts",
+    "../models.ts",
+    "../requestbuilder.ts"
+  ]
+}

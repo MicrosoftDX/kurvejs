@@ -352,7 +352,7 @@ export class Users extends CollectionNode {
 
     $ = (userId:string) => new User(this.graph, this.path, userId);
 
-    GetUsers = (odataQuery:ODataQuery) => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery(odataQuery), this, new Users(this.graph), userScopes);
+    GetUsers = (odataQuery?:ODataQuery) => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery(odataQuery), this, new Users(this.graph), userScopes);
 /*
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */
