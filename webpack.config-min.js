@@ -1,10 +1,10 @@
 var webpack = require('webpack');
 
 module.exports = {
-  entry: './src/kurve.ts',
+  entry: './kurve.ts',
   output: {
-    library: "Kurve",
-    libraryTarget: "umd",
+    library: "kurve",
+    libraryTarget: "amd",
     filename: 'dist/kurve.min.js'
   },
   devtool: 'source-map',
