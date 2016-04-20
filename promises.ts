@@ -1,9 +1,14 @@
-﻿// Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
-// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
+﻿module kurve {
+// Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
 
-module Kurve {
-
-    function DispatchDeferred(closure: () => void) {
+ export class Error {
+        public status: number;
+        public statusText: string;
+        public text: string;
+        public other: any;
+    }
+    
+     function DispatchDeferred(closure: () => void) {
         setTimeout(closure, 0);
     }
 
@@ -229,7 +234,7 @@ module Kurve {
             return this._deferred.then(undefined, errorCallback);
         }
     }
-}
+} //remove during bundling
 
 //*********************************************************   
 //   

@@ -1,25 +1,22 @@
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
-export module kurve {
-    
+module kurve  {
 // Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
 
-
-
-  export class Error {
+ export class Error {
         public status: number;
         public statusText: string;
         public text: string;
         public other: any;
     }
     
-    function DispatchDeferred(closure: () => void) {
+     function DispatchDeferred(closure: () => void) {
         setTimeout(closure, 0);
     }
 
-     enum PromiseState { Pending, ResolutionInProgress, Resolved, Rejected }
+    enum PromiseState { Pending, ResolutionInProgress, Resolved, Rejected }
 
     export interface PromiseCallback<T> {
-        (error: Error, result?: T): void;
+        (result:T, error: Error): void;
     }
 
     class Client {
@@ -218,13 +215,13 @@ export module kurve {
         private _error: any;
     }
 
-    export class Promise<T, E>  {
+    export class Promise<T, E> implements Promise<T, E> {
         constructor(private _deferred: Deferred<T, E>) { }
 
         then<R>(
             successCallback?: (result: T) => R,
             errorCallback?: (error: E) => R
-        );
+        ): Promise<R, E>;
 
         then(successCallback: any, errorCallback: any): any {
             return this._deferred.then(successCallback, errorCallback);
@@ -232,7 +229,7 @@ export module kurve {
 
         fail<R>(
             errorCallback?: (error: E) => R
-        );
+        ): Promise<R, E>;
 
         fail(errorCallback: any): any {
             return this._deferred.then(undefined, errorCallback);
@@ -240,7 +237,40 @@ export module kurve {
     }
 
 
+//*********************************************************   
+//   
+//Kurve js, https://github.com/microsoftdx/kurvejs
+//  
+//Copyright (c) Microsoft Corporation  
+//All rights reserved.   
+//  
+// MIT License:  
+// Permission is hereby granted, free of charge, to any person obtaining  
+// a copy of this software and associated documentation files (the  
+// ""Software""), to deal in the Software without restriction, including  
+// without limitation the rights to use, copy, modify, merge, publish,  
+// distribute, sublicense, and/or sell copies of the Software, and to  
+// permit persons to whom the Software is furnished to do so, subject to  
+// the following conditions:  
 
+
+
+
+// The above copyright notice and this permission notice shall be  
+// included in all copies or substantial portions of the Software.  
+
+
+
+
+// THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,  
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF  
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND  
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE  
+// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION  
+// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION  
+// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  
+//   
+//*********************************************************   
 
 
 
@@ -1229,10 +1259,6 @@ Some operations include parameters which transform into OData queries
 Note: This initial stab only includes a few familiar pieces of the Microsoft Graph.
 */
 
-//import { Promise,Error } from "./promises";
-//import { Graph } from "./graph";
-//import { Error } from "./identity";
-//import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel, MailFolderDataModel } from './models';
 
 export class Scopes {
     private static rootUrl = "https://graph.microsoft.com/";
@@ -1326,7 +1352,7 @@ export class Singleton<Model, N extends Node> {
     }
 
     get item() {
-        return this.raw;
+        return this.raw as Model;
     }
 }
 
@@ -1341,18 +1367,18 @@ export class Collection<Model, N extends CollectionNode> {
     }
 
     get items() {
-        return (this.raw.value ? this.raw.value : [this.raw]);
+        return (this.raw.value ? this.raw.value : [this.raw]) as Model[];
     }
 }
 
-export class Node {
+export abstract class Node {
     constructor(protected graph:Graph, protected path:string) {
     }
 
     pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
 }
 
-export class CollectionNode extends Node {    
+export abstract class CollectionNode extends Node {    
     private _nextLink:string;   // this is only set when the collection in question is from a nextLink
 
     pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => this._nextLink || pathWithQuery(this.path + pathSuffix, odataQuery);
@@ -1363,7 +1389,7 @@ export class CollectionNode extends Node {
 }
 
 export class Attachment extends Node {
-    constructor(graph:Graph, path:string, private context:string, attachmentId?:string) {
+    constructor(graph:Graph, path:string="", private context:string, attachmentId?:string) {
         super(graph, path + (attachmentId ? "/" + attachmentId : ""));
     }
 
@@ -1380,7 +1406,7 @@ export class Attachment extends Node {
 }
 
 export class Attachments extends CollectionNode {
-    constructor(graph:Graph, path:string, private context:string) {
+    constructor(graph:Graph, path:string="", private context:string) {
         super(graph, path + "/attachments");
     }
 
@@ -1419,7 +1445,7 @@ export class Messages extends CollectionNode {
 }
 
 export class Event extends Node {
-    constructor(graph:Graph, path:string, eventId:string) {
+    constructor(graph:Graph, path:string="", eventId:string) {
         super(graph, path + (eventId ? "/" + eventId : ""));
     }
 
@@ -1460,7 +1486,7 @@ export class CalendarView extends CollectionNode {
 let mailFolderScopes = [Scopes.Mail.Read, Scopes.Mail.ReadWrite];
 
 export class MailFolder extends Node {
-    constructor(graph:Graph, path:string, mailFolderId:string) {
+    constructor(graph:Graph, path:string="", mailFolderId:string) {
         super(graph, path + (mailFolderId ? "/" + mailFolderId : ""));
     }
 
@@ -1511,6 +1537,8 @@ export class Users extends CollectionNode {
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */
 }
+
+
 
 }
 
