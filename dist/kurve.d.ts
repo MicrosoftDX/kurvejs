@@ -343,22 +343,22 @@ declare module kurve {
         raw: any;
         self: N;
         constructor(raw: any, self: N);
-        item: any;
+        item: Model;
     }
     class Collection<Model, N extends CollectionNode> {
         raw: any;
         self: N;
         next: N;
         constructor(raw: any, self: N, next: N);
-        items: any;
+        items: Model[];
     }
-    class Node {
+    abstract class Node {
         protected graph: Graph;
         protected path: string;
         constructor(graph: Graph, path: string);
         pathWithQuery: (odataQuery?: OData | string, pathSuffix?: string) => string;
     }
-    class CollectionNode extends Node {
+    abstract class CollectionNode extends Node {
         private _nextLink;
         pathWithQuery: (odataQuery?: OData | string, pathSuffix?: string) => string;
         nextLink: string;

@@ -79,10 +79,6 @@ Some operations include parameters which transform into OData queries
 Note: This initial stab only includes a few familiar pieces of the Microsoft Graph.
 */
 
-//import { Promise,Error } from "./promises";
-//import { Graph } from "./graph";
-//import { Error } from "./identity";
-//import { UserDataModel, AttachmentDataModel, MessageDataModel, EventDataModel, MailFolderDataModel } from './models';
 
 export class Scopes {
     private static rootUrl = "https://graph.microsoft.com/";
@@ -176,7 +172,7 @@ export class Singleton<Model, N extends Node> {
     }
 
     get item() {
-        return this.raw;
+        return this.raw as Model;
     }
 }
 
@@ -191,18 +187,18 @@ export class Collection<Model, N extends CollectionNode> {
     }
 
     get items() {
-        return (this.raw.value ? this.raw.value : [this.raw]);
+        return (this.raw.value ? this.raw.value : [this.raw]) as Model[];
     }
 }
 
-export class Node {
+export abstract class Node {
     constructor(protected graph:Graph, protected path:string) {
     }
 
     pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
 }
 
-export class CollectionNode extends Node {    
+export abstract class CollectionNode extends Node {    
     private _nextLink:string;   // this is only set when the collection in question is from a nextLink
 
     pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => this._nextLink || pathWithQuery(this.path + pathSuffix, odataQuery);
@@ -213,7 +209,7 @@ export class CollectionNode extends Node {
 }
 
 export class Attachment extends Node {
-    constructor(graph:Graph, path:string, private context:string, attachmentId?:string) {
+    constructor(graph:Graph, path:string="", private context:string, attachmentId?:string) {
         super(graph, path + (attachmentId ? "/" + attachmentId : ""));
     }
 
@@ -230,7 +226,7 @@ export class Attachment extends Node {
 }
 
 export class Attachments extends CollectionNode {
-    constructor(graph:Graph, path:string, private context:string) {
+    constructor(graph:Graph, path:string="", private context:string) {
         super(graph, path + "/attachments");
     }
 
@@ -269,7 +265,7 @@ export class Messages extends CollectionNode {
 }
 
 export class Event extends Node {
-    constructor(graph:Graph, path:string, eventId:string) {
+    constructor(graph:Graph, path:string="", eventId:string) {
         super(graph, path + (eventId ? "/" + eventId : ""));
     }
 
@@ -310,7 +306,7 @@ export class CalendarView extends CollectionNode {
 let mailFolderScopes = [Scopes.Mail.Read, Scopes.Mail.ReadWrite];
 
 export class MailFolder extends Node {
-    constructor(graph:Graph, path:string, mailFolderId:string) {
+    constructor(graph:Graph, path:string="", mailFolderId:string) {
         super(graph, path + (mailFolderId ? "/" + mailFolderId : ""));
     }
 
@@ -361,5 +357,7 @@ export class Users extends CollectionNode {
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */
 }
+
+
 
 } //remove during bundling
