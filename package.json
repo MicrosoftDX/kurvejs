@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Kurve JS library",
   "license": "MIT",
-  "main": "kurve.js",
+  "main": "./dist/kurve.js",
   "repository": {
     "type": "git",
     "url": "https://github.com/MicrosoftDX/kurvejs"
