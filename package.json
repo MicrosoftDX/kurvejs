@@ -23,13 +23,5 @@
     "run-sequence": "^1.1.5",
     "ts-loader": "0.8.1",
     "typescript": "1.8.9"
-  },
-  "scripts": {
-    "build:cleanup": "node build/cleanup",
-    "build:dts": "dts-generator --target ES5 --main kurve --project ./ --out dist/kurve.d.ts --module amd",
-    "build:bundle": "webpack --config ./webpack.config.js --moduleName kurve",
-    "build:bundle-min": "webpack --config ./webpack.config-min.js",
-    "build:copy-index": "node build/copy-index",
-    "build": "npm run build:cleanup && npm run build:dts  && npm run build:bundle && npm run build:bundle-min && npm run build:copy-index"
   }
 }

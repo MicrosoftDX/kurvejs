@@ -31,7 +31,7 @@ gulp.task('clean', function () {
 });
 
 gulp.task('mergefilesClient', function () {
-  gulp.src(config.core.typescript,{base:config.build.srcDir})
+ return gulp.src(config.core.typescript,{base:config.build.srcDir})
     .pipe(replace('module kurve {', ''))
     .pipe(replace('} //remove during bundling', ''))
     .pipe(concat('kurve.ts'))
@@ -41,7 +41,7 @@ gulp.task('mergefilesClient', function () {
 });
 
 gulp.task('mergefilesNode', function () {
-  gulp.src(config.core.node,{base:config.build.srcDir})
+  return gulp.src(config.core.node,{base:config.build.srcDir})
     .pipe(replace('module kurve {', ''))
     .pipe(replace('} //remove during bundling', ''))
     .pipe(concat('kurve.ts'))
@@ -51,7 +51,7 @@ gulp.task('mergefilesNode', function () {
 });
 
 gulp.task('sourcemap',['mergefilesClient'], function () {
- gulp.src(clientFolder + 'kurve.ts')
+ return gulp.src(clientFolder + 'kurve.ts')
     .pipe(sourcemaps.init()) // sourcemaps init. currently redundant directory def, waiting for this - https://github.com/floridoo/gulp-sourcemaps/issues/111 
     .pipe(typescript({  
             noExternalResolve: true,  
@@ -101,22 +101,10 @@ gulp.task('copyreference', function () {
   return result; 
   
 });
-//gulp.task('buildNode2', function () {
-//  
-//  dts.bundle({
-//    name: 'kurve',
-//    main: './dist/reference.ts',
-//    baseDir: './dist'
-//});
-//
-//});
 
-gulp.task('packNode',['clean','buildNode'], function () {
-  return; 
-   
-});
 
-gulp.task('buildNode',['mergefilesNode'], function () {
+
+gulp.task('buildNode',['mergefilesNode','copyreference'], function () {
   var tsResult =gulp.src([nodeFolder + 'kurve.ts','./reference.ts'])
     .pipe(typescript({  
             noExternalResolve: false,  
@@ -139,12 +127,12 @@ gulp.task('buildNode',['mergefilesNode'], function () {
      ]); 
 });
 
-gulp.task('packNode',['clean','buildNode2'], function () {
+gulp.task('packNode',['buildNode'], function () {
   return; 
    
 });
 
-gulp.task('packBrowser',['clean','buildClient'], function () {
+gulp.task('packBrowser',['buildClient'], function () {
   var result = gulp.src(config.build.buildDir + '*.*')
         .pipe(gulp.dest('./dist-' + config.build.version ));
   return result; 
