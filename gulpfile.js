@@ -13,7 +13,8 @@ var addModuleExports = require("./gulp-addModuleExports");
 var replace = require("gulp-replace");
 var headerfooter = require('gulp-headerfooter');
 var dts = require('dts-bundle');
-var clientFolder='./client/';
+
+var clientFolder=config.build.outputDirectory + '-' + config.build.version + '/';
 var nodeFolder='./dist/';
 /*
 Compiles all typescript files and creating a declaration file.
