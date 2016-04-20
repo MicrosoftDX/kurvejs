@@ -835,7 +835,7 @@ module kurve  {
                 }
 
                 d.resolve(new Singleton<Model, N>(jsonResult, self));
-            });
+            }, null, scopes);
 
             return d.promise;
          }
@@ -855,7 +855,7 @@ module kurve  {
                 }
 
                 d.resolve(new Collection<Model,N>(jsonResult, self, next))
-            });
+            }, null, scopes);
 
             return d.promise;
          }

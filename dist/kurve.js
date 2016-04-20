@@ -692,7 +692,7 @@ var kurve;
                     return;
                 }
                 d.resolve(new Singleton(jsonResult, self));
-            });
+            }, null, scopes);
             return d.promise;
         };
         Graph.prototype.GetCollection = function (path, self, next, scopes) {
@@ -707,7 +707,7 @@ var kurve;
                     return;
                 }
                 d.resolve(new Collection(jsonResult, self, next));
-            });
+            }, null, scopes);
             return d.promise;
         };
         Graph.prototype.Post = function (object, path, self, scopes) {
