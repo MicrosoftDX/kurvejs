@@ -692,7 +692,7 @@ var kurve;
                     return;
                 }
                 d.resolve(new Singleton(jsonResult, self));
-            });
+            }, null, scopes);
             return d.promise;
         };
         Graph.prototype.GetCollection = function (path, self, next, scopes) {
@@ -707,7 +707,7 @@ var kurve;
                     return;
                 }
                 d.resolve(new Collection(jsonResult, self, next));
-            });
+            }, null, scopes);
             return d.promise;
         };
         Graph.prototype.Post = function (object, path, self, scopes) {
@@ -728,15 +728,6 @@ var kurve;
                         });
             */
             return d.promise;
-        };
-        //Only adds scopes when linked to a v2 Oauth of kurve identity
-        Graph.prototype.scopesForV2 = function (scopes) {
-            if (!this.KurveIdentity)
-                return null;
-            if (this.KurveIdentity.getCurrentOauthVersion() === OAuthVersion.v1)
-                return null;
-            else
-                return scopes;
         };
         Graph.prototype.get = function (url, callback, responseType, scopes) {
             var _this = this;
@@ -822,7 +813,6 @@ var kurve;
                 }
             }
         };
-        Graph.foo = function () { return "test"; };
         return Graph;
     }());
     kurve.Graph = Graph;
@@ -1051,6 +1041,10 @@ var kurve;
             var _this = this;
             this.graph = graph;
             this.path = path;
+            //Only adds scopes when linked to a v2 Oauth of kurve identity
+            this.scopesForV2 = function (scopes) {
+                return _this.graph.KurveIdentity && _this.graph.KurveIdentity.getCurrentOauthVersion() === OAuthVersion.v2 ? scopes : null;
+            };
             this.pathWithQuery = function (odataQuery, pathSuffix) {
                 if (pathSuffix === void 0) { pathSuffix = ""; }
                 return pathWithQuery(_this.path + pathSuffix, odataQuery);
@@ -1086,7 +1080,7 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + (attachmentId ? "/" + attachmentId : ""));
             this.context = context;
-            this.GetAttachment = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, Attachment.scopes[_this.context]); };
+            this.GetAttachment = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2(Attachment.scopes[_this.context])); };
         }
         Attachment.scopes = {
             messages: [Scopes.Mail.Read],
@@ -1103,7 +1097,7 @@ var kurve;
             _super.call(this, graph, path + "/attachments");
             this.context = context;
             this.$ = function (attachmentId) { return new Attachment(_this.graph, _this.path, _this.context, attachmentId); };
-            this.GetAttachments = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Attachments(_this.graph, null, _this.context), Attachment.scopes[_this.context]); };
+            this.GetAttachments = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Attachments(_this.graph, null, _this.context), _this.scopesForV2(Attachment.scopes[_this.context])); };
         }
         return Attachments;
     }(CollectionNode));
@@ -1115,7 +1109,7 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + (messageId ? "/" + messageId : ""));
             this.GetMessage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, [Scopes.Mail.Read]); };
-            this.SendMessage = function (odataQuery) { return _this.graph.Post(null, _this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), _this, [Scopes.Mail.Send]); };
+            this.SendMessage = function (odataQuery) { return _this.graph.Post(null, _this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), _this, _this.scopesForV2([Scopes.Mail.Send])); };
         }
         Object.defineProperty(Message.prototype, "attachments", {
             get: function () { return new Attachments(this.graph, this.path, "messages"); },
@@ -1132,8 +1126,8 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/messages");
             this.$ = function (messageId) { return new Message(_this.graph, _this.path, messageId); };
-            this.GetMessages = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Messages(_this.graph), [Scopes.Mail.Read, Scopes.Mail.ReadWrite]); };
-            this.CreateMessage = function (object, odataQuery) { return _this.graph.Post(object, _this.pathWithQuery(odataQuery), _this, [Scopes.Mail.ReadWrite]); };
+            this.GetMessages = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Messages(_this.graph), _this.scopesForV2([Scopes.Mail.Read])); };
+            this.CreateMessage = function (object, odataQuery) { return _this.graph.Post(object, _this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Mail.ReadWrite])); };
         }
         return Messages;
     }(CollectionNode));
@@ -1144,7 +1138,7 @@ var kurve;
             var _this = this;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + (eventId ? "/" + eventId : ""));
-            this.GetEvent = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, [Scopes.Calendars.Read]); };
+            this.GetEvent = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Calendars.Read])); };
         }
         Object.defineProperty(Event.prototype, "attachments", {
             get: function () { return new Attachments(this.graph, this.path, "events"); },
@@ -1154,7 +1148,6 @@ var kurve;
         return Event;
     }(Node));
     kurve.Event = Event;
-    var eventsScopes = [Scopes.Calendars.Read, Scopes.Calendars.ReadWrite];
     var Events = (function (_super) {
         __extends(Events, _super);
         function Events(graph, path) {
@@ -1162,7 +1155,7 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/events");
             this.$ = function (eventId) { return new Event(_this.graph, _this.path, eventId); };
-            this.GetEvents = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Events(_this.graph), eventsScopes); };
+            this.GetEvents = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Events(_this.graph), _this.scopesForV2([Scopes.Calendars.Read])); };
         }
         return Events;
     }(CollectionNode));
@@ -1174,19 +1167,18 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/calendarView");
             this.dateRange = function (startDate, endDate) { return ("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString()); };
-            this.GetCalendarView = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new CalendarView(_this.graph), eventsScopes); };
+            this.GetCalendarView = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new CalendarView(_this.graph), [Scopes.Calendars.Read]); };
         }
         return CalendarView;
     }(CollectionNode));
     kurve.CalendarView = CalendarView;
-    var mailFolderScopes = [Scopes.Mail.Read, Scopes.Mail.ReadWrite];
     var MailFolder = (function (_super) {
         __extends(MailFolder, _super);
         function MailFolder(graph, path, mailFolderId) {
             var _this = this;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + (mailFolderId ? "/" + mailFolderId : ""));
-            this.GetMailFolder = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, mailFolderScopes); };
+            this.GetMailFolder = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, [Scopes.Mail.Read]); };
         }
         return MailFolder;
     }(Node));
@@ -1198,13 +1190,12 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/mailFolders");
             this.$ = function (mailFolderId) { return new MailFolder(_this.graph, _this.path, mailFolderId); };
-            this.GetMailFolders = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new MailFolders(_this.graph), mailFolderScopes); };
+            this.GetMailFolders = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new MailFolders(_this.graph), _this.scopesForV2([Scopes.Mail.Read])); };
         }
         return MailFolders;
     }(CollectionNode));
     kurve.MailFolders = MailFolders;
-    var usersScopes = [Scopes.User.ReadBasicAll, Scopes.User.ReadAll, Scopes.User.ReadWriteAll, Scopes.Directory.ReadAll, Scopes.Directory.ReadWriteAll, Scopes.Directory.AccessAsUserAll];
-    var userScopes = usersScopes.concat([Scopes.User.Read, Scopes.User.ReadWrite]);
+    //let usersScopes = [Scopes.User.ReadBasicAll, Scopes.User.ReadAll, Scopes.User.ReadWriteAll, Scopes.Directory.ReadAll, Scopes.Directory.ReadWriteAll, Scopes.Directory.AccessAsUserAll];
     var User = (function (_super) {
         __extends(User, _super);
         function User(graph, path, userId) {
@@ -1212,8 +1203,7 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, userId ? path + "/" + userId : path + "/me");
             this.graph = graph;
-            this.GetUser = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, userScopes); };
-            console.log("Graph.foo", Graph.foo);
+            this.GetUser = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.User.Read])); };
         }
         Object.defineProperty(User.prototype, "messages", {
             get: function () { return new Messages(this.graph, this.path); },
@@ -1245,7 +1235,7 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/users");
             this.$ = function (userId) { return new User(_this.graph, _this.path, userId); };
-            this.GetUsers = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Users(_this.graph), userScopes); };
+            this.GetUsers = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Users(_this.graph), [Scopes.User.Read]); };
         }
         return Users;
     }(CollectionNode));

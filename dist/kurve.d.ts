@@ -267,17 +267,75 @@ declare module kurve {
         contentLocation?: string;
         contentType?: string;
     }
+    class Scopes {
+        private static rootUrl;
+        static General: {
+            OpenId: string;
+            OfflineAccess: string;
+        };
+        static User: {
+            Read: string;
+            ReadAll: string;
+            ReadWrite: string;
+            ReadWriteAll: string;
+            ReadBasicAll: string;
+        };
+        static Contacts: {
+            Read: string;
+            ReadWrite: string;
+        };
+        static Directory: {
+            ReadAll: string;
+            ReadWriteAll: string;
+            AccessAsUserAll: string;
+        };
+        static Group: {
+            ReadAll: string;
+            ReadWriteAll: string;
+            AccessAsUserAll: string;
+        };
+        static Mail: {
+            Read: string;
+            ReadWrite: string;
+            Send: string;
+        };
+        static Calendars: {
+            Read: string;
+            ReadWrite: string;
+        };
+        static Files: {
+            Read: string;
+            ReadAll: string;
+            ReadWrite: string;
+            ReadWriteAppFolder: string;
+            ReadWriteSelected: string;
+        };
+        static Tasks: {
+            ReadWrite: string;
+        };
+        static People: {
+            Read: string;
+            ReadWrite: string;
+        };
+        static Notes: {
+            Create: string;
+            ReadWriteCreatedByApp: string;
+            Read: string;
+            ReadAll: string;
+            ReadWriteAll: string;
+        };
+    }
     class OData {
         query: string;
         constructor(query?: string);
         toString: () => string;
-        odata: (query: string) => OData;
-        select: (...fields: string[]) => OData;
-        expand: (...fields: string[]) => OData;
-        filter: (query: string) => OData;
-        orderby: (...fields: string[]) => OData;
-        top: (items: Number) => OData;
-        skip: (items: Number) => OData;
+        odata: (query: string) => this;
+        select: (...fields: string[]) => this;
+        expand: (...fields: string[]) => this;
+        filter: (query: string) => this;
+        orderby: (...fields: string[]) => this;
+        top: (items: Number) => this;
+        skip: (items: Number) => this;
     }
     class Singleton<Model, N extends Node> {
         raw: any;

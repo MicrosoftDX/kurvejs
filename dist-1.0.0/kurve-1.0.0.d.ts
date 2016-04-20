@@ -102,10 +102,9 @@ declare module kurve {
         private generateNonce();
     }
     class Graph {
-        static foo: () => string;
         private req;
         private accessToken;
-        private KurveIdentity;
+        KurveIdentity: Identity;
         private defaultResourceID;
         private baseUrl;
         constructor(identityInfo: {
@@ -119,7 +118,6 @@ declare module kurve {
         Get<Model, N extends Node>(path: string, self: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
         GetCollection<Model, N extends CollectionNode>(path: string, self: N, next: N, scopes?: string[]): Promise<Collection<Model, N>, Error>;
         Post<Model, N extends Node>(object: Model, path: string, self: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
-        private scopesForV2(scopes);
         get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
         post(object: string, url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
         private generateError(xhr);
@@ -356,6 +354,7 @@ declare module kurve {
         protected graph: Graph;
         protected path: string;
         constructor(graph: Graph, path: string);
+        protected scopesForV2: (scopes: string[]) => string[];
         pathWithQuery: (odataQuery?: OData | string, pathSuffix?: string) => string;
     }
     abstract class CollectionNode extends Node {

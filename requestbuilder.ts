@@ -80,7 +80,7 @@ Note: This initial stab only includes a few familiar pieces of the Microsoft Gra
 */
 
 
-class Scopes {
+export class Scopes {
     private static rootUrl = "https://graph.microsoft.com/";
     static General = {
         OpenId: "openid",
@@ -264,7 +264,7 @@ export class Messages extends CollectionNode {
 
     $ = (messageId:string) => new Message(this.graph, this.path, messageId);
 
-    GetMessages     = (odataQuery?:ODataQuery) => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery(odataQuery), this, new Messages(this.graph), this.scopesForV2([Scopes.Mail.Read, Scopes.Mail.ReadWrite]));
+    GetMessages     = (odataQuery?:ODataQuery) => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery(odataQuery), this, new Messages(this.graph), this.scopesForV2([Scopes.Mail.Read]));
     CreateMessage   = (object:MessageDataModel, odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Mail.ReadWrite]));
 }
 
@@ -282,7 +282,6 @@ export class Event extends Node {
 */
 }
 
-let eventsScopes = [Scopes.Calendars.Read, Scopes.Calendars.ReadWrite];
 
 export class Events extends CollectionNode {
     constructor(graph:Graph, path:string="") {
@@ -291,7 +290,7 @@ export class Events extends CollectionNode {
 
     $ = (eventId:string) => new Event(this.graph, this.path, eventId);
 
-    GetEvents = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery(odataQuery), this, new Events(this.graph), this.scopesForV2(eventsScopes));
+    GetEvents = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery(odataQuery), this, new Events(this.graph), this.scopesForV2([Scopes.Calendars.Read]));
 /*
     POST = this.graph.POST<EventDataModel>(this.path, this.query);
 */
@@ -304,10 +303,9 @@ export class CalendarView extends CollectionNode {
     
     dateRange = (startDate:Date, endDate:Date) => `startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`
 
-    GetCalendarView = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, CalendarView>(this.pathWithQuery(odataQuery), this, new CalendarView(this.graph), eventsScopes);
+    GetCalendarView = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, CalendarView>(this.pathWithQuery(odataQuery), this, new CalendarView(this.graph), [Scopes.Calendars.Read]);
 }
 
-let mailFolderScopes = [Scopes.Mail.Read, Scopes.Mail.ReadWrite];
 
 export class MailFolder extends Node {
     constructor(graph:Graph, path:string="", mailFolderId:string) {
@@ -315,7 +313,7 @@ export class MailFolder extends Node {
     }
 
 
-    GetMailFolder = (odataQuery?:ODataQuery) => this.graph.Get<MailFolderDataModel, MailFolder>(this.pathWithQuery(odataQuery), this, mailFolderScopes);
+    GetMailFolder = (odataQuery?:ODataQuery) => this.graph.Get<MailFolderDataModel, MailFolder>(this.pathWithQuery(odataQuery), this, [Scopes.Mail.Read]);
 }
 
 export class MailFolders extends CollectionNode {
@@ -325,11 +323,10 @@ export class MailFolders extends CollectionNode {
 
     $ = (mailFolderId:string) => new MailFolder(this.graph, this.path, mailFolderId);
 
-    GetMailFolders = (odataQuery?:ODataQuery) => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery(odataQuery), this, new MailFolders(this.graph), this.scopesForV2(mailFolderScopes));
+    GetMailFolders = (odataQuery?:ODataQuery) => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery(odataQuery), this, new MailFolders(this.graph), this.scopesForV2([Scopes.Mail.Read]));
 }
 
-let usersScopes = [Scopes.User.ReadBasicAll, Scopes.User.ReadAll, Scopes.User.ReadWriteAll, Scopes.Directory.ReadAll, Scopes.Directory.ReadWriteAll, Scopes.Directory.AccessAsUserAll];
-let userScopes = usersScopes.concat([Scopes.User.Read, Scopes.User.ReadWrite]);
+//let usersScopes = [Scopes.User.ReadBasicAll, Scopes.User.ReadAll, Scopes.User.ReadWriteAll, Scopes.Directory.ReadAll, Scopes.Directory.ReadWriteAll, Scopes.Directory.AccessAsUserAll];
 
 export class User extends Node {
     constructor(protected graph:Graph, path:string="", userId?:string) {
@@ -341,7 +338,7 @@ export class User extends Node {
     get calendarView()  { return new CalendarView(this.graph, this.path); }
     get mailFolders()   { return new MailFolders(this.graph, this.path) }
 
-    GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, User>(this.pathWithQuery(odataQuery), this, this.scopesForV2(userScopes));
+    GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, User>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.Read]));
 /*
     PATCH = this.graph.PATCH<UserDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<UserDataModel>(this.path, this.query);
@@ -355,7 +352,7 @@ export class Users extends CollectionNode {
 
     $ = (userId:string) => new User(this.graph, this.path, userId);
 
-    GetUsers = (odataQuery?:ODataQuery) => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery(odataQuery), this, new Users(this.graph), userScopes);
+    GetUsers = (odataQuery?:ODataQuery) => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery(odataQuery), this, new Users(this.graph), [Scopes.User.Read]);
 /*
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */
