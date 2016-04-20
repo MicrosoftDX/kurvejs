@@ -1,4 +1,4 @@
-module kurve {
+﻿module kurve {
     
 // Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
 
