@@ -15,17 +15,15 @@ var headerfooter = require('gulp-headerfooter');
 var dts = require('dts-bundle');
 
 var clientFolder=config.build.outputDirectory + '-' + config.build.version + '/';
-var nodeFolder='./dist/';
-/*
-Compiles all typescript files and creating a declaration file.
-*/
+var nodeFolder='dist/';
 
 
 gulp.task('clean', function () {
    return del([
     config.build.buildDir,
-    clientFolder,nodeFolder,
-   './dist-' + config.build.version +'/'
+    clientFolder,
+    nodeFolder,
+   'dist-' + config.build.version +'/'
   ]);
   
 
@@ -62,6 +60,7 @@ gulp.task('sourcemap',['mergefilesClient'], function () {
             typescript: require('typescript')
     }))
      .pipe(sourcemaps.write("./"))
+     .pipe(concat('kurve-' + config.build.version  + '.map')) 
      .pipe(gulp.dest(clientFolder ))
 
 });
@@ -88,9 +87,10 @@ gulp.task('buildClient',['mergefilesClient','sourcemap'], function () {
     
  return merge2([ 
          tsResult.dts 
-             .pipe(concat('kurve'  + config.build.declarationFilename)) 
+             .pipe(concat('kurve-' + config.build.version  + config.build.declarationFilename)) 
              .pipe(gulp.dest(clientFolder)), 
          tsResult.js 
+             .pipe(concat('kurve-' + config.build.version  + '.js')) 
              .pipe(gulp.dest(clientFolder)) 
      ]); 
 });
@@ -128,20 +128,17 @@ gulp.task('buildNode',['mergefilesNode','copyreference'], function () {
      ]); 
 });
 
-gulp.task('packNode',['buildNode'], function () {
-  return; 
-   
+
+
+gulp.task('cleanUpClient',['buildClient'], function () {
+    return del([
+    './dist-' + config.build.version + '/kurve.ts'
+  ]);
+    
 });
 
-gulp.task('packBrowser',['buildClient'], function () {
-  var result = gulp.src(config.build.buildDir + '*.*')
-        .pipe(gulp.dest('./dist-' + config.build.version ));
-  return result; 
-  
-});
-
-gulp.task('default',['clean','packNode','packBrowser'], function () {
-   var result = gulp.src('./dist-' + config.build.version + "/kurve.js")
+gulp.task('default',['clean','buildNode','cleanUpClient'], function () {
+   var result = gulp.src(clientFolder + "/kurve-" + config.build.version + ".js")
    .pipe(rename(config.build.minFilename + '-' + config.build.version + '.js'))
     .pipe(uglify())
     .pipe(gulp.dest('./dist-' + config.build.version ));
