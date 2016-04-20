@@ -4,11 +4,11 @@
     "filename": "kurve.js",
     "minFilename": "kurve.min",
     "declarationFilename": ".d.ts",
-    "outputDirectory": "./dist",
-    "srcOutputDirectory": "./dist",
-    "srcCompiledJavaScriptFile": "./dist/kurve.js",
+    "outputDirectory": "dist",
+    "srcOutputDirectory": "dist",
+    "srcCompiledJavaScriptFile": "dist/kurve.js",
     "srcDir":"./",
-    "buildDir":"./build/"
+    "buildDir":"build/"
     
   },
   "core": {

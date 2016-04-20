@@ -15,14 +15,15 @@ var headerfooter = require('gulp-headerfooter');
 var dts = require('dts-bundle');
 
 var clientFolder=config.build.outputDirectory + '-' + config.build.version + '/';
-var nodeFolder='./dist/';
+var nodeFolder='dist/';
 
 
 gulp.task('clean', function () {
    return del([
     config.build.buildDir,
-    clientFolder,nodeFolder,
-   './dist-' + config.build.version +'/'
+    clientFolder,
+    nodeFolder,
+   'dist-' + config.build.version +'/'
   ]);
   
 
