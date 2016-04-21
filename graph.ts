@@ -18,6 +18,7 @@ module kurve {
 
         get me() { return new User(this, this.baseUrl); }
         get users() { return new Users(this, this.baseUrl); }
+        get groups() { return new Groups(this, this.baseUrl); }
 
         public Get<Model, N extends Node>(path:string, self:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
             console.log("GET", path, scopes);
