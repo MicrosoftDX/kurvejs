@@ -329,13 +329,13 @@ declare module kurve {
         query: string;
         constructor(query?: string);
         toString: () => string;
-        odata: (query: string) => this;
-        select: (...fields: string[]) => this;
-        expand: (...fields: string[]) => this;
-        filter: (query: string) => this;
-        orderby: (...fields: string[]) => this;
-        top: (items: Number) => this;
-        skip: (items: Number) => this;
+        odata: (query: string) => OData;
+        select: (...fields: string[]) => OData;
+        expand: (...fields: string[]) => OData;
+        filter: (query: string) => OData;
+        orderby: (...fields: string[]) => OData;
+        top: (items: Number) => OData;
+        skip: (items: Number) => OData;
     }
     class Singleton<Model, N extends Node> {
         raw: any;
@@ -413,6 +413,17 @@ declare module kurve {
         $: (mailFolderId: string) => MailFolder;
         GetMailFolders: (odataQuery?: OData | string) => Promise<Collection<MailFolderDataModel, MailFolders>, Error>;
     }
+    class Photo extends Node {
+        private context;
+        constructor(graph: Graph, path: string, context: string);
+        static scopes: {
+            user: string[];
+            group: string[];
+            contact: string[];
+        };
+        GetPhotoProperties: (odataQuery?: OData | string) => Promise<Singleton<ProfilePhotoDataModel, Photo>, Error>;
+        GetPhotoImage: (odataQuery?: OData | string) => Promise<Singleton<any, Photo>, Error>;
+    }
     class User extends Node {
         protected graph: Graph;
         constructor(graph: Graph, path?: string, userId?: string);
@@ -420,6 +431,7 @@ declare module kurve {
         events: Events;
         calendarView: CalendarView;
         mailFolders: MailFolders;
+        photo: Photo;
         GetUser: (odataQuery?: OData | string) => Promise<Singleton<UserDataModel, User>, Error>;
     }
     class Users extends CollectionNode {

@@ -11,7 +11,7 @@ var kurve;
         function Error() {
         }
         return Error;
-    }());
+    })();
     kurve.Error = Error;
     function DispatchDeferred(closure) {
         setTimeout(closure, 0);
@@ -68,7 +68,7 @@ var kurve;
             }
         };
         return Client;
-    }());
+    })();
     var Deferred = (function () {
         function Deferred(dispatcher) {
             this._stack = [];
@@ -171,7 +171,7 @@ var kurve;
             return this;
         };
         return Deferred;
-    }());
+    })();
     kurve.Deferred = Deferred;
     var Promise = (function () {
         function Promise(_deferred) {
@@ -184,7 +184,7 @@ var kurve;
             return this._deferred.then(undefined, errorCallback);
         };
         return Promise;
-    }());
+    })();
     kurve.Promise = Promise;
     (function (EndPointVersion) {
         EndPointVersion[EndPointVersion["v1"] = 1] = "v1";
@@ -217,7 +217,7 @@ var kurve;
             });
         };
         return CachedToken;
-    }());
+    })();
     var TokenCache = (function () {
         function TokenCache(tokenStorage) {
             var _this = this;
@@ -271,12 +271,12 @@ var kurve;
             delete this.cachedTokens[key];
         };
         return TokenCache;
-    }());
+    })();
     var IdToken = (function () {
         function IdToken() {
         }
         return IdToken;
-    }());
+    })();
     kurve.IdToken = IdToken;
     var Identity = (function () {
         //      private tenant: string = "";
@@ -654,7 +654,7 @@ var kurve;
             return text;
         };
         return Identity;
-    }());
+    })();
     kurve.Identity = Identity;
     var Graph = (function () {
         function Graph(identityInfo) {
@@ -814,7 +814,7 @@ var kurve;
             }
         };
         return Graph;
-    }());
+    })();
     kurve.Graph = Graph;
     /*
     
@@ -954,7 +954,7 @@ var kurve;
             ReadWriteAll: Scopes.rootUrl + "Notes.ReadWrite.All",
         };
         return Scopes;
-    }());
+    })();
     kurve.Scopes = Scopes;
     var queryUnion = function (query1, query2) { return (query1 ? query1 + (query2 ? "&" + query2 : "") : query2); };
     var OData = (function () {
@@ -992,7 +992,7 @@ var kurve;
             this.skip = function (items) { return _this.odata("$skip=" + items); };
         }
         return OData;
-    }());
+    })();
     kurve.OData = OData;
     var pathWithQuery = function (path, odataQuery) {
         var query = odataQuery && odataQuery.toString();
@@ -1011,7 +1011,7 @@ var kurve;
             configurable: true
         });
         return Singleton;
-    }());
+    })();
     kurve.Singleton = Singleton;
     var Collection = (function () {
         function Collection(raw, self, next) {
@@ -1034,7 +1034,7 @@ var kurve;
             configurable: true
         });
         return Collection;
-    }());
+    })();
     kurve.Collection = Collection;
     var Node = (function () {
         function Node(graph, path) {
@@ -1051,7 +1051,7 @@ var kurve;
             };
         }
         return Node;
-    }());
+    })();
     kurve.Node = Node;
     var CollectionNode = (function (_super) {
         __extends(CollectionNode, _super);
@@ -1071,7 +1071,7 @@ var kurve;
             configurable: true
         });
         return CollectionNode;
-    }(Node));
+    })(Node);
     kurve.CollectionNode = CollectionNode;
     var Attachment = (function (_super) {
         __extends(Attachment, _super);
@@ -1087,7 +1087,7 @@ var kurve;
             events: [Scopes.Calendars.Read],
         };
         return Attachment;
-    }(Node));
+    })(Node);
     kurve.Attachment = Attachment;
     var Attachments = (function (_super) {
         __extends(Attachments, _super);
@@ -1100,7 +1100,7 @@ var kurve;
             this.GetAttachments = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Attachments(_this.graph, null, _this.context), _this.scopesForV2(Attachment.scopes[_this.context])); };
         }
         return Attachments;
-    }(CollectionNode));
+    })(CollectionNode);
     kurve.Attachments = Attachments;
     var Message = (function (_super) {
         __extends(Message, _super);
@@ -1117,7 +1117,7 @@ var kurve;
             configurable: true
         });
         return Message;
-    }(Node));
+    })(Node);
     kurve.Message = Message;
     var Messages = (function (_super) {
         __extends(Messages, _super);
@@ -1130,7 +1130,7 @@ var kurve;
             this.CreateMessage = function (object, odataQuery) { return _this.graph.Post(object, _this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Mail.ReadWrite])); };
         }
         return Messages;
-    }(CollectionNode));
+    })(CollectionNode);
     kurve.Messages = Messages;
     var Event = (function (_super) {
         __extends(Event, _super);
@@ -1146,7 +1146,7 @@ var kurve;
             configurable: true
         });
         return Event;
-    }(Node));
+    })(Node);
     kurve.Event = Event;
     var Events = (function (_super) {
         __extends(Events, _super);
@@ -1158,7 +1158,7 @@ var kurve;
             this.GetEvents = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Events(_this.graph), _this.scopesForV2([Scopes.Calendars.Read])); };
         }
         return Events;
-    }(CollectionNode));
+    })(CollectionNode);
     kurve.Events = Events;
     var CalendarView = (function (_super) {
         __extends(CalendarView, _super);
@@ -1170,7 +1170,7 @@ var kurve;
             this.GetCalendarView = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new CalendarView(_this.graph), [Scopes.Calendars.Read]); };
         }
         return CalendarView;
-    }(CollectionNode));
+    })(CollectionNode);
     kurve.CalendarView = CalendarView;
     var MailFolder = (function (_super) {
         __extends(MailFolder, _super);
@@ -1181,7 +1181,7 @@ var kurve;
             this.GetMailFolder = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, [Scopes.Mail.Read]); };
         }
         return MailFolder;
-    }(Node));
+    })(Node);
     kurve.MailFolder = MailFolder;
     var MailFolders = (function (_super) {
         __extends(MailFolders, _super);
@@ -1193,9 +1193,26 @@ var kurve;
             this.GetMailFolders = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new MailFolders(_this.graph), _this.scopesForV2([Scopes.Mail.Read])); };
         }
         return MailFolders;
-    }(CollectionNode));
+    })(CollectionNode);
     kurve.MailFolders = MailFolders;
-    //let usersScopes = [Scopes.User.ReadBasicAll, Scopes.User.ReadAll, Scopes.User.ReadWriteAll, Scopes.Directory.ReadAll, Scopes.Directory.ReadWriteAll, Scopes.Directory.AccessAsUserAll];
+    var Photo = (function (_super) {
+        __extends(Photo, _super);
+        function Photo(graph, path, context) {
+            var _this = this;
+            if (path === void 0) { path = ""; }
+            _super.call(this, graph, path + "/photo");
+            this.context = context;
+            this.GetPhotoProperties = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, Photo.scopes[_this.context]); };
+            this.GetPhotoImage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery, "/$value"), _this, Photo.scopes[_this.context]); };
+        }
+        Photo.scopes = {
+            user: [Scopes.User.ReadBasicAll],
+            group: [Scopes.Group.ReadAll],
+            contact: [Scopes.Contacts.Read]
+        };
+        return Photo;
+    })(Node);
+    kurve.Photo = Photo;
     var User = (function (_super) {
         __extends(User, _super);
         function User(graph, path, userId) {
@@ -1225,8 +1242,13 @@ var kurve;
             enumerable: true,
             configurable: true
         });
+        Object.defineProperty(User.prototype, "photo", {
+            get: function () { return new Photo(this.graph, this.path, "user"); },
+            enumerable: true,
+            configurable: true
+        });
         return User;
-    }(Node));
+    })(Node);
     kurve.User = User;
     var Users = (function (_super) {
         __extends(Users, _super);
@@ -1238,7 +1260,7 @@ var kurve;
             this.GetUsers = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Users(_this.graph), [Scopes.User.Read]); };
         }
         return Users;
-    }(CollectionNode));
+    })(CollectionNode);
     kurve.Users = Users;
 })(kurve || (kurve = {}));
 //*********************************************************
