@@ -1,109 +1,88 @@
-﻿
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
-
-module Sample {
-    class Error {
-    }
-    export class AppV2 {
-        private clientId;
-        private redirectUri;
-        private identity: kurve.Identity;
-        private graph: kurve.Graph;
-
-        constructor() {
+var Sample;
+(function (Sample) {
+    var Error = (function () {
+        function Error() {
+        }
+        return Error;
+    }());
+    var AppV2 = (function () {
+        function AppV2() {
+            var _this = this;
             //Setup
-            this.clientId = (<HTMLInputElement>document.getElementById("AppID")).value;
-            this.redirectUri = (<HTMLInputElement>document.getElementById("redirectUrl")).value;
-
+            this.clientId = document.getElementById("AppID").value;
+            this.redirectUri = document.getElementById("redirectUrl").value;
             //Create identity object
             this.identity = new kurve.Identity({
                 clientId: this.clientId,
                 tokenProcessingUri: this.redirectUri,
                 version: kurve.EndPointVersion.v2
             });
-
             //We can request for specific scopes during logon (so user will have to consent them right away and not during the flow of the app
             //The list of available consents is available under Kuve.Scopes module
-            this.identity.loginAsync({ scopes: [kurve.Scopes.Mail.Read, kurve.Scopes.General.OpenId] }).then(() => {
-
-                
-                this.graph = new kurve.Graph({ identity: this.identity });
-                
+            this.identity.loginAsync({ scopes: [kurve.Scopes.Mail.Read, kurve.Scopes.General.OpenId] }).then(function () {
+                _this.graph = new kurve.Graph({ identity: _this.identity });
                 //Update UI
-
                 document.getElementById("initDiv").style.display = "none";
                 document.getElementById("scenarios").style.display = "";
-                document.getElementById("logoutBtn").addEventListener("click", (() => { this.logout(); }));
-
-                document.getElementById("requestAccessToken").addEventListener("click", (() => { this.requestAccessToken(); }));
-                document.getElementById("meUser").addEventListener("click", (() => { this.loadUserMe(); }));              
-                document.getElementById("userMessages").addEventListener("click", (() => {this.loadUserMessages();}));
-                document.getElementById("userEvents").addEventListener("click", (() => { this.loadUserEvents(); }));
-                document.getElementById("userPhoto").addEventListener("click", (() => { this.loadUserPhoto(); }));
-                document.getElementById("loggedIn").addEventListener("click", (() => { this.isLoggedIn(); }));
-                document.getElementById("whoAmI").addEventListener("click", (() => { this.whoAmI(); }));
-
-
+                document.getElementById("logoutBtn").addEventListener("click", (function () { _this.logout(); }));
+                document.getElementById("requestAccessToken").addEventListener("click", (function () { _this.requestAccessToken(); }));
+                document.getElementById("meUser").addEventListener("click", (function () { _this.loadUserMe(); }));
+                document.getElementById("userMessages").addEventListener("click", (function () { _this.loadUserMessages(); }));
+                document.getElementById("userEvents").addEventListener("click", (function () { _this.loadUserEvents(); }));
+                document.getElementById("userPhoto").addEventListener("click", (function () { _this.loadUserPhoto(); }));
+                document.getElementById("loggedIn").addEventListener("click", (function () { _this.isLoggedIn(); }));
+                document.getElementById("whoAmI").addEventListener("click", (function () { _this.whoAmI(); }));
             });
         }
-        
         //-----------------------------------------------Scenarios---------------------------------------------
-       
-
         //Scenario 1: Logout
-        private logout(): void {
+        AppV2.prototype.logout = function () {
             this.identity.logOut();
-        }
-
+        };
         //Scenario 2: Request access token
-        private requestAccessToken(): void {
+        AppV2.prototype.requestAccessToken = function () {
             document.getElementById("results").innerHTML = "";
-
             //Using false for prompt will cause it to attempt to silently get the token. If it fails, it will then re-attempt, this time
             //Prompting for a UI for consent
-            this.identity.getAccessTokenForScopesAsync([kurve.Scopes.User.Read, kurve.Scopes.Mail.Read], false).then((token) => {
+            this.identity.getAccessTokenForScopesAsync([kurve.Scopes.User.Read, kurve.Scopes.Mail.Read], false).then(function (token) {
                 document.getElementById("results").innerText = "token: " + token;
             });
-        }
-    
+        };
         //Scenario 3: Load user "me"
-        private loadUserMe(): void {
+        AppV2.prototype.loadUserMe = function () {
             document.getElementById("results").innerHTML = "";
-            this.graph.me.GetUser().then((user) => {
+            this.graph.me.GetUser().then(function (user) {
                 document.getElementById("results").innerHTML += user.item.displayName + "</br>";
             });
-        }
-
+        };
         //Scenario 4: Load user "me" and then its messages
-        private loadUserMessages(): void {
+        AppV2.prototype.loadUserMessages = function () {
+            var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.graph.me.messages.GetMessages("$top=2").then((messages) => {
-
-                    this.messagesCallback(messages,null );
-                }).fail((error) =>{
-                    this.messagesCallback(null,error);
-                });
-        }
-
-        private loadUserEvents(): void {
+            this.graph.me.messages.GetMessages("$top=2").then(function (messages) {
+                _this.messagesCallback(messages, null);
+            }).fail(function (error) {
+                _this.messagesCallback(null, error);
+            });
+        };
+        AppV2.prototype.loadUserEvents = function () {
+            var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.graph.me.GetUser().then((user) => {
+            this.graph.me.GetUser().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                user.self.events.GetEvents("$top=2").then((events)=>{
-                    this.eventsCallback(events, null);
-                }).fail((error) => {
-                    this.eventsCallback(null, error);
+                user.self.events.GetEvents("$top=2").then(function (events) {
+                    _this.eventsCallback(events, null);
+                }).fail(function (error) {
+                    _this.eventsCallback(null, error);
                 });
-
             });
-        }
-
-
+        };
         //Scenario 5: Load user "me" and then its messages
-        private loadUserPhoto(): void {
+        AppV2.prototype.loadUserPhoto = function () {
             document.getElementById("results").innerHTML = "";
-            this.graph.me.GetUser().then((user) => {
+            this.graph.me.GetUser().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Photo:" + "</br>";
                 //TODO: Not implemented yet
@@ -115,7 +94,6 @@ module Sample {
                 //        var x = photo;
                 //    }
                 //});
-
                 //user.profilePhotoValue((photoValue: any, error: Kurve.Error) => {
                 //    if (error)
                 //        window.alert(error.statusText);
@@ -126,57 +104,50 @@ module Sample {
                 //            img.src = reader.result;
                 //        }
                 //        reader.readAsDataURL(photoValue);
-
                 //        document.getElementById("results").appendChild(img);
                 //    }
                 //});
             });
-        }
-
+        };
         //Scenario 6: Is logged in?
-        private isLoggedIn(): void {
-            document.getElementById("results").innerText = this.identity.isLoggedIn()?"True":"False";
-        }
-
+        AppV2.prototype.isLoggedIn = function () {
+            document.getElementById("results").innerText = this.identity.isLoggedIn() ? "True" : "False";
+        };
         //Scenario 7: Who am I?
-        private whoAmI(): void {
+        AppV2.prototype.whoAmI = function () {
             document.getElementById("results").innerText = JSON.stringify(this.identity.getIdToken());
-        }
-    
-
+        };
         //--------------------------------Callbacks---------------------------------------------
-
-
-        private messagesCallback(messages: kurve.Collection<kurve.MessageDataModel, kurve.Messages>, error: kurve.Error): void {
+        AppV2.prototype.messagesCallback = function (messages, error) {
+            var _this = this;
             if (messages.items) {
-                messages.items.forEach((item) => {
+                messages.items.forEach(function (item) {
                     document.getElementById("results").innerHTML += item.subject + "</br>";
                 });
             }
-
             if (messages.next) {
-                messages.next.GetMessages().then((messages) => {
-                    this.messagesCallback(messages, error);
+                messages.next.GetMessages().then(function (messages) {
+                    _this.messagesCallback(messages, error);
                 });
             }
-        }
-
-        private eventsCallback(events: kurve.Collection<kurve.EventDataModel, kurve.Events>, error: kurve.Error): void {
+        };
+        AppV2.prototype.eventsCallback = function (events, error) {
+            var _this = this;
             if (events.items) {
-                events.items.forEach((event) => {
+                events.items.forEach(function (event) {
                     document.getElementById("results").innerHTML += event.subject + "</br>";
                 });
             }
-
             if (events.next) {
-                events.next.GetEvents().then((stuff) => {
-                    this.eventsCallback(stuff, error);
+                events.next.GetEvents().then(function (stuff) {
+                    _this.eventsCallback(stuff, error);
                 });
             }
-        }
-    }
-}
-
+        };
+        return AppV2;
+    }());
+    Sample.AppV2 = AppV2;
+})(Sample || (Sample = {}));
 //*********************************************************   
 //   
 //Kurve js, https://github.com/microsoftdx/kurvejs
@@ -192,16 +163,8 @@ module Sample {
 // distribute, sublicense, and/or sell copies of the Software, and to  
 // permit persons to whom the Software is furnished to do so, subject to  
 // the following conditions:  
-
-
-
-
 // The above copyright notice and this permission notice shall be  
 // included in all copies or substantial portions of the Software.  
-
-
-
-
 // THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,  
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF  
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND  
