@@ -1478,10 +1478,17 @@ export class Photo extends Node {
         contact: [Scopes.Contacts.Read]
     }
 
-    GetPhotoProperties = (odataQuery?:ODataQuery) => this.graph.Get<ProfilePhotoDataModel, Photo>(this.pathWithQuery(odataQuery), this, Photo.scopes[this.context]);
-    GetPhotoImage = (odataQuery?:ODataQuery) => this.graph.Get<any, Photo>(this.pathWithQuery(odataQuery, "/$value"), this, Photo.scopes[this.context]);
+    GetPhotoProperties = (odataQuery?:ODataQuery) => this.graph.Get<ProfilePhotoDataModel, Photo>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Photo.scopes[this.context]));
+    GetPhotoImage = (odataQuery?:ODataQuery) => this.graph.Get<any, Photo>(this.pathWithQuery(odataQuery, "/$value"), this, this.scopesForV2(Photo.scopes[this.context]));
 }
 
+export class Manager extends Node {
+    constructor(graph:Graph, path:string="") {
+        super(graph, path + "/manager" );
+    }
+
+    GetManager = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, Manager>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.ReadAll]));
+}
 
 export class User extends Node {
     constructor(protected graph:Graph, path:string="", userId?:string) {
@@ -1493,6 +1500,7 @@ export class User extends Node {
     get calendarView()  { return new CalendarView(this.graph, this.path); }
     get mailFolders()   { return new MailFolders(this.graph, this.path) }
     get photo()         { return new Photo(this.graph, this.path, "user"); }
+    get manager()       { return new Manager(this.graph, this.path); }
 
     GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, User>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.Read]));
 /*

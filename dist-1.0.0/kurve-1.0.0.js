@@ -1202,8 +1202,8 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/photo");
             this.context = context;
-            this.GetPhotoProperties = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, Photo.scopes[_this.context]); };
-            this.GetPhotoImage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery, "/$value"), _this, Photo.scopes[_this.context]); };
+            this.GetPhotoProperties = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2(Photo.scopes[_this.context])); };
+            this.GetPhotoImage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery, "/$value"), _this, _this.scopesForV2(Photo.scopes[_this.context])); };
         }
         Photo.scopes = {
             user: [Scopes.User.ReadBasicAll],
@@ -1213,6 +1213,17 @@ var kurve;
         return Photo;
     })(Node);
     kurve.Photo = Photo;
+    var Manager = (function (_super) {
+        __extends(Manager, _super);
+        function Manager(graph, path) {
+            var _this = this;
+            if (path === void 0) { path = ""; }
+            _super.call(this, graph, path + "/manager");
+            this.GetManager = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.User.ReadAll])); };
+        }
+        return Manager;
+    })(Node);
+    kurve.Manager = Manager;
     var User = (function (_super) {
         __extends(User, _super);
         function User(graph, path, userId) {
@@ -1244,6 +1255,11 @@ var kurve;
         });
         Object.defineProperty(User.prototype, "photo", {
             get: function () { return new Photo(this.graph, this.path, "user"); },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(User.prototype, "manager", {
+            get: function () { return new Manager(this.graph, this.path); },
             enumerable: true,
             configurable: true
         });

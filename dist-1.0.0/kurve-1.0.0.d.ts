@@ -424,6 +424,10 @@ declare module kurve {
         GetPhotoProperties: (odataQuery?: OData | string) => Promise<Singleton<ProfilePhotoDataModel, Photo>, Error>;
         GetPhotoImage: (odataQuery?: OData | string) => Promise<Singleton<any, Photo>, Error>;
     }
+    class Manager extends Node {
+        constructor(graph: Graph, path?: string);
+        GetManager: (odataQuery?: OData | string) => Promise<Singleton<UserDataModel, Manager>, Error>;
+    }
     class User extends Node {
         protected graph: Graph;
         constructor(graph: Graph, path?: string, userId?: string);
@@ -432,6 +436,7 @@ declare module kurve {
         calendarView: CalendarView;
         mailFolders: MailFolders;
         photo: Photo;
+        manager: Manager;
         GetUser: (odataQuery?: OData | string) => Promise<Singleton<UserDataModel, User>, Error>;
     }
     class Users extends CollectionNode {
