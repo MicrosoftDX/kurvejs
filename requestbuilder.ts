@@ -49,14 +49,16 @@ All operations return a "self" property which allows you to continue along the G
 
 Operations which return paginated collections can return a "next" request object. This can be utilized in a recursive function:
 
-    ListMessageSubjects(messages:Messages) {
-        messages.GetMessages().then(collection => {
+    ListMessageSubjects(messages:Messages, odata?:string) {
+        messages.GetMessages(odata).then(collection => {
             collection.items.forEach(message => console.log(message.subject));
             if (collection.next)
-                ListMessageSubjects(collection.next);
+                ListMessageSubjects(collection.next); // don't need odata after the first time
         })
     }
-    ListMessageSubjects(graph.me.messages);
+    ListMessageSubjects(graph.me.messages, new OData().select("subject").toString());
+    
+(With async/await support, an iteration pattern can be used intead of recursion)
 
 Every Graph operation may include OData queries:
 

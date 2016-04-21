@@ -819,6 +819,7 @@ module kurve  {
 
         get me() { return new User(this, this.baseUrl); }
         get users() { return new Users(this, this.baseUrl); }
+        get groups() { return new Groups(this, this.baseUrl); }
 
         public Get<Model, N extends Node>(path:string, self:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
             console.log("GET", path, scopes);
@@ -1498,6 +1499,24 @@ export class MemberOf extends CollectionNode {
     GetGroups = (odataQuery?:ODataQuery) => this.graph.GetCollection<GroupDataModel, MemberOf>(this.pathWithQuery(odataQuery), this, new MemberOf(this.graph), this.scopesForV2([Scopes.User.ReadAll]));
 }
 
+export class DirectReport extends Node {
+    constructor(protected graph:Graph, path:string="", userId?:string) {
+        super(graph, path + "/" + userId);
+    }
+    
+    GetDirectReport = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, DirectReport>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.Read]));
+}
+    
+export class DirectReports extends CollectionNode {
+    constructor(graph:Graph, path:string="") {
+        super(graph, path + "/directReports");
+    }
+
+    $ = (userId:string) => new DirectReport(this.graph, this.path, userId);
+
+    GetDirectReports = (odataQuery?:ODataQuery) => this.graph.GetCollection<UserDataModel, DirectReports>(this.pathWithQuery(odataQuery), this, new DirectReports(this.graph), this.scopesForV2([Scopes.User.Read]));
+}
+
 export class User extends Node {
     constructor(protected graph:Graph, path:string="", userId?:string) {
         super(graph, userId ? path + "/" + userId : path + "/me");
@@ -1509,6 +1528,7 @@ export class User extends Node {
     get mailFolders()   { return new MailFolders(this.graph, this.path) }
     get photo()         { return new Photo(this.graph, this.path, "user"); }
     get manager()       { return new Manager(this.graph, this.path); }
+    get directReports() { return new DirectReports(this.graph, this.path); }
 
     GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, User>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.Read]));
 /*
@@ -1530,6 +1550,23 @@ export class Users extends CollectionNode {
 */
 }
 
+export class Group extends Node {
+    constructor(protected graph:Graph, path:string="", groupId:string) {
+        super(graph, path + "/" + groupId);
+    }
+
+    GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, Group>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Group.ReadAll]));
+}
+
+export class Groups extends CollectionNode {
+    constructor(graph:Graph, path:string="") {
+        super(graph, path + "/groups");
+    }
+
+    $ = (groupId:string) => new Group(this.graph, this.path, groupId);
+
+    GetGroups = (odataQuery?:ODataQuery) => this.graph.GetCollection<GroupDataModel, Groups>(this.pathWithQuery(odataQuery), this, new Groups(this.graph), this.scopesForV2([Scopes.Group.ReadAll]));
+}
 
 
 }

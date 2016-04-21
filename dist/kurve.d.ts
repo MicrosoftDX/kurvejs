@@ -115,6 +115,7 @@ declare module kurve {
         });
         me: User;
         users: Users;
+        groups: Groups;
         Get<Model, N extends Node>(path: string, self: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
         GetCollection<Model, N extends CollectionNode>(path: string, self: N, next: N, scopes?: string[]): Promise<Collection<Model, N>, Error>;
         Post<Model, N extends Node>(object: Model, path: string, self: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
@@ -432,6 +433,16 @@ declare module kurve {
         constructor(graph: Graph, path?: string);
         GetGroups: (odataQuery?: OData | string) => Promise<Collection<GroupDataModel, MemberOf>, Error>;
     }
+    class DirectReport extends Node {
+        protected graph: Graph;
+        constructor(graph: Graph, path?: string, userId?: string);
+        GetDirectReport: (odataQuery?: OData | string) => Promise<Singleton<UserDataModel, DirectReport>, Error>;
+    }
+    class DirectReports extends CollectionNode {
+        constructor(graph: Graph, path?: string);
+        $: (userId: string) => DirectReport;
+        GetDirectReports: (odataQuery?: OData | string) => Promise<Collection<UserDataModel, DirectReports>, Error>;
+    }
     class User extends Node {
         protected graph: Graph;
         constructor(graph: Graph, path?: string, userId?: string);
@@ -441,12 +452,23 @@ declare module kurve {
         mailFolders: MailFolders;
         photo: Photo;
         manager: Manager;
+        directReports: DirectReports;
         GetUser: (odataQuery?: OData | string) => Promise<Singleton<UserDataModel, User>, Error>;
     }
     class Users extends CollectionNode {
         constructor(graph: Graph, path?: string);
         $: (userId: string) => User;
         GetUsers: (odataQuery?: OData | string) => Promise<Collection<UserDataModel, Users>, Error>;
+    }
+    class Group extends Node {
+        protected graph: Graph;
+        constructor(graph: Graph, path: string, groupId: string);
+        GetUser: (odataQuery?: OData | string) => Promise<Singleton<UserDataModel, Group>, Error>;
+    }
+    class Groups extends CollectionNode {
+        constructor(graph: Graph, path?: string);
+        $: (groupId: string) => Group;
+        GetGroups: (odataQuery?: OData | string) => Promise<Collection<GroupDataModel, Groups>, Error>;
     }
 }
 

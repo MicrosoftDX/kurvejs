@@ -680,6 +680,11 @@ var kurve;
             enumerable: true,
             configurable: true
         });
+        Object.defineProperty(Graph.prototype, "groups", {
+            get: function () { return new Groups(this, this.baseUrl); },
+            enumerable: true,
+            configurable: true
+        });
         Graph.prototype.Get = function (path, self, scopes) {
             console.log("GET", path, scopes);
             var d = new Deferred();
@@ -1235,6 +1240,30 @@ var kurve;
         return MemberOf;
     })(CollectionNode);
     kurve.MemberOf = MemberOf;
+    var DirectReport = (function (_super) {
+        __extends(DirectReport, _super);
+        function DirectReport(graph, path, userId) {
+            var _this = this;
+            if (path === void 0) { path = ""; }
+            _super.call(this, graph, path + "/" + userId);
+            this.graph = graph;
+            this.GetDirectReport = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.User.Read])); };
+        }
+        return DirectReport;
+    })(Node);
+    kurve.DirectReport = DirectReport;
+    var DirectReports = (function (_super) {
+        __extends(DirectReports, _super);
+        function DirectReports(graph, path) {
+            var _this = this;
+            if (path === void 0) { path = ""; }
+            _super.call(this, graph, path + "/directReports");
+            this.$ = function (userId) { return new DirectReport(_this.graph, _this.path, userId); };
+            this.GetDirectReports = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new DirectReports(_this.graph), _this.scopesForV2([Scopes.User.Read])); };
+        }
+        return DirectReports;
+    })(CollectionNode);
+    kurve.DirectReports = DirectReports;
     var User = (function (_super) {
         __extends(User, _super);
         function User(graph, path, userId) {
@@ -1274,6 +1303,11 @@ var kurve;
             enumerable: true,
             configurable: true
         });
+        Object.defineProperty(User.prototype, "directReports", {
+            get: function () { return new DirectReports(this.graph, this.path); },
+            enumerable: true,
+            configurable: true
+        });
         return User;
     })(Node);
     kurve.User = User;
@@ -1289,6 +1323,30 @@ var kurve;
         return Users;
     })(CollectionNode);
     kurve.Users = Users;
+    var Group = (function (_super) {
+        __extends(Group, _super);
+        function Group(graph, path, groupId) {
+            var _this = this;
+            if (path === void 0) { path = ""; }
+            _super.call(this, graph, path + "/" + groupId);
+            this.graph = graph;
+            this.GetUser = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Group.ReadAll])); };
+        }
+        return Group;
+    })(Node);
+    kurve.Group = Group;
+    var Groups = (function (_super) {
+        __extends(Groups, _super);
+        function Groups(graph, path) {
+            var _this = this;
+            if (path === void 0) { path = ""; }
+            _super.call(this, graph, path + "/groups");
+            this.$ = function (groupId) { return new Group(_this.graph, _this.path, groupId); };
+            this.GetGroups = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Groups(_this.graph), _this.scopesForV2([Scopes.Group.ReadAll])); };
+        }
+        return Groups;
+    })(CollectionNode);
+    kurve.Groups = Groups;
 })(kurve || (kurve = {}));
 //*********************************************************
 //
