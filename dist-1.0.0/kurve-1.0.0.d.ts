@@ -31,7 +31,7 @@ declare module kurve {
         then<R>(successCallback?: (result: T) => R, errorCallback?: (error: E) => R): any;
         fail<R>(errorCallback?: (error: E) => R): any;
     }
-    enum OAuthVersion {
+    enum EndPointVersion {
         v1 = 1,
         v2 = 2,
     }
@@ -58,7 +58,7 @@ declare module kurve {
     interface IdentitySettings {
         clientId: string;
         tokenProcessingUri: string;
-        version: OAuthVersion;
+        version: EndPointVersion;
         tokenStorage?: TokenStorage;
     }
     class Identity {
@@ -80,7 +80,7 @@ declare module kurve {
         getIdToken(): any;
         isLoggedIn(): boolean;
         private renewIdToken();
-        getCurrentOauthVersion(): OAuthVersion;
+        getCurrentEndPointVersion(): EndPointVersion;
         getAccessTokenAsync(resource: string): Promise<string, Error>;
         getAccessToken(resource: string, callback: PromiseCallback<string>): void;
         getAccessTokenForScopesAsync(scopes: string[], promptForConsent?: boolean): Promise<string, Error>;

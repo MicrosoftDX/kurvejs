@@ -1,6 +1,6 @@
 module kurve {
 
-    export enum OAuthVersion {
+    export enum EndPointVersion {
         v1=1,
         v2=2
     }
@@ -118,7 +118,7 @@ module kurve {
     export interface IdentitySettings {
         clientId: string;
         tokenProcessingUri: string;
-        version: OAuthVersion;
+        version: EndPointVersion;
         tokenStorage?: TokenStorage;
     }
 
@@ -129,7 +129,7 @@ module kurve {
         public clientId: string;
 //      private req: XMLHttpRequest;
         private state: string;
-        private version: OAuthVersion;
+        private version: EndPointVersion;
         private nonce: string;
         private idToken: IdToken;
         private loginCallback: (error: Error) => void;
@@ -149,7 +149,7 @@ module kurve {
             if (identitySettings.version)
                 this.version = identitySettings.version;
             else
-                this.version = OAuthVersion.v1;
+                this.version = EndPointVersion.v1;
 
             this.tokenCache = new TokenCache(identitySettings.tokenStorage);
 
@@ -298,7 +298,7 @@ module kurve {
             this.login(() => { });
         }
 
-        public getCurrentOauthVersion(): OAuthVersion {
+        public getCurrentEndPointVersion(): EndPointVersion {
             return this.version;
         }
 
@@ -316,7 +316,7 @@ module kurve {
         }
 
         public getAccessToken(resource: string, callback: PromiseCallback<string>): void {
-            if (this.version !== OAuthVersion.v1) {
+            if (this.version !== EndPointVersion.v1) {
                 var e = new Error();
                 e.statusText = "Currently this identity class is using v2 OAuth mode. You need to use getAccessTokenForScopes() method";
                 callback(e);
@@ -374,7 +374,7 @@ module kurve {
         }
 
         public getAccessTokenForScopes(scopes: string[], promptForConsent, callback: (token: string, error: Error) => void): void {
-            if (this.version !== OAuthVersion.v2) {
+            if (this.version !== EndPointVersion.v2) {
                 var e = new Error();
                 e.statusText = "Dynamic scopes require v2 mode. Currently this identity class is using v1";
                 callback(null, e);
@@ -454,7 +454,7 @@ module kurve {
             if (!loginSettings) loginSettings = {};
             if (loginSettings.policy) this.policy = loginSettings.policy;
 
-            if (loginSettings.scopes && this.version === OAuthVersion.v1) {
+            if (loginSettings.scopes && this.version === EndPointVersion.v1) {
                 var e = new Error();
                 e.text = "Scopes can only be used with OAuth v2.";
                 callback(e);
@@ -479,7 +479,7 @@ module kurve {
             if (loginSettings.tenant) {
                 loginURL += "&tenant=" + encodeURIComponent(loginSettings.tenant);
             }
-            if (this.version === OAuthVersion.v2) {
+            if (this.version === EndPointVersion.v2) {
                     if (!loginSettings.scopes) loginSettings.scopes = [];
                     if (loginSettings.scopes.indexOf("profile") < 0)
                         loginSettings.scopes.push("profile");

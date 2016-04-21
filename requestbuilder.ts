@@ -197,7 +197,7 @@ export abstract class Node {
 
     //Only adds scopes when linked to a v2 Oauth of kurve identity
     protected scopesForV2 = (scopes: string[]) =>
-        this.graph.KurveIdentity && this.graph.KurveIdentity.getCurrentOauthVersion() === OAuthVersion.v2 ? scopes : null;
+        this.graph.KurveIdentity && this.graph.KurveIdentity.getCurrentEndPointVersion() === EndPointVersion.v2 ? scopes : null;
     
     pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
 }

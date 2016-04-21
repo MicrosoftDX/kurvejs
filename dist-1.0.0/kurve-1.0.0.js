@@ -186,11 +186,11 @@ var kurve;
         return Promise;
     }());
     kurve.Promise = Promise;
-    (function (OAuthVersion) {
-        OAuthVersion[OAuthVersion["v1"] = 1] = "v1";
-        OAuthVersion[OAuthVersion["v2"] = 2] = "v2";
-    })(kurve.OAuthVersion || (kurve.OAuthVersion = {}));
-    var OAuthVersion = kurve.OAuthVersion;
+    (function (EndPointVersion) {
+        EndPointVersion[EndPointVersion["v1"] = 1] = "v1";
+        EndPointVersion[EndPointVersion["v2"] = 2] = "v2";
+    })(kurve.EndPointVersion || (kurve.EndPointVersion = {}));
+    var EndPointVersion = kurve.EndPointVersion;
     var CachedToken = (function () {
         function CachedToken(id, scopes, resource, token, expiry) {
             this.id = id;
@@ -289,7 +289,7 @@ var kurve;
             if (identitySettings.version)
                 this.version = identitySettings.version;
             else
-                this.version = OAuthVersion.v1;
+                this.version = EndPointVersion.v1;
             this.tokenCache = new TokenCache(identitySettings.tokenStorage);
             //Callback handler from other windows
             window.addEventListener("message", function (event) {
@@ -420,7 +420,7 @@ var kurve;
             clearTimeout(this.refreshTimer);
             this.login(function () { });
         };
-        Identity.prototype.getCurrentOauthVersion = function () {
+        Identity.prototype.getCurrentEndPointVersion = function () {
             return this.version;
         };
         Identity.prototype.getAccessTokenAsync = function (resource) {
@@ -437,7 +437,7 @@ var kurve;
         };
         Identity.prototype.getAccessToken = function (resource, callback) {
             var _this = this;
-            if (this.version !== OAuthVersion.v1) {
+            if (this.version !== EndPointVersion.v1) {
                 var e = new Error();
                 e.statusText = "Currently this identity class is using v2 OAuth mode. You need to use getAccessTokenForScopes() method";
                 callback(e);
@@ -487,7 +487,7 @@ var kurve;
         };
         Identity.prototype.getAccessTokenForScopes = function (scopes, promptForConsent, callback) {
             var _this = this;
-            if (this.version !== OAuthVersion.v2) {
+            if (this.version !== EndPointVersion.v2) {
                 var e = new Error();
                 e.statusText = "Dynamic scopes require v2 mode. Currently this identity class is using v1";
                 callback(null, e);
@@ -562,7 +562,7 @@ var kurve;
                 loginSettings = {};
             if (loginSettings.policy)
                 this.policy = loginSettings.policy;
-            if (loginSettings.scopes && this.version === OAuthVersion.v1) {
+            if (loginSettings.scopes && this.version === EndPointVersion.v1) {
                 var e = new Error();
                 e.text = "Scopes can only be used with OAuth v2.";
                 callback(e);
@@ -586,7 +586,7 @@ var kurve;
             if (loginSettings.tenant) {
                 loginURL += "&tenant=" + encodeURIComponent(loginSettings.tenant);
             }
-            if (this.version === OAuthVersion.v2) {
+            if (this.version === EndPointVersion.v2) {
                 if (!loginSettings.scopes)
                     loginSettings.scopes = [];
                 if (loginSettings.scopes.indexOf("profile") < 0)
@@ -1043,7 +1043,7 @@ var kurve;
             this.path = path;
             //Only adds scopes when linked to a v2 Oauth of kurve identity
             this.scopesForV2 = function (scopes) {
-                return _this.graph.KurveIdentity && _this.graph.KurveIdentity.getCurrentOauthVersion() === OAuthVersion.v2 ? scopes : null;
+                return _this.graph.KurveIdentity && _this.graph.KurveIdentity.getCurrentEndPointVersion() === EndPointVersion.v2 ? scopes : null;
             };
             this.pathWithQuery = function (odataQuery, pathSuffix) {
                 if (pathSuffix === void 0) { pathSuffix = ""; }
