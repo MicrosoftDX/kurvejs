@@ -1108,7 +1108,7 @@ var kurve;
             var _this = this;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + (messageId ? "/" + messageId : ""));
-            this.GetMessage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, [Scopes.Mail.Read]); };
+            this.GetMessage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Mail.Read])); };
             this.SendMessage = function (odataQuery) { return _this.graph.Post(null, _this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), _this, _this.scopesForV2([Scopes.Mail.Send])); };
         }
         Object.defineProperty(Message.prototype, "attachments", {
@@ -1167,7 +1167,7 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/calendarView");
             this.dateRange = function (startDate, endDate) { return ("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString()); };
-            this.GetCalendarView = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new CalendarView(_this.graph), [Scopes.Calendars.Read]); };
+            this.GetCalendarView = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new CalendarView(_this.graph), _this.scopesForV2([Scopes.Calendars.Read])); };
         }
         return CalendarView;
     })(CollectionNode);
@@ -1178,7 +1178,7 @@ var kurve;
             var _this = this;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + (mailFolderId ? "/" + mailFolderId : ""));
-            this.GetMailFolder = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, [Scopes.Mail.Read]); };
+            this.GetMailFolder = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Mail.Read])); };
         }
         return MailFolder;
     })(Node);
@@ -1224,6 +1224,17 @@ var kurve;
         return Manager;
     })(Node);
     kurve.Manager = Manager;
+    var MemberOf = (function (_super) {
+        __extends(MemberOf, _super);
+        function MemberOf(graph, path) {
+            var _this = this;
+            if (path === void 0) { path = ""; }
+            _super.call(this, graph, path + "/memberOf");
+            this.GetGroups = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new MemberOf(_this.graph), _this.scopesForV2([Scopes.User.ReadAll])); };
+        }
+        return MemberOf;
+    })(CollectionNode);
+    kurve.MemberOf = MemberOf;
     var User = (function (_super) {
         __extends(User, _super);
         function User(graph, path, userId) {
@@ -1273,7 +1284,7 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/users");
             this.$ = function (userId) { return new User(_this.graph, _this.path, userId); };
-            this.GetUsers = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Users(_this.graph), [Scopes.User.Read]); };
+            this.GetUsers = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, new Users(_this.graph), _this.scopesForV2([Scopes.User.Read])); };
         }
         return Users;
     })(CollectionNode);

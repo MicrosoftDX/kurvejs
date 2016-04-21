@@ -428,6 +428,10 @@ declare module kurve {
         constructor(graph: Graph, path?: string);
         GetManager: (odataQuery?: OData | string) => Promise<Singleton<UserDataModel, Manager>, Error>;
     }
+    class MemberOf extends CollectionNode {
+        constructor(graph: Graph, path?: string);
+        GetGroups: (odataQuery?: OData | string) => Promise<Collection<GroupDataModel, MemberOf>, Error>;
+    }
     class User extends Node {
         protected graph: Graph;
         constructor(graph: Graph, path?: string, userId?: string);
