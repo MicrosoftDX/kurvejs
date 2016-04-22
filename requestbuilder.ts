@@ -173,7 +173,7 @@ export class Singleton<Model, N extends Node> {
     constructor(public raw:any, public self:N) {
     }
 
-    get item() {
+    public get item() {
         return this.raw as Model;
     }
 }

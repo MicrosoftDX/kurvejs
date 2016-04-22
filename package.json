@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Kurve JS library",
   "license": "MIT",
-  "main": "./dist/kurve.js",
+  "main": "./kurve.js",
   "typings":"./kurve.d.ts",
   "repository": {
     "type": "git",
@@ -14,9 +14,6 @@
   },
   
  
-  "dependencies": {
-    "autodts": "~0.0.4"
-  },
   "devDependencies": {
     "del": "^2.2.0",
     "dts-bundle": "^0.4.3",
@@ -31,7 +28,6 @@
     "merge2": "^1.0.2",
     "run-sequence": "^1.1.5",
     "ts-loader": "0.8.1",
-    "typescript": "1.8.9",
-    "autodts": "~0.0.4"
+    "typescript": "1.8.9"
   }
 }

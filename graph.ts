@@ -118,7 +118,7 @@ module kurve {
                         path: path,
                         method: 'GET',
                         headers: {
-                            'Content-Type': responseType,
+                           'Content-Type': responseType?responseType:'application/json',
                             accept: '*/*',
                             'Authorization': 'Bearer ' + token
                         }

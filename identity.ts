@@ -156,7 +156,8 @@ module kurve {
                 this.version = identitySettings.version;
             else
                 this.version = EndPointVersion.v1;
-
+            if (identitySettings.appSecret)
+                this.appSecret=identitySettings.appSecret;
             this.mode = identitySettings.mode;
 
             if (this.mode === Mode.Client) {
@@ -277,14 +278,14 @@ module kurve {
             }), expiration);
         }
 
-        private decodeAccessToken(accessToken: string, resource?:string, scopes?:string[]): void {
+        private decodeAccessToken(accessToken: string, resource?:string, scopes?:string[]): CachedToken {
             var decodedToken = this.base64Decode(accessToken.substring(accessToken.indexOf('.') + 1, accessToken.lastIndexOf('.')));
             var decodedTokenJSON = JSON.parse(decodedToken);
             var expiryDate = new Date(new Date('01/01/1970 0:0 UTC').getTime() + parseInt(decodedTokenJSON.exp) * 1000);
             var key = resource || scopes.join(" ");
 
             var token = new CachedToken(key, scopes, resource, accessToken, expiryDate);
-            this.tokenCache.add(token);
+            return token;
         }
 
         public getIdToken(): any {
@@ -338,7 +339,8 @@ module kurve {
                         callback(error);
                     }
                     else {
-                        this.decodeAccessToken(token, resource);
+                        var t = this.decodeAccessToken(token, resource);
+                        this.tokenCache.add(t);
                         callback(null, token);
                     }
                 });
@@ -566,7 +568,8 @@ module kurve {
                     }
                 }
                 else {
-                    this.decodeAccessToken(token, null, scopes);
+                    var t = this.decodeAccessToken(token, null, scopes);
+                    this.tokenCache.add(t);
                     callback(token, null);
                 }
             });

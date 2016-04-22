@@ -295,6 +295,8 @@ var kurve;
                 this.version = identitySettings.version;
             else
                 this.version = EndPointVersion.v1;
+            if (identitySettings.appSecret)
+                this.appSecret = identitySettings.appSecret;
             this.mode = identitySettings.mode;
             if (this.mode === Mode.Client) {
                 this.tokenCache = new TokenCache(identitySettings.tokenStorage);
@@ -414,7 +416,7 @@ var kurve;
             var expiryDate = new Date(new Date('01/01/1970 0:0 UTC').getTime() + parseInt(decodedTokenJSON.exp) * 1000);
             var key = resource || scopes.join(" ");
             var token = new CachedToken(key, scopes, resource, accessToken, expiryDate);
-            this.tokenCache.add(token);
+            return token;
         };
         Identity.prototype.getIdToken = function () {
             return this.idToken;
@@ -463,7 +465,8 @@ var kurve;
                         callback(error);
                     }
                     else {
-                        _this.decodeAccessToken(token, resource);
+                        var t = _this.decodeAccessToken(token, resource);
+                        _this.tokenCache.add(t);
                         callback(null, token);
                     }
                 });
@@ -669,7 +672,8 @@ var kurve;
                     }
                 }
                 else {
-                    _this.decodeAccessToken(token, null, scopes);
+                    var t = _this.decodeAccessToken(token, null, scopes);
+                    _this.tokenCache.add(t);
                     callback(token, null);
                 }
             });
@@ -932,7 +936,7 @@ var kurve;
                         path: path,
                         method: 'GET',
                         headers: {
-                            'Content-Type': responseType,
+                            'Content-Type': responseType ? responseType : 'application/json',
                             accept: '*/*',
                             'Authorization': 'Bearer ' + token
                         }
