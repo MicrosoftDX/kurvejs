@@ -821,7 +821,7 @@ module kurve  {
         get users() { return new Users(this, this.baseUrl); }
         get groups() { return new Groups(this, this.baseUrl); }
 
-        public Get<Model, N extends Node>(path:string, self:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
+        public Get<Model, N extends Node>(path:string, self:N, scopes?:string[], responseType?:string): Promise<Singleton<Model, N>, Error> {
             console.log("GET", path, scopes);
             var d = new Deferred<Singleton<Model, N>, Error>();
 
@@ -836,7 +836,7 @@ module kurve  {
                 }
 
                 d.resolve(new Singleton<Model, N>(jsonResult, self));
-            }, null, scopes);
+            }, responseType, scopes);
 
             return d.promise;
          }
@@ -1190,14 +1190,16 @@ All operations return a "self" property which allows you to continue along the G
 
 Operations which return paginated collections can return a "next" request object. This can be utilized in a recursive function:
 
-    ListMessageSubjects(messages:Messages) {
-        messages.GetMessages().then(collection => {
+    ListMessageSubjects(messages:Messages, odata?:string) {
+        messages.GetMessages(odata).then(collection => {
             collection.items.forEach(message => console.log(message.subject));
             if (collection.next)
-                ListMessageSubjects(collection.next);
+                ListMessageSubjects(collection.next); // don't need odata after the first time
         })
     }
-    ListMessageSubjects(graph.me.messages);
+    ListMessageSubjects(graph.me.messages, new OData().select("subject").toString());
+    
+(With async/await support, an iteration pattern can be used intead of recursion)
 
 Every Graph operation may include OData queries:
 
@@ -1480,7 +1482,7 @@ export class Photo extends Node {
     }
 
     GetPhotoProperties = (odataQuery?:ODataQuery) => this.graph.Get<ProfilePhotoDataModel, Photo>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Photo.scopes[this.context]));
-    GetPhotoImage = (odataQuery?:ODataQuery) => this.graph.Get<any, Photo>(this.pathWithQuery(odataQuery, "/$value"), this, this.scopesForV2(Photo.scopes[this.context]));
+    GetPhotoImage = (odataQuery?:ODataQuery) => this.graph.Get<any, Photo>(this.pathWithQuery(odataQuery, "/$value"), this, this.scopesForV2(Photo.scopes[this.context]), "blob");
 }
 
 export class Manager extends Node {

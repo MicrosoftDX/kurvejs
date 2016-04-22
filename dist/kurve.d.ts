@@ -116,7 +116,7 @@ declare module kurve {
         me: User;
         users: Users;
         groups: Groups;
-        Get<Model, N extends Node>(path: string, self: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
+        Get<Model, N extends Node>(path: string, self: N, scopes?: string[], responseType?: string): Promise<Singleton<Model, N>, Error>;
         GetCollection<Model, N extends CollectionNode>(path: string, self: N, next: N, scopes?: string[]): Promise<Collection<Model, N>, Error>;
         Post<Model, N extends Node>(object: Model, path: string, self: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
         get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;

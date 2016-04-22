@@ -685,7 +685,7 @@ var kurve;
             enumerable: true,
             configurable: true
         });
-        Graph.prototype.Get = function (path, self, scopes) {
+        Graph.prototype.Get = function (path, self, scopes, responseType) {
             console.log("GET", path, scopes);
             var d = new Deferred();
             this.get(path, function (error, result) {
@@ -697,7 +697,7 @@ var kurve;
                     return;
                 }
                 d.resolve(new Singleton(jsonResult, self));
-            }, null, scopes);
+            }, responseType, scopes);
             return d.promise;
         };
         Graph.prototype.GetCollection = function (path, self, next, scopes) {
@@ -870,14 +870,16 @@ var kurve;
     
     Operations which return paginated collections can return a "next" request object. This can be utilized in a recursive function:
     
-        ListMessageSubjects(messages:Messages) {
-            messages.GetMessages().then(collection => {
+        ListMessageSubjects(messages:Messages, odata?:string) {
+            messages.GetMessages(odata).then(collection => {
                 collection.items.forEach(message => console.log(message.subject));
                 if (collection.next)
-                    ListMessageSubjects(collection.next);
+                    ListMessageSubjects(collection.next); // don't need odata after the first time
             })
         }
-        ListMessageSubjects(graph.me.messages);
+        ListMessageSubjects(graph.me.messages, new OData().select("subject").toString());
+        
+    (With async/await support, an iteration pattern can be used intead of recursion)
     
     Every Graph operation may include OData queries:
     
@@ -1208,7 +1210,7 @@ var kurve;
             _super.call(this, graph, path + "/photo");
             this.context = context;
             this.GetPhotoProperties = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2(Photo.scopes[_this.context])); };
-            this.GetPhotoImage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery, "/$value"), _this, _this.scopesForV2(Photo.scopes[_this.context])); };
+            this.GetPhotoImage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery, "/$value"), _this, _this.scopesForV2(Photo.scopes[_this.context]), "blob"); };
         }
         Photo.scopes = {
             user: [Scopes.User.ReadBasicAll],

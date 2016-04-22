@@ -20,7 +20,7 @@ module kurve {
         get users() { return new Users(this, this.baseUrl); }
         get groups() { return new Groups(this, this.baseUrl); }
 
-        public Get<Model, N extends Node>(path:string, self:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
+        public Get<Model, N extends Node>(path:string, self:N, scopes?:string[], responseType?:string): Promise<Singleton<Model, N>, Error> {
             console.log("GET", path, scopes);
             var d = new Deferred<Singleton<Model, N>, Error>();
 
@@ -35,7 +35,7 @@ module kurve {
                 }
 
                 d.resolve(new Singleton<Model, N>(jsonResult, self));
-            }, null, scopes);
+            }, responseType, scopes);
 
             return d.promise;
          }
