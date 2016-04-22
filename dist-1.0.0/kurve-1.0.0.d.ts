@@ -453,7 +453,7 @@ declare module kurve {
         photo: Photo;
         manager: Manager;
         directReports: DirectReports;
-        memberOf: Groups;
+        memberOf: MemberOf;
         GetUser: (odataQuery?: OData | string) => Promise<Singleton<UserDataModel, User>, Error>;
     }
     class Users extends CollectionNode {

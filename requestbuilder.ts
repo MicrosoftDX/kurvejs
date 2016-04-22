@@ -390,7 +390,7 @@ export class User extends Node {
     get photo()         { return new Photo(this.graph, this.path, "user"); }
     get manager()       { return new Manager(this.graph, this.path); }
     get directReports() { return new DirectReports(this.graph, this.path); }
-    get memberOf()      { return new Groups(this.graph, this.path); }
+    get memberOf()      { return new MemberOf(this.graph, this.path); }
 
     GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, User>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.Read]));
 /*

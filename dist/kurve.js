@@ -1316,7 +1316,7 @@ var kurve;
             configurable: true
         });
         Object.defineProperty(User.prototype, "memberOf", {
-            get: function () { return new Groups(this.graph, this.path); },
+            get: function () { return new MemberOf(this.graph, this.path); },
             enumerable: true,
             configurable: true
         });
