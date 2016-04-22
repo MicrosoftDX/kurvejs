@@ -1315,6 +1315,11 @@ var kurve;
             enumerable: true,
             configurable: true
         });
+        Object.defineProperty(User.prototype, "memberOf", {
+            get: function () { return new Groups(this.graph, this.path); },
+            enumerable: true,
+            configurable: true
+        });
         return User;
     }(Node));
     kurve.User = User;
@@ -1337,7 +1342,7 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/" + groupId);
             this.graph = graph;
-            this.GetUser = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Group.ReadAll])); };
+            this.GetGroup = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Group.ReadAll])); };
         }
         return Group;
     }(Node));

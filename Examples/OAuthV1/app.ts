@@ -131,15 +131,14 @@ module Sample {
 
         //Scenario 7: Load user "me" and then its groups
         private loadUserGroups(): void {
-            //TODO: Not implemented yet
-            //document.getElementById("results").innerHTML = "";
-            //this.graph.me.GetUser().then(((user) => {
-            //    document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
-            //    document.getElementById("results").innerHTML += "Groups:" + "</br>";
-            //    user.self.memberOf(((groups, error) => {
-            //        this.groupsCallback(groups, error);
-            //    }), "$top=5");
-            //}));
+            document.getElementById("results").innerHTML = "";
+            this.graph.me.GetUser().then(((user) => {
+                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Groups:" + "</br>";
+                user.self.memberOf.GetGroups("$top=5").then((groups) => {
+                    this.groupsCallback(groups, null);
+                });
+            }));
         }
 
         //Scenario 8: Load user "me" and then its manager
@@ -156,7 +155,6 @@ module Sample {
 
         //Scenario 9: Load groups with paging
         private loadGroupsWithPaging(): void {
-            //TODO: not implemented yet
             document.getElementById("results").innerHTML = "";
 
             this.graph.groups.GetGroups().then((groups) => {
@@ -166,17 +164,15 @@ module Sample {
 
         //Scenario 10: Load group by ID
         private groupById(): void {
-            //Not implemented yet
-            //document.getElementById("results").innerHTML = "";
+            document.getElementById("results").innerHTML = "";
 
-            //this.graph.groups.$((<HTMLInputElement>document.getElementById("groupId")).value).GetGroup().then((group) => {
-            //    document.getElementById("results").innerHTML += group.item.displayName + "</br>";
-            //});
+            this.graph.groups.$((<HTMLInputElement>document.getElementById("groupId")).value).GetGroup().then((group) => {
+                document.getElementById("results").innerHTML += group.item.displayName + "</br>";
+            });
         }
 
         //Scenario 11: Load user "me" and then its messages
         private loadUserPhoto(): void {
-            //Not implemented yet
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then((user) => {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
@@ -224,30 +220,29 @@ module Sample {
             });
 
             if (users.next) {
-            //TODO: Bug, requires Odata
-                users.next.GetUsers("").then(((result) => {
+                users.next.GetUsers().then(((result) => {
                     this.getUsersCallback(result, null);
                 }));
             }
         }
 
-        //TODO: Missing groups implementation
-        //private getGroupsCallback(groups: kurve.Collection<kurve.GroupDataModel, kurve.Groups>, error: kurve.Error): void {
-        //    if (error) {
-        //        document.getElementById("results").innerText = error.statusText;
-        //        return;
-        //    }
+ 
+        private getGroupsCallback(groups: kurve.Collection<kurve.GroupDataModel, kurve.Groups>, error: kurve.Error): void {
+            if (error) {
+                document.getElementById("results").innerText = error.statusText;
+                return;
+            }
 
-        //    groups.data.forEach((item) => {
-        //        document.getElementById("results").innerHTML += item.data.displayName + "</br>";
-        //    });
+            groups.items.forEach((item) => {
+                document.getElementById("results").innerHTML += item.displayName + "</br>";
+            });
 
-        //    if (groups.nextLink) {
-        //        groups.nextLink().then(((result) => {
-        //            this.getGroupsCallback(result, null);
-        //        }));
-        //    }
-        //}
+            if (groups.next) {
+                groups.next.GetGroups().then(((result) => {
+                    this.getGroupsCallback(result, null);
+                }));
+            }
+        }
 
         private messagesCallback(messages: kurve.Collection<kurve.MessageDataModel, kurve.Messages>, error: kurve.Error): void {
             if (messages.items) {
@@ -279,19 +274,18 @@ module Sample {
 
         }
 
-        //TODO: Not implemented yet
-        //private groupsCallback(groups: Kurve.Groups, error: Kurve.Error): void {
-        //    groups.data.forEach((item) => {
-        //        document.getElementById("results").innerHTML += item.data.displayName + "</br>";
-        //    });
+        private groupsCallback(groups: kurve.Collection<kurve.GroupDataModel, kurve.Groups>, error: kurve.Error): void {
+            groups.items.forEach((item) => {
+                document.getElementById("results").innerHTML += item.displayName + "</br>";
+            });
 
-        //    if (groups.nextLink) {
-        //        groups.nextLink(((groups, error) => {
-        //            this.groupsCallback(groups, error);
-        //        }));
-        //    }
+            if (groups.next) {
+                groups.next.GetGroups().then((groups) => {
+                    this.groupsCallback(groups, null);
+                });
+            }
 
-        //}
+        }
     }
 }
 
