@@ -1,4 +1,4 @@
 
-declare module "kurve"{
- export = kurve;
-}
+//declare module "kurve"{
+// export = kurve;
+//}

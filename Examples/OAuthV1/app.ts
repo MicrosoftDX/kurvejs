@@ -67,24 +67,21 @@ module Sample {
         //Scenario 2: Load users with paging
         private loadUsersWithPaging(): void {
             document.getElementById("results").innerHTML = "";
-
-            this.graph.users.GetUsers("$top=5").then(((users) => {
-                this.getUsersCallback(users, null);
-            }));
+            this.showUsers(this.graph.users, "$top=5");
         }
 
         //Scenario 3: Load users with custom odata query
         private loadUsersWithOdataQuery(query: string): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.users.GetUsers(query).then((users) => { this.getUsersCallback(users, null); });
+            this.showUsers(this.graph.users, query);
         }
 
         //Scenario 4: Load user "me"
         private loadUserMe(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.me.GetUser().then((user) => {
-                document.getElementById("results").innerHTML += user.item.displayName + "</br>";
-            });
+            this.graph.me.GetUser().then(user =>
+                document.getElementById("results").innerHTML += user.item.displayName + "</br>"
+            );
         }
 
         //Scenario 5: Load user by ID
@@ -101,44 +98,32 @@ module Sample {
         //Scenario 6: Load user "me" and then its messages
         private loadUserMessages(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.me.GetUser().then((user) => {
+            this.graph.me.GetUser().then(user => {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                user.self.messages.GetMessages("$top=2").then((messages) => {
-                    this.messagesCallback(messages, null);
-                }).fail((error) => {
-                    this.messagesCallback(null, error);
-                });
-
+                this.showMessages(user.self.messages, "$top=2");
             });
         }
 
 
-        //Scenario 6: Load user "me" and then its messages
+        //Scenario 6: Load user "me" and then its events
         private loadUserEvents(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.me.GetUser().then((user) => {
+            this.graph.me.GetUser().then(user => {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Events:" + "</br>";
-                user.self.events.GetEvents("$top=2").then((items) => {
-                    this.eventsCallback(items, null);
-                }).fail((error) => {
-                    this.eventsCallback(null, error);
-                });
-
+                this.showEvents(user.self.events, "$top=2");
             });
         }
 
         //Scenario 7: Load user "me" and then its groups
         private loadUserGroups(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.me.GetUser().then(((user) => {
+            this.graph.me.GetUser().then(user => {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Groups:" + "</br>";
-                user.self.memberOf.GetGroups("$top=5").then((groups) => {
-                    this.groupsCallback(groups, null);
-                });
-            }));
+                this.showGroups(user.self.memberOf, "$top=5");
+            });
         }
 
         //Scenario 8: Load user "me" and then its manager
@@ -156,10 +141,7 @@ module Sample {
         //Scenario 9: Load groups with paging
         private loadGroupsWithPaging(): void {
             document.getElementById("results").innerHTML = "";
-
-            this.graph.groups.GetGroups().then((groups) => {
-                this.getGroupsCallback(groups, null);
-            });
+            this.showGroups(this.graph.groups, "$top=5");
         }
 
         //Scenario 10: Load group by ID
@@ -209,83 +191,71 @@ module Sample {
 
         //--------------------------------Callbacks---------------------------------------------
 
-        private getUsersCallback(users: kurve.Collection<kurve.UserDataModel, kurve.Users>, error: kurve.Error): void {
-            if (error) {
-                document.getElementById("results").innerText = error.statusText;
-                return;
-            }
+        private showUsers(users: kurve.Users, odataQuery?: string): void {
+            users.GetUsers(odataQuery)
+                .then(collection => {
+                    collection.items.forEach(user =>
+                        document.getElementById("results").innerHTML += user.displayName + "</br>"
+                    );
 
-            users.items.forEach((user) => {
-                document.getElementById("results").innerHTML += user.displayName + "</br>";
-            });
-
-            if (users.next) {
-                users.next.GetUsers().then(((result) => {
-                    this.getUsersCallback(result, null);
-                }));
-            }
+                    if (collection.next)
+                        this.showUsers(collection.next);
+                })
+                .fail(error =>
+                    document.getElementById("results").innerText = error.statusText
+                )
         }
 
- 
-        private getGroupsCallback(groups: kurve.Collection<kurve.GroupDataModel, kurve.Groups>, error: kurve.Error): void {
-            if (error) {
-                document.getElementById("results").innerText = error.statusText;
-                return;
-            }
 
-            groups.items.forEach((item) => {
-                document.getElementById("results").innerHTML += item.displayName + "</br>";
-            });
+        private showGroups(groups: kurve.Groups, odataQuery?: string): void {
+            groups.GetGroups(odataQuery)
+                .then(collection => {
+                    collection.items.forEach(group =>
+                        document.getElementById("results").innerHTML += group.displayName + "</br>"
+                    );
 
-            if (groups.next) {
-                groups.next.GetGroups().then(((result) => {
-                    this.getGroupsCallback(result, null);
-                }));
-            }
+                    if (collection.next)
+                        this.showGroups(collection.next);
+                })
+                .fail((error) => {
+                    document.getElementById("results").innerText = JSON.stringify(error);
+                });
         }
 
-        private messagesCallback(messages: kurve.Collection<kurve.MessageDataModel, kurve.Messages>, error: kurve.Error): void {
-            if (messages.items) {
-                messages.items.forEach((item) => {
-                    document.getElementById("results").innerHTML += item.subject + "</br>";
-                });
-            }
+        private showMessages(messages: kurve.Messages, odataQuery?: string): void {
+            messages.GetMessages(odataQuery)
+                .then(collection => {
+                    collection.items.forEach(message =>
+                        document.getElementById("results").innerHTML += message.subject + "</br>"
+                    );
 
-            if (messages.next) {
-                messages.next.GetMessages().then((messages) => {
-                    this.messagesCallback(messages, error);
-                });
-            }
+                    if (collection.next)
+                        this.showMessages(collection.next);
+                })
+                .fail(error =>
+                    document.getElementById("results").innerText = error.statusText
+                )
+
+        }
+       
+
+        private showEvents(events: kurve.Events, odataQuery?: string): void {
+            events.GetEvents(odataQuery)
+                .then(collection => {
+                    collection.items.forEach(event =>
+                        document.getElementById("results").innerHTML += event.subject + "</br>"
+                    );
+
+                    if (events.next)
+                        this.showEvents(collection.next);
+                })
+                .fail(error =>
+                    document.getElementById("results").innerText = error.statusText
+                )
 
         }
 
-        private eventsCallback(events: kurve.Collection<kurve.EventDataModel, kurve.Events>, error: kurve.Error): void {
-            if (events.items) {
-                events.items.forEach((event) => {
-                    document.getElementById("results").innerHTML += event.subject + "</br>";
-                });
-            }
-
-            if (events.next) {
-                events.next.GetEvents().then((results) => {
-                    this.eventsCallback(results, error);
-                });
-            }
-
-        }
-
-        private groupsCallback(groups: kurve.Collection<kurve.GroupDataModel, kurve.Groups>, error: kurve.Error): void {
-            groups.items.forEach((item) => {
-                document.getElementById("results").innerHTML += item.displayName + "</br>";
-            });
-
-            if (groups.next) {
-                groups.next.GetGroups().then((groups) => {
-                    this.groupsCallback(groups, null);
-                });
-            }
-
-        }
+      
     }
 }
 

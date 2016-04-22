@@ -5,10 +5,14 @@ module kurve {
         KurveIdentity: Identity = null;
         private defaultResourceID: string = "https://graph.microsoft.com";
         private baseUrl: string = "https://graph.microsoft.com/v1.0";
+        private https: any;
+        private mode: Mode;
 
-        constructor(identityInfo: { identity: Identity });
-        constructor(identityInfo: { defaultAccessToken: string });
-        constructor(identityInfo: any) {
+        constructor(identityInfo: { identity: Identity }, mode: Mode, https?: any);
+        constructor(identityInfo: { defaultAccessToken: string },mode:Mode, https?: any);
+        constructor(identityInfo: any, mode: Mode, https?: any) {
+            if (https) this.https = https;
+            this.mode = mode;
             if (identityInfo.defaultAccessToken) {
                 this.accessToken = identityInfo.defaultAccessToken;
             } else {
@@ -86,25 +90,82 @@ module kurve {
             return d.promise;
          }
  
-        public get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?:string[]): void {
-            var xhr = new XMLHttpRequest();
-            if (responseType)
-                xhr.responseType = responseType;
-            xhr.onreadystatechange = () => {
-                if (xhr.readyState === 4)
-                    if (xhr.status === 200)
-                        callback(null, responseType ? xhr.response : xhr.responseText);
-                    else
-                        callback(this.generateError(xhr));
-            }
-
-            xhr.open("GET", url);
-            this.addAccessTokenAndSend(xhr, (addTokenError: Error) => {
-                if (addTokenError) {
-                    callback(addTokenError);
+        public get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void {
+            if (this.mode === Mode.Client) {
+                var xhr = new XMLHttpRequest();
+                if (responseType)
+                    xhr.responseType = responseType;
+                xhr.onreadystatechange = () => {
+                    if (xhr.readyState === 4)
+                        if (xhr.status === 200)
+                            callback(null, responseType ? xhr.response : xhr.responseText);
+                        else
+                            callback(this.generateError(xhr));
                 }
-            }, scopes);
+
+                xhr.open("GET", url);
+                this.addAccessTokenAndSend(xhr, (addTokenError: Error) => {
+                    if (addTokenError) {
+                        callback(addTokenError);
+                    }
+                }, scopes);
+            } else {
+                var token = this.findAccessToken((token, error) => {
+                    var path = url.substr(27, url.length);
+                    var options = {
+                        host: 'graph.microsoft.com',
+                        port: '443',
+                        path: path,
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': responseType,
+                            accept: '*/*',
+                            'Authorization': 'Bearer ' + token
+                        }
+                    };
+
+                    var post_req = this.https.request(options, (response) => {
+                        response.setEncoding('utf8');
+                        response.on('data', (chunk) => {
+                            callback(null, chunk);
+                        });
+                    });
+
+                    post_req.end();
+
+                }, scopes);
+            }
         }
+        private findAccessToken(callback: (token: string, error: Error) => void, scopes?: string[]): void {
+            if (this.accessToken) {
+                callback(this.accessToken, null);
+            } else {
+                //Using the integrated Identity object
+
+                if (scopes) {
+                    //v2 scope based tokens
+                    this.KurveIdentity.getAccessTokenForScopes(scopes, false, ((token: string, error: Error) => {
+                        if (error)
+                            callback(null, error);
+                        else {
+                            callback(token, null);
+                        }
+                    }));
+
+                }
+                else {
+                    //v1 resource based tokens
+                    this.KurveIdentity.getAccessToken(this.defaultResourceID, ((error: Error, token: string) => {
+                        if (error)
+                            callback(null, error);
+                        else {
+                            callback(token, null);
+                        }
+                    }));
+                }
+            }
+        }
+
 
         public post(object:string, url: string, callback: PromiseCallback<string>, responseType?: string, scopes?:string[]): void {
 /*
@@ -140,40 +201,15 @@ module kurve {
 
         }
 
-        private addAccessTokenAndSend(xhr: XMLHttpRequest, callback: (error: Error) => void, scopes?:string[]): void {
-            if (this.accessToken) {
-                //Using default access token
-                xhr.setRequestHeader('Authorization', 'Bearer ' + this.accessToken);
-                xhr.send();
-            } else {
-                //Using the integrated Identity object
-
-                if (scopes) {
-                    //v2 scope based tokens
-                    this.KurveIdentity.getAccessTokenForScopes(scopes,false, ((token: string, error: Error) => {
-                        if (error)
-                            callback(error);
-                        else {
-                            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                            xhr.send();
-                            callback(null);
-                        }
-                    }));
-
+        private addAccessTokenAndSend(xhr: XMLHttpRequest, callback: (error: Error) => void, scopes?: string[]): void {
+            this.findAccessToken((token, error) => {
+                if (token) {
+                    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+                    xhr.send();
+                } else {
+                    callback(error);
                 }
-                else {
-                    //v1 resource based tokens
-                    this.KurveIdentity.getAccessToken(this.defaultResourceID, ((error: Error, token: string) => {
-                        if (error)
-                            callback(error);
-                        else {
-                            xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-                            xhr.send();
-                            callback(null);
-                        }
-                    }));
-                }
-            }
+            }, scopes);
         }
 
     }

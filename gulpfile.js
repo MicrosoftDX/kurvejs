@@ -14,8 +14,8 @@ var replace = require("gulp-replace");
 var headerfooter = require('gulp-headerfooter');
 var dts = require('dts-bundle');
 
-var clientFolder=config.build.outputDirectory + '-' + config.build.version + '/';
-var nodeFolder='dist/';
+var clientFolder=config.build.outputDirectory + '/client/' + config.build.version + '/';
+var nodeFolder=config.build.outputDirectory + '/node/';
 
 
 gulp.task('clean', function () {
@@ -102,10 +102,21 @@ gulp.task('copyreference', function () {
   return result; 
   
 });
+gulp.task('copynpmpackage', function () {
+  var result = gulp.src('./package.json')
+        .pipe(gulp.dest(nodeFolder));
+  return result; 
+  
+});
 
+gulp.task('copytsconfig', function () {
+  var result = gulp.src('./tsconfig.json')
+        .pipe(gulp.dest(nodeFolder));
+  return result; 
+  
+});
 
-
-gulp.task('buildNode',['mergefilesNode','copyreference'], function () {
+gulp.task('buildNode',['mergefilesNode','copyreference','copytsconfig'], function () {
   var tsResult =gulp.src([nodeFolder + 'kurve.ts','./reference.ts'])
     .pipe(typescript({  
             noExternalResolve: false,  
@@ -129,19 +140,28 @@ gulp.task('buildNode',['mergefilesNode','copyreference'], function () {
 });
 
 
-
-gulp.task('cleanUpClient',['buildClient'], function () {
+gulp.task('cleanupNode',['buildNode','copynpmpackage'], function () {
     return del([
-    './dist-' + config.build.version + '/kurve.ts'
+    nodeFolder +  'kurve.ts',
+    nodeFolder +  'reference.js',
+    nodeFolder +  'reference.ts'
+    
   ]);
     
 });
 
-gulp.task('default',['clean','buildNode','cleanUpClient'], function () {
+gulp.task('cleanUpClient',['buildClient'], function () {
+    return del([
+    clientFolder + '/kurve.ts'
+  ]);
+    
+});
+
+gulp.task('default',['clean','cleanupNode','cleanUpClient'], function () {
    var result = gulp.src(clientFolder + "/kurve-" + config.build.version + ".js")
    .pipe(rename(config.build.minFilename + '-' + config.build.version + '.js'))
     .pipe(uglify())
-    .pipe(gulp.dest('./dist-' + config.build.version ));
+    .pipe(gulp.dest(clientFolder  ));
   return result; 
   
 });

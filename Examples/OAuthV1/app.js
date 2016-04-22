@@ -48,23 +48,19 @@ var Sample;
         };
         //Scenario 2: Load users with paging
         AppV1.prototype.loadUsersWithPaging = function () {
-            var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.graph.users.GetUsers("$top=5").then((function (users) {
-                _this.getUsersCallback(users, null);
-            }));
+            this.showUsers(this.graph.users, "$top=5");
         };
         //Scenario 3: Load users with custom odata query
         AppV1.prototype.loadUsersWithOdataQuery = function (query) {
-            var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.graph.users.GetUsers(query).then(function (users) { _this.getUsersCallback(users, null); });
+            this.showUsers(this.graph.users, query);
         };
         //Scenario 4: Load user "me"
         AppV1.prototype.loadUserMe = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(function (user) {
-                document.getElementById("results").innerHTML += user.item.displayName + "</br>";
+                return document.getElementById("results").innerHTML += user.item.displayName + "</br>";
             });
         };
         //Scenario 5: Load user by ID
@@ -83,38 +79,28 @@ var Sample;
             this.graph.me.GetUser().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                user.self.messages.GetMessages("$top=2").then(function (messages) {
-                    _this.messagesCallback(messages, null);
-                }).fail(function (error) {
-                    _this.messagesCallback(null, error);
-                });
+                _this.showMessages(user.self.messages, "$top=2");
             });
         };
-        //Scenario 6: Load user "me" and then its messages
+        //Scenario 6: Load user "me" and then its events
         AppV1.prototype.loadUserEvents = function () {
             var _this = this;
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Events:" + "</br>";
-                user.self.events.GetEvents("$top=2").then(function (items) {
-                    _this.eventsCallback(items, null);
-                }).fail(function (error) {
-                    _this.eventsCallback(null, error);
-                });
+                _this.showEvents(user.self.events, "$top=2");
             });
         };
         //Scenario 7: Load user "me" and then its groups
         AppV1.prototype.loadUserGroups = function () {
             var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.graph.me.GetUser().then((function (user) {
+            this.graph.me.GetUser().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Groups:" + "</br>";
-                user.self.memberOf.GetGroups("$top=5").then(function (groups) {
-                    _this.groupsCallback(groups, null);
-                });
-            }));
+                _this.showGroups(user.self.memberOf, "$top=5");
+            });
         };
         //Scenario 8: Load user "me" and then its manager
         AppV1.prototype.loadUserManager = function () {
@@ -129,11 +115,8 @@ var Sample;
         };
         //Scenario 9: Load groups with paging
         AppV1.prototype.loadGroupsWithPaging = function () {
-            var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.graph.groups.GetGroups().then(function (groups) {
-                _this.getGroupsCallback(groups, null);
-            });
+            this.showGroups(this.graph.groups, "$top=5");
         };
         //Scenario 10: Load group by ID
         AppV1.prototype.groupById = function () {
@@ -172,72 +155,61 @@ var Sample;
             document.getElementById("results").innerText = JSON.stringify(this.identity.getIdToken());
         };
         //--------------------------------Callbacks---------------------------------------------
-        AppV1.prototype.getUsersCallback = function (users, error) {
+        AppV1.prototype.showUsers = function (users, odataQuery) {
             var _this = this;
-            if (error) {
-                document.getElementById("results").innerText = error.statusText;
-                return;
-            }
-            users.items.forEach(function (user) {
-                document.getElementById("results").innerHTML += user.displayName + "</br>";
+            users.GetUsers(odataQuery)
+                .then(function (collection) {
+                collection.items.forEach(function (user) {
+                    return document.getElementById("results").innerHTML += user.displayName + "</br>";
+                });
+                if (collection.next)
+                    _this.showUsers(collection.next);
+            })
+                .fail(function (error) {
+                return document.getElementById("results").innerText = error.statusText;
             });
-            if (users.next) {
-                users.next.GetUsers().then((function (result) {
-                    _this.getUsersCallback(result, null);
-                }));
-            }
         };
-        AppV1.prototype.getGroupsCallback = function (groups, error) {
+        AppV1.prototype.showGroups = function (groups, odataQuery) {
             var _this = this;
-            if (error) {
-                document.getElementById("results").innerText = error.statusText;
-                return;
-            }
-            groups.items.forEach(function (item) {
-                document.getElementById("results").innerHTML += item.displayName + "</br>";
+            groups.GetGroups(odataQuery)
+                .then(function (collection) {
+                collection.items.forEach(function (group) {
+                    return document.getElementById("results").innerHTML += group.displayName + "</br>";
+                });
+                if (collection.next)
+                    _this.showGroups(collection.next);
+            })
+                .fail(function (error) {
+                document.getElementById("results").innerText = JSON.stringify(error);
             });
-            if (groups.next) {
-                groups.next.GetGroups().then((function (result) {
-                    _this.getGroupsCallback(result, null);
-                }));
-            }
         };
-        AppV1.prototype.messagesCallback = function (messages, error) {
+        AppV1.prototype.showMessages = function (messages, odataQuery) {
             var _this = this;
-            if (messages.items) {
-                messages.items.forEach(function (item) {
-                    document.getElementById("results").innerHTML += item.subject + "</br>";
+            messages.GetMessages(odataQuery)
+                .then(function (collection) {
+                collection.items.forEach(function (message) {
+                    return document.getElementById("results").innerHTML += message.subject + "</br>";
                 });
-            }
-            if (messages.next) {
-                messages.next.GetMessages().then(function (messages) {
-                    _this.messagesCallback(messages, error);
-                });
-            }
-        };
-        AppV1.prototype.eventsCallback = function (events, error) {
-            var _this = this;
-            if (events.items) {
-                events.items.forEach(function (event) {
-                    document.getElementById("results").innerHTML += event.subject + "</br>";
-                });
-            }
-            if (events.next) {
-                events.next.GetEvents().then(function (results) {
-                    _this.eventsCallback(results, error);
-                });
-            }
-        };
-        AppV1.prototype.groupsCallback = function (groups, error) {
-            var _this = this;
-            groups.items.forEach(function (item) {
-                document.getElementById("results").innerHTML += item.displayName + "</br>";
+                if (collection.next)
+                    _this.showMessages(collection.next);
+            })
+                .fail(function (error) {
+                return document.getElementById("results").innerText = error.statusText;
             });
-            if (groups.next) {
-                groups.next.GetGroups().then(function (groups) {
-                    _this.groupsCallback(groups, null);
+        };
+        AppV1.prototype.showEvents = function (events, odataQuery) {
+            var _this = this;
+            events.GetEvents(odataQuery)
+                .then(function (collection) {
+                collection.items.forEach(function (event) {
+                    return document.getElementById("results").innerHTML += event.subject + "</br>";
                 });
-            }
+                if (events.next)
+                    _this.showEvents(collection.next);
+            })
+                .fail(function (error) {
+                return document.getElementById("results").innerText = error.statusText;
+            });
         };
         return AppV1;
     }());

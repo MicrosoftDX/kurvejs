@@ -5,7 +5,10 @@ module kurve {
         v2=2
     }
 
-  
+    export enum Mode {
+        Client = 1,
+        Node = 2
+    }
 
     class CachedToken {
         constructor(
@@ -117,30 +120,33 @@ module kurve {
 
     export interface IdentitySettings {
         clientId: string;
+        appSecret?: string;
         tokenProcessingUri: string;
         version: EndPointVersion;
         tokenStorage?: TokenStorage;
+        mode: Mode;
     }
 
     export class Identity {
-//      public authContext: any = null;
-//      public config: any = null;
-//      public isCallback: boolean = false;
         public clientId: string;
-//      private req: XMLHttpRequest;
         private state: string;
         private version: EndPointVersion;
         private nonce: string;
         private idToken: IdToken;
         private loginCallback: (error: Error) => void;
-//      private accessTokenCallback: (token: string, error: Error) => void;
         private getTokenCallback: (token: string, error: Error) => void;
         private tokenProcessorUrl: string;
         private tokenCache: TokenCache;
-//      private logonUser: any;
         private refreshTimer: any;
         private policy: string = "";
-//      private tenant: string = "";
+        private mode: Mode = Mode.Client;
+        private appSecret: string;
+        private NodePersistDataCallBack: (key: string, value: string, expiry: Date) => void;
+        private NodeRetrieveDataCallBack: (key: string) => string;
+        private req: any;
+        private res: any;
+        private https: any;
+
 
         constructor(identitySettings: IdentitySettings) {
             this.clientId = identitySettings.clientId;
@@ -151,81 +157,86 @@ module kurve {
             else
                 this.version = EndPointVersion.v1;
 
-            this.tokenCache = new TokenCache(identitySettings.tokenStorage);
+            this.mode = identitySettings.mode;
 
-            //Callback handler from other windows
-            window.addEventListener("message", event => {
-                if (event.data.type === "id_token") {
-                    if (event.data.error) {
-                        var e: Error = new Error();
-                        e.text = event.data.error;
-                        this.loginCallback(e);
+            if (this.mode === Mode.Client) {
 
-                    } else {
-                        //check for state
-                        if (this.state !== event.data.state) {
-                            var error = new Error();
-                            error.statusText = "Invalid state";
-                            this.loginCallback(error);
+                this.tokenCache = new TokenCache(identitySettings.tokenStorage);
+
+                //Callback handler from other windows
+                window.addEventListener("message", event => {
+                    if (event.data.type === "id_token") {
+                        if (event.data.error) {
+                            var e: Error = new Error();
+                            e.text = event.data.error;
+                            this.loginCallback(e);
+
                         } else {
-                            this.decodeIdToken(event.data.token);
-                            this.loginCallback(null);
+                            //check for state
+                            if (this.state !== event.data.state) {
+                                var error = new Error();
+                                error.statusText = "Invalid state";
+                                this.loginCallback(error);
+                            } else {
+                                this.decodeIdToken(event.data.token);
+                                this.loginCallback(null);
+                            }
+                        }
+                    } else if (event.data.type === "access_token") {
+                        if (event.data.error) {
+                            var e: Error = new Error();
+                            e.text = event.data.error;
+                            this.getTokenCallback(null, e);
+
+                        } else {
+                            var token: string = event.data.token;
+                            var iframe = document.getElementById("tokenIFrame");
+                            iframe.parentNode.removeChild(iframe);
+
+                            if (event.data.state !== this.state) {
+                                var error = new Error();
+                                error.statusText = "Invalid state";
+                                this.getTokenCallback(null, error);
+                            }
+                            else {
+                                this.getTokenCallback(token, null);
+                            }
                         }
                     }
-                } else if (event.data.type === "access_token") {
-                    if (event.data.error) {
-                        var e: Error = new Error();
-                        e.text = event.data.error;
-                        this.getTokenCallback(null, e);
+                });
+            }
+        }
 
-                    } else {
-                        var token:string = event.data.token;
-                        var iframe = document.getElementById("tokenIFrame");
-                        iframe.parentNode.removeChild(iframe);
+        private parseQueryString(str: string) {
+            var queryString = str || window.location.search || '';
+            var keyValPairs: any[] = [];
+            var params: any = {};
+            queryString = queryString.replace(/.*?\?/, "");
 
-                        if (event.data.state !== this.state) {
-                            var error = new Error();
-                            error.statusText = "Invalid state";
-                            this.getTokenCallback(null, error);
-                        }
-                        else {
-                            this.getTokenCallback(token, null);
-                        }
-                    }
+            if (queryString.length) {
+                keyValPairs = queryString.split('&');
+                for (var pairNum in keyValPairs) {
+                    var key = keyValPairs[pairNum].split('=')[0];
+                    if (!key.length) continue;
+                    if (typeof params[key] === 'undefined')
+                        params[key] = [];
+                    params[key].push(keyValPairs[pairNum].split('=')[1]);
                 }
-            });
+            }
+            return params;
+        }
+
+        private token(s: string, url: string) {
+            var start = url.indexOf(s);
+            if (start < 0) return null;
+            var end = url.indexOf("&", start + s.length);
+            return url.substring(start, ((end > 0) ? end : url.length));
         }
 
         public checkForIdentityRedirect(): boolean {
-            function token(s: string) {
-                var start = window.location.href.indexOf(s);
-                if (start < 0) return null;
-                var end = window.location.href.indexOf("&",start + s.length);
-                return  window.location.href.substring(start,((end > 0) ? end : window.location.href.length));
-            }
-
-            function parseQueryString(str: string) {
-                var queryString = str || window.location.search || '';
-                var keyValPairs: any[] = [];
-                var params: any = {};
-                queryString = queryString.replace(/.*?\?/, "");
-
-                if (queryString.length) {
-                    keyValPairs = queryString.split('&');
-                    for (var pairNum in keyValPairs) {
-                        var key = keyValPairs[pairNum].split('=')[0];
-                        if (!key.length) continue;
-                        if (typeof params[key] === 'undefined')
-                            params[key] = [];
-                        params[key].push(keyValPairs[pairNum].split('=')[1]);
-                    }
-                }
-                return params;
-            }
-
-            var params = parseQueryString(window.location.href);
-            var idToken = token("#id_token=");
-            var accessToken = token("#access_token");
+            var params = this.parseQueryString(window.location.href);
+            var idToken = this.token("#id_token=", window.location.href);
+            var accessToken = this.token("#access_token", window.location.href);
             if (idToken) {
                 if (true || this.state === params["state"][0]) { //BUG? When you are in a pure redirect system you don't remember your state or nonce so don't check.
                     this.decodeIdToken(idToken);
@@ -239,15 +250,6 @@ module kurve {
             }
             else if (accessToken) {
                 throw "Should not get here.  This should be handled via the iframe approach."
-/*
-                if (this.state === params["state"][0]) {
-                    this.getTokenCallback && this.getTokenCallback(accessToken, null);
-                } else {
-                    var error = new Error();
-                    error.statusText = "Invalid state";
-                    this.getTokenCallback && this.getTokenCallback(null, error);
-                }
-*/
             }
             return false;
         }
@@ -322,44 +324,206 @@ module kurve {
                 callback(e);
                 return;
             }
+            if (this.mode === Mode.Client) {
+                var token = this.tokenCache.getForResource(resource);
+                if (token) {
+                    return callback(null, token.token);
+                }
 
-            var token = this.tokenCache.getForResource(resource);
-            if (token) {
-                return callback(null, token.token);
+                //If we got this far, we need to go get this token
+
+                //Need to create the iFrame to invoke the acquire token
+                this.getTokenCallback = ((token: string, error: Error) => {
+                    if (error) {
+                        callback(error);
+                    }
+                    else {
+                        this.decodeAccessToken(token, resource);
+                        callback(null, token);
+                    }
+                });
+
+                this.nonce = "token" + this.generateNonce();
+                this.state = "token" + this.generateNonce();
+
+                var iframe = document.createElement('iframe');
+                iframe.style.display = "none";
+                iframe.id = "tokenIFrame";
+
+                iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
+                    "&resource=" + encodeURIComponent(resource) +
+                    "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
+                    "&state=" + encodeURIComponent(this.state) +
+                    "&version=" + encodeURIComponent(this.version.toString()) +
+                    "&nonce=" + encodeURIComponent(this.nonce) +
+                    "&op=token";
+
+                document.body.appendChild(iframe);
+            } else {
+                var cookies = this.parseNodeCookies(this.req);
+                var upn = this.NodeRetrieveDataCallBack("session|" + cookies["kurveSession"]);
+                var code = this.NodeRetrieveDataCallBack("code|" + upn);
+
+                var post_data = "grant_type=authorization_code" +
+                    "&client_id=" + encodeURIComponent(this.clientId) +
+                    "&code=" + encodeURIComponent(code) +
+                    "&redirect_uri=" + encodeURIComponent(this.tokenProcessorUrl) +
+                    "&resource=" + encodeURIComponent(resource) +
+                    "&client_secret=" + encodeURIComponent(this.appSecret);
+
+                var post_options = {
+                    host: 'login.microsoftonline.com',
+                    port: '443',
+                    path: '/common/oauth2/token',
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Content-Length': post_data.length,
+                        accept: '*/*'
+                    }
+                };
+
+                var post_req = this.https.request(post_options, (response) => {
+                    response.setEncoding('utf8');
+                    response.on('data', (chunk) => {
+                        var chunkJson = JSON.parse(chunk);
+                        var t = this.decodeAccessToken(chunkJson.access_token, resource);
+                        // this.tokenCache.add(t); //TODO: Persist/retrieve token cache no server
+                        callback(null, chunkJson.access_token);
+                    });
+                });
+
+                post_req.write(post_data);
+                post_req.end();
             }
-
-            //If we got this far, we need to go get this token
-
-            //Need to create the iFrame to invoke the acquire token
-            this.getTokenCallback = ((token: string, error: Error) => {
-                if (error) {
-                    callback(error);
-                }
-                else {
-                    this.decodeAccessToken(token, resource);
-                    callback(null, token);
-                }
-            });
-
-            this.nonce = "token" + this.generateNonce();
-            this.state = "token" + this.generateNonce();
-
-            var iframe = document.createElement('iframe');
-            iframe.style.display = "none";
-            iframe.id = "tokenIFrame";
-
-            iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
-            "&resource=" + encodeURIComponent(resource) +
-                "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
-                "&state=" + encodeURIComponent(this.state) +
-                "&version=" + encodeURIComponent(this.version.toString()) +
-                "&nonce=" + encodeURIComponent(this.nonce) +
-                "&op=token";
-
-            document.body.appendChild(iframe);
         }
 
+        private parseNodeCookies(req) {
+            var list = {};
+            var rc = req.headers.cookie;
 
+            rc && rc.split(';').forEach(function (cookie) {
+                var parts = cookie.split('=');
+                list[parts.shift().trim()] = decodeURI(parts.join('='));
+            });
+
+            return list;
+        }
+        public handleNodeCallback(req: any, res: any, https: any, crypto: any, persistDataCallback: (key: string, value: string, expiry: Date) => void, retrieveDataCallback: (key: string) => string): Promise<boolean, Error> {
+            this.NodePersistDataCallBack = persistDataCallback;
+            this.NodeRetrieveDataCallBack = retrieveDataCallback;
+            var url: string = <string>req.url;
+
+            this.req = req;
+            this.res = res;
+            this.https = https;
+
+            var params = this.parseQueryString(url);
+            var code = this.token("code=", url);
+            var accessToken = this.token("#access_token", url);
+            var cookies = this.parseNodeCookies(req);
+
+            var d = new Deferred<boolean, Error>();
+
+            if (this.version === EndPointVersion.v1) {
+
+                if (code) {
+                    var codeFromRequest = params["code"][0];
+                    var stateFromRequest = params["state"][0];
+                    var cachedState = retrieveDataCallback("state|" + stateFromRequest);
+                    if (cachedState) {
+                        if (cachedState === "waiting") {
+                            var expiry = new Date(new Date().getTime() + 86400000);
+                            persistDataCallback("state|" + stateFromRequest, "done", expiry);
+
+                            var post_data = "grant_type=authorization_code" +
+                                "&client_id=" + encodeURIComponent(this.clientId) +
+                                "&code=" + encodeURIComponent(codeFromRequest) +
+                                "&redirect_uri=" + encodeURIComponent(this.tokenProcessorUrl) +
+                                "&resource=" + encodeURIComponent("https://graph.microsoft.com") +
+                                "&client_secret=" + encodeURIComponent(this.appSecret);
+
+                            var post_options = {
+                                host: 'login.microsoftonline.com',
+                                port: '443',
+                                path: '/common/oauth2/token',
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'Content-Length': post_data.length,
+                                    accept: '*/*'
+                                }
+                            };
+
+                            var post_req = https.request(post_options, (response) => {
+                                response.setEncoding('utf8');
+                                response.on('data', (chunk) => {
+                                    var chunkJson = JSON.parse(chunk);
+                                    var decodedToken = JSON.parse(this.base64Decode(chunkJson.access_token.substring(chunkJson.access_token.indexOf('.') + 1, chunkJson.access_token.lastIndexOf('.'))));
+                                    var upn = decodedToken.upn;
+                                    var sha = crypto.createHash('sha256');
+                                    sha.update(Math.random().toString());
+                                    var sessionID = sha.digest('hex');
+                                    var expiry = new Date(new Date().getTime() + 30 * 60 * 1000);
+                                    persistDataCallback("session|" + sessionID, upn, expiry);
+                                    persistDataCallback("code|" + upn, codeFromRequest, expiry);
+                                    res.writeHead(302, {
+                                        'Set-Cookie': 'kurveSession=' + sessionID,
+                                        'Location': '/'
+                                    });
+                                    res.end();
+                                    d.resolve(false);
+
+                                });
+                            });
+
+                            post_req.write(post_data);
+                            post_req.end();
+                        } else {
+                            //same state has been reused, not allowed
+                            res.writeHead(500, "Replay detected", { 'content-type': 'text/plain' });
+                            res.end("Replay detected");
+                            d.resolve(false);
+                        }
+                    }
+                    else {
+                        //state doesn't match any of our cached ones
+                        res.writeHead(500, "State doesn't match", { 'content-type': 'text/plain' });
+                        res.end("State doesn't match");
+                        d.resolve(false);
+                    }
+                    return d.promise;
+
+                } else {
+                    if (cookies["kurveSession"]) {
+                        var upn = retrieveDataCallback("session|" + cookies["kurveSession"]);
+                        if (upn) {
+                            d.resolve(true);
+                            return d.promise;
+                        }
+                    }
+                    var state: string = this.generateNonce();
+                    var expiry = new Date(new Date().getTime() + 900000);
+
+                    persistDataCallback("state|" + state, "waiting", expiry);
+
+                    var url = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=code&client_id=" +
+                        encodeURIComponent(this.clientId) +
+                        "&redirect_uri=" + encodeURIComponent(this.tokenProcessorUrl) +
+                        "&state=" + encodeURIComponent(state);
+
+                    res.writeHead(302, { 'Location': url });
+
+                    res.end();
+                    d.resolve(false);
+                    return d.promise;
+                }
+            } else {
+                //TODO: v2
+                d.resolve(false);
+                return d.promise;
+            }
+        }
         public getAccessTokenForScopesAsync(scopes: string[], promptForConsent = false): Promise<string, Error> {
 
             var d = new Deferred<string, Error>();
@@ -436,7 +600,8 @@ module kurve {
             }
         }
 
-        public loginAsync(loginSettings?: { scopes?: string[], policy?:string, tenant?:string}): Promise<void, Error> {
+        public loginAsync(loginSettings?: { scopes?: string[], policy?: string, tenant?: string }): Promise<void, Error> {
+        //TODO: Not node compatible
             var d = new Deferred<void, Error>();
             this.login((error) => {
                 if (error) {
@@ -449,7 +614,8 @@ module kurve {
             return d.promise;
         }
 
-        public login(callback: (error: Error) => void, loginSettings?: { scopes?: string[], policy?: string, tenant?: string}): void {
+        public login(callback: (error: Error) => void, loginSettings?: { scopes?: string[], policy?: string, tenant?: string }): void {
+        //TODO: Not node compatible
             this.loginCallback = callback;
             if (!loginSettings) loginSettings = {};
             if (loginSettings.policy) this.policy = loginSettings.policy;
@@ -492,7 +658,8 @@ module kurve {
         }
 
 
-        public loginNoWindowAsync(toUrl? : string): Promise<void, Error> {
+        public loginNoWindowAsync(toUrl?: string): Promise<void, Error> {
+        //TODO: Not node compatible
             var d = new Deferred<void, Error>();
             this.loginNoWindow((error) => {
                 if (error) {
@@ -505,7 +672,8 @@ module kurve {
             return d.promise;
         }
 
-        public loginNoWindow(callback: (error: Error) => void, toUrl? : string): void {
+        public loginNoWindow(callback: (error: Error) => void, toUrl?: string): void {
+        //TODO: Not node compatible
             this.loginCallback = callback;
             this.state = "clientId=" + this.clientId + "&" + "tokenProcessorUrl=" + this.tokenProcessorUrl
             this.nonce = this.generateNonce();
@@ -523,6 +691,7 @@ module kurve {
         }
 
         public logOut(): void {
+        //TODO: Not node compatible
             this.tokenCache.clear();
             var url = "https://login.microsoftonline.com/common/oauth2/logout?post_logout_redirect_uri=" + encodeURI(window.location.href);
             window.location.href = url;
