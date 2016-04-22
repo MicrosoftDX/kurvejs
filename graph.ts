@@ -25,16 +25,21 @@ module kurve {
             var d = new Deferred<Singleton<Model, N>, Error>();
 
             this.get(path, (error, result) => {
-                var jsonResult = JSON.parse(result) ;
+                if (!responseType){
+                    var jsonResult = JSON.parse(result) ;
 
-                if (jsonResult.error) {
-                    var errorODATA = new Error();
-                    errorODATA.other = jsonResult.error;
-                    d.reject(errorODATA);
-                    return;
+                    if (jsonResult.error) {
+                        var errorODATA = new Error();
+                        errorODATA.other = jsonResult.error;
+                        d.reject(errorODATA);
+                        return;
+                    }
+                    d.resolve(new Singleton<Model, N>(jsonResult, self));
+                } else {
+                    d.resolve(new Singleton<Model, N>(result, self));
                 }
 
-                d.resolve(new Singleton<Model, N>(jsonResult, self));
+                
             }, responseType, scopes);
 
             return d.promise;

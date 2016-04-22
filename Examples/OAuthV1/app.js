@@ -48,30 +48,32 @@ var Sample;
         };
         //Scenario 2: Load users with paging
         AppV1.prototype.loadUsersWithPaging = function () {
+            var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.showUsers(this.graph.users, "$top=5");
+            this.graph.users.GetUsers("$top=5").then((function (users) {
+                _this.getUsersCallback(users, null);
+            }));
         };
         //Scenario 3: Load users with custom odata query
         AppV1.prototype.loadUsersWithOdataQuery = function (query) {
+            var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.showUsers(this.graph.users, query);
+            this.graph.users.GetUsers(query).then(function (users) { _this.getUsersCallback(users, null); });
         };
         //Scenario 4: Load user "me"
         AppV1.prototype.loadUserMe = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(function (user) {
-                return document.getElementById("results").innerHTML += user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += user.item.displayName + "</br>";
             });
         };
         //Scenario 5: Load user by ID
         AppV1.prototype.userById = function () {
             document.getElementById("results").innerHTML = "";
-            this.graph.users.$(document.getElementById("userId").value).GetUser()
-                .then(function (user) {
-                return document.getElementById("results").innerHTML += user.item.displayName + "</br>";
-            })
-                .fail(function (error) {
-                return window.alert(error.status);
+            this.graph.users.$(document.getElementById("userId").value).GetUser().then(function (user) {
+                document.getElementById("results").innerHTML += user.item.displayName + "</br>";
+            }).fail(function (error) {
+                window.alert(error.status);
             });
         };
         //Scenario 6: Load user "me" and then its messages
@@ -81,7 +83,11 @@ var Sample;
             this.graph.me.GetUser().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                _this.showMessages(user.self.messages, "$top=2");
+                user.self.messages.GetMessages("$top=2").then(function (messages) {
+                    _this.messagesCallback(messages, null);
+                }).fail(function (error) {
+                    _this.messagesCallback(null, error);
+                });
             });
         };
         //Scenario 6: Load user "me" and then its messages
@@ -91,65 +97,74 @@ var Sample;
             this.graph.me.GetUser().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Events:" + "</br>";
-                _this.showEvents(user.self.events, "$top=2");
+                user.self.events.GetEvents("$top=2").then(function (items) {
+                    _this.eventsCallback(items, null);
+                }).fail(function (error) {
+                    _this.eventsCallback(null, error);
+                });
             });
         };
         //Scenario 7: Load user "me" and then its groups
         AppV1.prototype.loadUserGroups = function () {
-            var _this = this;
-            document.getElementById("results").innerHTML = "";
-            this.graph.me.GetUser().then(function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
-                document.getElementById("results").innerHTML += "Groups:" + "</br>";
-                _this.showGroups(user.self.memberOf, "$top=5");
-            });
+            //TODO: Not implemented yet
+            //document.getElementById("results").innerHTML = "";
+            //this.graph.me.GetUser().then(((user) => {
+            //    document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+            //    document.getElementById("results").innerHTML += "Groups:" + "</br>";
+            //    user.self.memberOf(((groups, error) => {
+            //        this.groupsCallback(groups, error);
+            //    }), "$top=5");
+            //}));
         };
         //Scenario 8: Load user "me" and then its manager
         AppV1.prototype.loadUserManager = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Manager:" + "</br>";
-                user.self.manager(function (manager) {
+                user.self.manager.GetManager().then(function (manager) {
                     document.getElementById("results").innerHTML += manager.item.displayName + "</br>";
                 });
             });
         };
         //Scenario 9: Load groups with paging
         AppV1.prototype.loadGroupsWithPaging = function () {
+            var _this = this;
+            //TODO: not implemented yet
             document.getElementById("results").innerHTML = "";
-            this.showGroups(this.graph.groups, "$top=5");
+            this.graph.groups.GetGroups().then(function (groups) {
+                _this.getGroupsCallback(groups, null);
+            });
         };
         //Scenario 10: Load group by ID
         AppV1.prototype.groupById = function () {
+            //Not implemented yet
             //document.getElementById("results").innerHTML = "";
-            //this.graph.groupAsync((<HTMLInputElement>document.getElementById("groupId")).value).then((group) => {
-            //    document.getElementById("results").innerHTML += group.data.displayName + "</br>";
+            //this.graph.groups.$((<HTMLInputElement>document.getElementById("groupId")).value).GetGroup().then((group) => {
+            //    document.getElementById("results").innerHTML += group.item.displayName + "</br>";
             //});
         };
         //Scenario 11: Load user "me" and then its messages
         AppV1.prototype.loadUserPhoto = function () {
+            //Not implemented yet
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Photo:" + "</br>";
                 user.self.photo.GetPhotoProperties().then(function (photo) {
-                    user.self.GetPhotoImage().then(function (image) {
-                        var img = document.createElement("img");
-                        var reader = new FileReader();
-                        reader.onloadend = function () {
-                            img.height = image.item.height;
-                            img.width = image.item.width;
-                            img.src = reader.result;
-                        };
-                        reader.readAsDataURL(image.item);
-                        document.getElementById("results").appendChild(img);
-                    })
-                        .fail(function (error) { return window.alert(error.statusText); });
-                })
-                    .fail(function (error) { return window.alert(error.statusText); });
-            })
-                .fail(function (error) { return window.alert(error.statusText); });
+                    //Photo metadata
+                    var x = photo;
+                });
+                user.self.photo.GetPhotoImage().then(function (photoValue) {
+                    var img = document.createElement("img");
+                    var reader = new FileReader();
+                    reader.onloadend = function () {
+                        img.src = reader.result;
+                    };
+                    reader.readAsDataURL(photoValue.raw);
+                    document.getElementById("results").appendChild(img);
+                });
+            });
         };
         //Scenario 12: Is logged in?
         AppV1.prototype.isLoggedIn = function () {
@@ -160,61 +175,62 @@ var Sample;
             document.getElementById("results").innerText = JSON.stringify(this.identity.getIdToken());
         };
         //--------------------------------Callbacks---------------------------------------------
-        AppV1.prototype.showUsers = function (users, odataQuery) {
+        AppV1.prototype.getUsersCallback = function (users, error) {
             var _this = this;
-            users.GetUsers(odataQuery)
-                .then(function (collection) {
-                collection.items.forEach(function (user) {
-                    return document.getElementById("results").innerHTML += user.item.displayName + "</br>";
-                });
-                if (collection.next)
-                    _this.showUsers(collection.next);
-            })
-                .fail(function (error) {
-                return document.getElementById("results").innerText = error.statusText;
+            if (error) {
+                document.getElementById("results").innerText = error.statusText;
+                return;
+            }
+            users.items.forEach(function (user) {
+                document.getElementById("results").innerHTML += user.displayName + "</br>";
             });
+            if (users.next) {
+                //TODO: Bug, requires Odata
+                users.next.GetUsers("").then((function (result) {
+                    _this.getUsersCallback(result, null);
+                }));
+            }
         };
-        AppV1.prototype.showGroups = function (groups, odataQuery) {
+        //TODO: Missing groups implementation
+        //private getGroupsCallback(groups: kurve.Collection<kurve.GroupDataModel, kurve.Groups>, error: kurve.Error): void {
+        //    if (error) {
+        //        document.getElementById("results").innerText = error.statusText;
+        //        return;
+        //    }
+        //    groups.data.forEach((item) => {
+        //        document.getElementById("results").innerHTML += item.data.displayName + "</br>";
+        //    });
+        //    if (groups.nextLink) {
+        //        groups.nextLink().then(((result) => {
+        //            this.getGroupsCallback(result, null);
+        //        }));
+        //    }
+        //}
+        AppV1.prototype.messagesCallback = function (messages, error) {
             var _this = this;
-            groups.GetGroups(odataQuery)
-                .then(function (collection) {
-                collection.items.forEach(function (group) {
-                    return document.getElementById("results").innerHTML += group.item.displayName + "</br>";
+            if (messages.items) {
+                messages.items.forEach(function (item) {
+                    document.getElementById("results").innerHTML += item.subject + "</br>";
                 });
-                if (collection.next)
-                    _this.showUsers(collection.next);
-            })
-                .fail(function (error) {
-                return document.getElementById("results").innerText = error.statusText;
-            });
+            }
+            if (messages.next) {
+                messages.next.GetMessages().then(function (messages) {
+                    _this.messagesCallback(messages, error);
+                });
+            }
         };
-        AppV1.prototype.showMessages = function (messages, odataQuery) {
+        AppV1.prototype.eventsCallback = function (events, error) {
             var _this = this;
-            messages.GetMessages(odataQuery)
-                .then(function (collection) {
-                collection.items.forEach(function (message) {
-                    return document.getElementById("results").innerHTML += message.subject + "</br>";
+            if (events.items) {
+                events.items.forEach(function (event) {
+                    document.getElementById("results").innerHTML += event.subject + "</br>";
                 });
-                if (collection.next)
-                    _this.showMessages(collection.next);
-            })
-                .fail(function (error) {
-                return document.getElementById("results").innerText = error.statusText;
-            });
-        };
-        AppV1.prototype.showEvents = function (events, odataQuery) {
-            var _this = this;
-            events.GetEvents(odataQuery)
-                .then(function (collection) {
-                collection.items.forEach(function (event) {
-                    return document.getElementById("results").innerHTML += event.subject + "</br>";
+            }
+            if (events.next) {
+                events.next.GetEvents().then(function (results) {
+                    _this.eventsCallback(results, error);
                 });
-                if (events.next)
-                    _this.showEvents(collection.next);
-            })
-                .fail(function (error) {
-                return document.getElementById("results").innerText = error.statusText;
-            });
+            }
         };
         return AppV1;
     }());

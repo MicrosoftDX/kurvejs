@@ -330,13 +330,13 @@ declare module kurve {
         query: string;
         constructor(query?: string);
         toString: () => string;
-        odata: (query: string) => OData;
-        select: (...fields: string[]) => OData;
-        expand: (...fields: string[]) => OData;
-        filter: (query: string) => OData;
-        orderby: (...fields: string[]) => OData;
-        top: (items: Number) => OData;
-        skip: (items: Number) => OData;
+        odata: (query: string) => this;
+        select: (...fields: string[]) => this;
+        expand: (...fields: string[]) => this;
+        filter: (query: string) => this;
+        orderby: (...fields: string[]) => this;
+        top: (items: Number) => this;
+        skip: (items: Number) => this;
     }
     class Singleton<Model, N extends Node> {
         raw: any;
@@ -423,7 +423,7 @@ declare module kurve {
             contact: string[];
         };
         GetPhotoProperties: (odataQuery?: OData | string) => Promise<Singleton<ProfilePhotoDataModel, Photo>, Error>;
-        GetPhotoImage: (odataQuery?: OData | string) => Promise<Singleton<any, Photo>, Error>;
+        GetPhotoImage: (odataQuery?: OData | string) => Promise<Singleton<any, any>, Error>;
     }
     class Manager extends Node {
         constructor(graph: Graph, path?: string);

@@ -341,7 +341,7 @@ export class Photo extends Node {
     }
 
     GetPhotoProperties = (odataQuery?:ODataQuery) => this.graph.Get<ProfilePhotoDataModel, Photo>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Photo.scopes[this.context]));
-    GetPhotoImage = (odataQuery?:ODataQuery) => this.graph.Get<any, Photo>(this.pathWithQuery(odataQuery, "/$value"), this, this.scopesForV2(Photo.scopes[this.context]), "blob");
+    GetPhotoImage = (odataQuery?:ODataQuery) => this.graph.Get<any, any>(this.pathWithQuery(odataQuery, "/$value"), this, this.scopesForV2(Photo.scopes[this.context]), "blob");
 }
 
 export class Manager extends Node {

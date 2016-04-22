@@ -85,28 +85,18 @@ var Sample;
             this.graph.me.GetUser().then(function (user) {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Photo:" + "</br>";
-                //TODO: Not implemented yet
-                //user.profilePhoto((photo, error) => {
-                //    if (error)
-                //        window.alert(error.statusText);
-                //    else {
-                //        //Photo metadata
-                //        var x = photo;
-                //    }
-                //});
-                //user.profilePhotoValue((photoValue: any, error: Kurve.Error) => {
-                //    if (error)
-                //        window.alert(error.statusText);
-                //    else {
-                //        var img = document.createElement("img");
-                //        var reader = new FileReader();
-                //        reader.onloadend = () => {
-                //            img.src = reader.result;
-                //        }
-                //        reader.readAsDataURL(photoValue);
-                //        document.getElementById("results").appendChild(img);
-                //    }
-                //});
+                user.self.photo.GetPhotoProperties().then(function (photo) {
+                    var x = photo;
+                });
+                user.self.photo.GetPhotoImage().then(function (photoValue) {
+                    var img = document.createElement("img");
+                    var reader = new FileReader();
+                    reader.onloadend = function () {
+                        img.src = reader.result;
+                    };
+                    reader.readAsDataURL(photoValue.item);
+                    document.getElementById("results").appendChild(img);
+                });
             });
         };
         //Scenario 6: Is logged in?

@@ -106,30 +106,21 @@ module Sample {
             this.graph.me.GetUser().then((user) => {
                 document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Photo:" + "</br>";
-                //TODO: Not implemented yet
-                //user.profilePhoto((photo, error) => {
-                //    if (error)
-                //        window.alert(error.statusText);
-                //    else {
-                //        //Photo metadata
-                //        var x = photo;
-                //    }
-                //});
 
-                //user.profilePhotoValue((photoValue: any, error: Kurve.Error) => {
-                //    if (error)
-                //        window.alert(error.statusText);
-                //    else {
-                //        var img = document.createElement("img");
-                //        var reader = new FileReader();
-                //        reader.onloadend = () => {
-                //            img.src = reader.result;
-                //        }
-                //        reader.readAsDataURL(photoValue);
+                user.self.photo.GetPhotoProperties().then((photo) => {                  
+                        var x = photo;
+                });
 
-                //        document.getElementById("results").appendChild(img);
-                //    }
-                //});
+                user.self.photo.GetPhotoImage().then((photoValue) => {
+                    var img = document.createElement("img");
+                    var reader = new FileReader();
+                    reader.onloadend = () => {
+                        img.src = reader.result;
+                    }
+                    reader.readAsDataURL(photoValue.item);
+
+                    document.getElementById("results").appendChild(img);
+                });
             });
         }
 
