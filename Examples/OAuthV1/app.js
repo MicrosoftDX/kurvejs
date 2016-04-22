@@ -106,15 +106,14 @@ var Sample;
         };
         //Scenario 8: Load user "me" and then its manager
         AppV1.prototype.loadUserManager = function () {
-            //TODO: not implemented yet
-            //document.getElementById("results").innerHTML = "";
-            //this.graph.me.GetUser().then((user) => {
-            //    document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
-            //    document.getElementById("results").innerHTML += "Manager:" + "</br>";
-            //    user.self.manager((manager: Kurve.User) => {
-            //        document.getElementById("results").innerHTML += manager.data.displayName + "</br>";
-            //    });
-            //});
+            document.getElementById("results").innerHTML = "";
+            this.graph.me.GetUser().then(function (user) {
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Manager:" + "</br>";
+                user.self.manager(function (manager) {
+                    document.getElementById("results").innerHTML += manager.item.displayName + "</br>";
+                });
+            });
         };
         //Scenario 9: Load groups with paging
         AppV1.prototype.loadGroupsWithPaging = function () {
@@ -130,33 +129,27 @@ var Sample;
         };
         //Scenario 11: Load user "me" and then its messages
         AppV1.prototype.loadUserPhoto = function () {
-            //Not implemented yet
-            //document.getElementById("results").innerHTML = "";
-            //this.graph.me((user: Kurve.User) => {
-            //    document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
-            //    document.getElementById("results").innerHTML += "Photo:" + "</br>";
-            //    user.profilePhoto((photo, error) => {
-            //        if (error)
-            //            window.alert(error.statusText);
-            //        else {
-            //            //Photo metadata
-            //            var x = photo;
-            //        }
-            //    });
-            //    user.profilePhotoValue((photoValue: any, error: Kurve.Error) => {
-            //        if (error)
-            //            window.alert(error.statusText);
-            //        else {
-            //            var img = document.createElement("img");
-            //            var reader = new FileReader();
-            //            reader.onloadend = () => {
-            //                img.src = reader.result;
-            //            }
-            //            reader.readAsDataURL(photoValue);
-            //            document.getElementById("results").appendChild(img);
-            //        }
-            //    });
-            //});
+            document.getElementById("results").innerHTML = "";
+            this.graph.me.GetUser().then(function (user) {
+                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Photo:" + "</br>";
+                user.self.photo.GetPhotoProperties().then(function (photo) {
+                    user.self.GetPhotoImage().then(function (image) {
+                        var img = document.createElement("img");
+                        var reader = new FileReader();
+                        reader.onloadend = function () {
+                            img.height = image.item.height;
+                            img.width = image.item.width;
+                            img.src = reader.result;
+                        };
+                        reader.readAsDataURL(image.item);
+                        document.getElementById("results").appendChild(img);
+                    })
+                        .fail(function (error) { return window.alert(error.statusText); });
+                })
+                    .fail(function (error) { return window.alert(error.statusText); });
+            })
+                .fail(function (error) { return window.alert(error.statusText); });
         };
         //Scenario 12: Is logged in?
         AppV1.prototype.isLoggedIn = function () {

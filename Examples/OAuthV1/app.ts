@@ -130,15 +130,14 @@ module Sample {
 
         //Scenario 8: Load user "me" and then its manager
         private loadUserManager(): void {
-            //TODO: not implemented yet
-            //document.getElementById("results").innerHTML = "";
-            //this.graph.me.GetUser().then((user) => {
-            //    document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
-            //    document.getElementById("results").innerHTML += "Manager:" + "</br>";
-            //    user.self.manager((manager: Kurve.User) => {
-            //        document.getElementById("results").innerHTML += manager.data.displayName + "</br>";
-            //    });
-            //});
+            document.getElementById("results").innerHTML = "";
+            this.graph.me.GetUser().then((user) => {
+                document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Manager:" + "</br>";
+                user.self.manager(manager => {
+                    document.getElementById("results").innerHTML += manager.item.displayName + "</br>";
+                });
+            });
         }
 
         //Scenario 9: Load groups with paging
@@ -158,36 +157,27 @@ module Sample {
 
         //Scenario 11: Load user "me" and then its messages
         private loadUserPhoto(): void {
-            //Not implemented yet
-            //document.getElementById("results").innerHTML = "";
-            //this.graph.me((user: Kurve.User) => {
-            //    document.getElementById("results").innerHTML += "User:" + user.data.displayName + "</br>";
-            //    document.getElementById("results").innerHTML += "Photo:" + "</br>";
-
-            //    user.profilePhoto((photo, error) => {
-            //        if (error)
-            //            window.alert(error.statusText);
-            //        else {
-            //            //Photo metadata
-            //            var x = photo;
-            //        }
-            //    });
-
-            //    user.profilePhotoValue((photoValue: any, error: Kurve.Error) => {
-            //        if (error)
-            //            window.alert(error.statusText);
-            //        else {
-            //            var img = document.createElement("img");
-            //            var reader = new FileReader();
-            //            reader.onloadend = () => {
-            //                img.src = reader.result;
-            //            }
-            //            reader.readAsDataURL(photoValue);
-
-            //            document.getElementById("results").appendChild(img);
-            //        }
-            //    });
-            //});
+            document.getElementById("results").innerHTML = "";
+            this.graph.me.GetUser().then((user) => {
+                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "Photo:" + "</br>";
+                user.self.photo.GetPhotoProperties().then(photo => {
+                    user.self.GetPhotoImage().then(image => {
+                        var img = document.createElement("img");
+                        var reader = new FileReader();
+                        reader.onloadend = () => {
+                            img.height = image.item.height;
+                            img.width = image.item.width;
+                            img.src = reader.result;
+                        }
+                        reader.readAsDataURL(image.item);
+                        document.getElementById("results").appendChild(img);
+                    })
+                    .fail(error => window.alert(error.statusText));
+                })
+                .fail(error => window.alert(error.statusText));
+            })
+            .fail(error => window.alert(error.statusText));
         }
 
         //Scenario 12: Is logged in?
