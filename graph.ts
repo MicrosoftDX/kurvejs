@@ -24,12 +24,12 @@ module kurve {
         get users() { return new Users(this, this.baseUrl); }
         get groups() { return new Groups(this, this.baseUrl); }
 
-        public Get<Model, N extends Node>(path:string, self:N, scopes?:string[], responseType?:string): Promise<Singleton<Model, N>, Error> {
+        public Get<Model, N extends Node>(path:string, node:N, scopes?:string[], responseType?:string): Promise<Singleton<Model, N>, Error> {
             console.log("GET", path, scopes);
             var d = new Deferred<Singleton<Model, N>, Error>();
 
             this.get(path, (error, result) => {
-                if (!responseType){
+                if (!responseType) {
                     var jsonResult = JSON.parse(result) ;
 
                     if (jsonResult.error) {
@@ -38,9 +38,9 @@ module kurve {
                         d.reject(errorODATA);
                         return;
                     }
-                    d.resolve(new Singleton<Model, N>(jsonResult, self));
+                    d.resolve(singletonFromResponse<Model, N>(jsonResult, node));
                 } else {
-                    d.resolve(new Singleton<Model, N>(result, self));
+                    d.resolve(singletonFromResponse<Model, N>(result, node));
                 }
 
                 
@@ -48,10 +48,10 @@ module kurve {
 
             return d.promise;
          }
-
-        public GetCollection<Model, N extends CollectionNode>(path:string, self:N, next:N, scopes?:string[]): Promise<Collection<Model, N>, Error> {
+         
+        public GetCollection<Model, C extends CollectionNode, N extends Node>(path:string, node:C, childFactory:ChildFactory<Model, N>, scopes?:string[]): Promise<Collection<Model, C, N>, Error> {
             console.log("GET collection", path, scopes);
-            var d = new Deferred<Collection<Model, N>, Error>();
+            var d = new Deferred<Collection<Model, C, N>, Error>();
 
             this.get(path, (error, result) => {
                 var jsonResult = JSON.parse(result) ;
@@ -62,14 +62,14 @@ module kurve {
                     d.reject(errorODATA);
                     return;
                 }
-
-                d.resolve(new Collection<Model,N>(jsonResult, self, next))
+                
+                d.resolve(collectionFromResponse<Model, C, N>(jsonResult, node, this, childFactory, scopes));
             }, null, scopes);
 
             return d.promise;
          }
 
-        public Post<Model, N extends Node>(object:Model, path:string, self:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
+        public Post<Model, N extends Node>(object:Model, path:string, node:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
             console.log("POST", path, scopes);
             var d = new Deferred<Singleton<Model, N>, Error>();
             
@@ -84,7 +84,7 @@ module kurve {
                     return;
                 }
 
-                d.resolve(new Response<Model, N>({}, self));
+                d.resolve(new Response<Model, N>({}, node));
             });
 */
             return d.promise;

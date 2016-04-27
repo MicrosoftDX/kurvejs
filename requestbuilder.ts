@@ -24,39 +24,75 @@ Each endpoint exposes the set of available Graph operations through strongly typ
 Certain Graph endpoints are implemented as OData "Functions". These are not treated as Graph nodes. They're just methods: 
 
     graph.me.events.$("123").DeclineEvent(eventResponse:EventResponse)
-        POST "/me/events/123/microsoft.graph.decline
+        POST "/me/events/123/microsoft.graph.decline""
 
 Graph operations are exposed through Promises:
 
     graph.me.messages
     .GetMessages()
-    .then(collection =>
-        collection.items.forEach(message =>
+    .then(messages =>
+        messages.forEach(message =>
             console.log(message.subject)
         )
     )
 
-All operations return a "self" property which allows you to continue along the Graph path from the point where you left off:
+All operations return a "_node" property which allows you to continue along the Graph path from the point where you left off:
 
-    graph.me.messages.$("123").GetMessage().then(singleton =>
-        console.log(singleton.item.subject);
-        singleton.self.attachments.GetAttachments().then(collection => // singleton.self === graph.me.messages.$("123")
-            collection.items.forEach(attachment => 
+    graph.me.messages.$("123").GetMessage().then(message =>
+        console.log(message.subject);
+        message._node.attachments.GetAttachments().then(attachments => // attachments._node === graph.me.messages.$("123").attachments
+            attachments.forEach(attachment => 
                 console.log(attachment.contentBytes)
             )
         )
     )
 
-Operations which return paginated collections can return a "next" request object. This can be utilized in a recursive function:
+Members of returned collections also have a "_node" object:
 
-    ListMessageSubjects(messages:Messages, odata?:string) {
-        messages.GetMessages(odata).then(collection => {
-            collection.items.forEach(message => console.log(message.subject));
-            if (collection.next)
-                ListMessageSubjects(collection.next); // don't need odata after the first time
+        me.messages.GetMessages().then(messages =>
+            messages.forEach(message =>
+                message._node.attachments.GetAttachments().then(attachments =>
+                    attachments.forEach(attachment =>
+                        console.log(attachment.id);
+                    )
+                )
+            )
+        )
+
+In this example message._node returns the expected node in the graph. But consider
+the case of:
+
+    me/directReports/{userId}
+    
+This returns a user object, but you can't do user operations. This operation is disallowed:
+
+    me/directReports/{userId}/manager
+    
+Instead you must start again at the beginning:
+
+    users/{userId}/manager
+    
+We facilitate this by setting the "_node" property on members of certain collections accordingly: 
+
+        me.directReports.GetDirectReports().then(users =>
+            users.forEach(user =>
+                user._node.manager.GetManager()     // equivalent to users.$(user.id).manager.GetManager();
+            )
+        )
+
+Operations which return paginated collections can return a "_next" request object. This can be utilized in a recursive function:
+
+    ListMessageSubjects(messages:Singleton<MessageDataModel, Message>) {
+        messages.forEach(message => console.log(message.subject));
+        if (messages._next)
+            messages._next().then(nextMessages =>
+                ListMessageSubjects(nextMessages)
+            )
         })
     }
-    ListMessageSubjects(graph.me.messages, new OData().select("subject").toString());
+    graph.me.messages.GetMessages(new OData().select("subject")).then(messages =>
+        ListMessageSubjects(messages)
+    );
     
 (With async/await support, an iteration pattern can be used intead of recursion)
 
@@ -169,28 +205,32 @@ let pathWithQuery = (path:string, odataQuery?:ODataQuery) => {
     return path + (query ? "?" + query : "");
 }
 
-export class Singleton<Model, N extends Node> {
-    constructor(public raw:any, public self:N) {
-    }
+export type Singleton<Model, N extends Node> = Model & {
+    _node?: N
+};
 
-    public get item() {
-        return this.raw as Model;
-    }
+export function singletonFromResponse<Model, N extends Node>(response:any, node:N) {
+    let singleton = response as Singleton<Model, N>;
+    singleton._node = node;
+    return singleton;
 }
 
-export class Collection<Model, N extends CollectionNode> {
-    constructor(public raw:any, public self:N, public next:N) {
-        let nextLink = this.raw["@odata.nextLink"];
-        if (nextLink) {
-            this.next.nextLink = nextLink;
-        } else {
-            this.next = undefined;
-        }
-    }
+export type ChildFactory<Model, N extends Node> = (id:string) => N;
 
-    get items() {
-        return (this.raw.value ? this.raw.value : [this.raw]) as Model[];
-    }
+export type Collection<Model, C extends CollectionNode, N extends Node> = Array<Singleton<Model, N>> & {
+    _next?: () => Promise<Collection<Model, C, N>, Error>,
+    _node?: C
+};
+
+export function collectionFromResponse<Model, C extends CollectionNode, N extends Node>(response:any, node:C, graph:Graph, childFactory?:ChildFactory<Model, N>, scopes?:string[]) {
+    let collection = response as Collection<Model, C, N>;
+    collection._node = node;
+    let nextLink = response["@odata.nextLink"];
+    if (nextLink)
+        collection._next = () => graph.GetCollection<Model, C, N>(nextLink, node, childFactory, scopes);
+    if (childFactory)
+        collection.forEach(item => item._node = item["id"] && childFactory(item["id"]));
+    return collection;
 }
 
 export abstract class Node {
@@ -223,14 +263,13 @@ export class Attachment extends Node {
         messages: [Scopes.Mail.Read],
         events: [Scopes.Calendars.Read],
     }
-
+    
     GetAttachment = (odataQuery?:ODataQuery) => this.graph.Get<AttachmentDataModel, Attachment>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Attachment.scopes[this.context]));
 /*    
     PATCH = this.graph.PATCH<AttachmentDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<AttachmentDataModel>(this.path, this.query);
 */
 }
-
 export class Attachments extends CollectionNode {
     constructor(graph:Graph, path:string="", private context:string) {
         super(graph, path + "/attachments");
@@ -238,7 +277,7 @@ export class Attachments extends CollectionNode {
 
     $ = (attachmentId:string) => new Attachment(this.graph, this.path, this.context, attachmentId);
     
-    GetAttachments = (odataQuery?:ODataQuery) => this.graph.GetCollection<AttachmentDataModel, Attachments>(this.pathWithQuery(odataQuery), this, new Attachments(this.graph, null, this.context), this.scopesForV2(Attachment.scopes[this.context]));
+    GetAttachments = (odataQuery?:ODataQuery) => this.graph.GetCollection<AttachmentDataModel, Attachments, Attachment>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2(Attachment.scopes[this.context]));
 /*
     POST = this.graph.POST<AttachmentDataModel>(this.path, this.query);
 */
@@ -266,7 +305,7 @@ export class Messages extends CollectionNode {
 
     $ = (messageId:string) => new Message(this.graph, this.path, messageId);
 
-    GetMessages     = (odataQuery?:ODataQuery) => this.graph.GetCollection<MessageDataModel, Messages>(this.pathWithQuery(odataQuery), this, new Messages(this.graph), this.scopesForV2([Scopes.Mail.Read]));
+    GetMessages     = (odataQuery?:ODataQuery) => this.graph.GetCollection<MessageDataModel, Messages, Message>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Mail.Read]));
     CreateMessage   = (object:MessageDataModel, odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Mail.ReadWrite]));
 }
 
@@ -284,7 +323,6 @@ export class Event extends Node {
 */
 }
 
-
 export class Events extends CollectionNode {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/events");
@@ -292,20 +330,23 @@ export class Events extends CollectionNode {
 
     $ = (eventId:string) => new Event(this.graph, this.path, eventId);
 
-    GetEvents = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, Events>(this.pathWithQuery(odataQuery), this, new Events(this.graph), this.scopesForV2([Scopes.Calendars.Read]));
+    GetEvents = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, Events, Event>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Calendars.Read]));
 /*
     POST = this.graph.POST<EventDataModel>(this.path, this.query);
 */
 }
 
 export class CalendarView extends CollectionNode {
+    private static suffix = "/calendarView";
     constructor(graph:Graph, path:string="") {
-        super(graph, path + "/calendarView");
+        super(graph, path + CalendarView.suffix);
     }
+    
+    private $ = (eventId:string) => new Event(this.graph, this.path, eventId); // need to adjust this path
     
     dateRange = (startDate:Date, endDate:Date) => `startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`
 
-    GetCalendarView = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, CalendarView>(this.pathWithQuery(odataQuery), this, new CalendarView(this.graph), this.scopesForV2([Scopes.Calendars.Read]));
+    GetCalendarView = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, CalendarView, Event>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Calendars.Read]));
 }
 
 
@@ -313,7 +354,6 @@ export class MailFolder extends Node {
     constructor(graph:Graph, path:string="", mailFolderId:string) {
         super(graph, path + (mailFolderId ? "/" + mailFolderId : ""));
     }
-
 
     GetMailFolder = (odataQuery?:ODataQuery) => this.graph.Get<MailFolderDataModel, MailFolder>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Mail.Read]));
 }
@@ -325,7 +365,7 @@ export class MailFolders extends CollectionNode {
 
     $ = (mailFolderId:string) => new MailFolder(this.graph, this.path, mailFolderId);
 
-    GetMailFolders = (odataQuery?:ODataQuery) => this.graph.GetCollection<MailFolderDataModel, MailFolders>(this.pathWithQuery(odataQuery), this, new MailFolders(this.graph), this.scopesForV2([Scopes.Mail.Read]));
+    GetMailFolders = (odataQuery?:ODataQuery) => this.graph.GetCollection<MailFolderDataModel, MailFolders, MailFolder>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Mail.Read]));
 }
 
 
@@ -357,13 +397,15 @@ export class MemberOf extends CollectionNode {
         super(graph, path + "/memberOf");
     }
 
-    GetGroups = (odataQuery?:ODataQuery) => this.graph.GetCollection<GroupDataModel, MemberOf>(this.pathWithQuery(odataQuery), this, new MemberOf(this.graph), this.scopesForV2([Scopes.User.ReadAll]));
+    GetGroups = (odataQuery?:ODataQuery) => this.graph.GetCollection<GroupDataModel, MemberOf, Group>(this.pathWithQuery(odataQuery), this, Groups.$(this.graph), this.scopesForV2([Scopes.User.ReadAll]));
 }
 
 export class DirectReport extends Node {
     constructor(protected graph:Graph, path:string="", userId?:string) {
         super(graph, path + "/" + userId);
     }
+    
+    // seems like this should re-root its response under Users
     
     GetDirectReport = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, DirectReport>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.Read]));
 }
@@ -374,8 +416,8 @@ export class DirectReports extends CollectionNode {
     }
 
     $ = (userId:string) => new DirectReport(this.graph, this.path, userId);
-
-    GetDirectReports = (odataQuery?:ODataQuery) => this.graph.GetCollection<UserDataModel, DirectReports>(this.pathWithQuery(odataQuery), this, new DirectReports(this.graph), this.scopesForV2([Scopes.User.Read]));
+    
+    GetDirectReports = (odataQuery?:ODataQuery) => this.graph.GetCollection<UserDataModel, DirectReports, User>(this.pathWithQuery(odataQuery), this, Users.$(this.graph), this.scopesForV2([Scopes.User.Read]));
 }
 
 export class User extends Node {
@@ -403,10 +445,12 @@ export class Users extends CollectionNode {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/users");
     }
-
+    
     $ = (userId:string) => new User(this.graph, this.path, userId);
+    
+    static $ = (graph:Graph) => graph.users.$; 
 
-    GetUsers = (odataQuery?:ODataQuery) => this.graph.GetCollection<UserDataModel, Users>(this.pathWithQuery(odataQuery), this, new Users(this.graph), this.scopesForV2([Scopes.User.Read]));
+    GetUsers = (odataQuery?:ODataQuery) => this.graph.GetCollection<UserDataModel, Users, User>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.User.Read]));
 /*
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */
@@ -424,10 +468,12 @@ export class Groups extends CollectionNode {
     constructor(graph:Graph, path:string="") {
         super(graph, path + "/groups");
     }
-
+    
     $ = (groupId:string) => new Group(this.graph, this.path, groupId);
+    
+    static $ = (graph:Graph) => graph.groups.$;
 
-    GetGroups = (odataQuery?:ODataQuery) => this.graph.GetCollection<GroupDataModel, Groups>(this.pathWithQuery(odataQuery), this, new Groups(this.graph), this.scopesForV2([Scopes.Group.ReadAll]));
+    GetGroups = (odataQuery?:ODataQuery) => this.graph.GetCollection<GroupDataModel, Groups, Group>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Group.ReadAll]));
 }
 
 
