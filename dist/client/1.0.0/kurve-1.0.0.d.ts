@@ -135,9 +135,9 @@ declare module kurve {
         me: User;
         users: Users;
         groups: Groups;
-        Get<Model, N extends Node>(path: string, self: N, scopes?: string[], responseType?: string): Promise<Singleton<Model, N>, Error>;
-        GetCollection<Model, C extends CollectionNode, N extends Node>(path: string, self: C, childFactory: ChildFactory<Model, N>, scopes?: string[]): Promise<Collection<Model, C, N>, Error>;
-        Post<Model, N extends Node>(object: Model, path: string, self: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
+        Get<Model, N extends Node>(path: string, node: N, scopes?: string[], responseType?: string): Promise<Singleton<Model, N>, Error>;
+        GetCollection<Model, C extends CollectionNode, N extends Node>(path: string, node: C, childFactory: ChildFactory<Model, N>, scopes?: string[]): Promise<Collection<Model, C, N>, Error>;
+        Post<Model, N extends Node>(object: Model, path: string, node: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
         get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
         private findAccessToken(callback, scopes?);
         post(object: string, url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
@@ -359,23 +359,23 @@ declare module kurve {
         skip: (items: Number) => OData;
     }
     type Singleton<Model, N extends Node> = Model & {
-        _self?: N;
+        _node?: N;
     };
-    function singletonFromResponse<Model, N extends Node>(response: any, self: N): Model & {
-        _self?: N;
+    function singletonFromResponse<Model, N extends Node>(response: any, node: N): Model & {
+        _node?: N;
     };
     type ChildFactory<Model, N extends Node> = (id: string) => N;
     type Collection<Model, C extends CollectionNode, N extends Node> = Array<Singleton<Model, N>> & {
         _next?: () => Promise<Collection<Model, C, N>, Error>;
-        _self?: C;
+        _node?: C;
     };
-    function collectionFromResponse<Model, C extends CollectionNode, N extends Node>(response: any, self: C, graph: Graph, childFactory?: ChildFactory<Model, N>, scopes?: string[]): (Model & {
-        _self?: N;
+    function collectionFromResponse<Model, C extends CollectionNode, N extends Node>(response: any, node: C, graph: Graph, childFactory?: ChildFactory<Model, N>, scopes?: string[]): (Model & {
+        _node?: N;
     })[] & {
         _next?: () => Promise<(Model & {
-            _self?: N;
+            _node?: N;
         })[] & any, Error>;
-        _self?: C;
+        _node?: C;
     };
     abstract class Node {
         protected graph: Graph;
@@ -397,7 +397,7 @@ declare module kurve {
             events: string[];
         };
         GetAttachment: (odataQuery?: OData | string) => Promise<AttachmentDataModel & {
-            _self?: Attachment;
+            _node?: Attachment;
         }, Error>;
     }
     class Attachments extends CollectionNode {
@@ -405,56 +405,56 @@ declare module kurve {
         constructor(graph: Graph, path: string, context: string);
         $: (attachmentId: string) => Attachment;
         GetAttachments: (odataQuery?: OData | string) => Promise<(AttachmentDataModel & {
-            _self?: Attachment;
+            _node?: Attachment;
         })[] & {
             _next?: () => Promise<(AttachmentDataModel & {
-                _self?: Attachment;
+                _node?: Attachment;
             })[] & any, Error>;
-            _self?: Attachments;
+            _node?: Attachments;
         }, Error>;
     }
     class Message extends Node {
         constructor(graph: Graph, path?: string, messageId?: string);
         attachments: Attachments;
         GetMessage: (odataQuery?: OData | string) => Promise<MessageDataModel & {
-            _self?: Message;
+            _node?: Message;
         }, Error>;
         SendMessage: (odataQuery?: OData | string) => Promise<MessageDataModel & {
-            _self?: Message;
+            _node?: Message;
         }, Error>;
     }
     class Messages extends CollectionNode {
         constructor(graph: Graph, path?: string);
         $: (messageId: string) => Message;
         GetMessages: (odataQuery?: OData | string) => Promise<(MessageDataModel & {
-            _self?: Message;
+            _node?: Message;
         })[] & {
             _next?: () => Promise<(MessageDataModel & {
-                _self?: Message;
+                _node?: Message;
             })[] & any, Error>;
-            _self?: Messages;
+            _node?: Messages;
         }, Error>;
         CreateMessage: (object: MessageDataModel, odataQuery?: OData | string) => Promise<MessageDataModel & {
-            _self?: Messages;
+            _node?: Messages;
         }, Error>;
     }
     class Event extends Node {
         constructor(graph: Graph, path: string, eventId: string);
         attachments: Attachments;
         GetEvent: (odataQuery?: OData | string) => Promise<EventDataModel & {
-            _self?: Event;
+            _node?: Event;
         }, Error>;
     }
     class Events extends CollectionNode {
         constructor(graph: Graph, path?: string);
         $: (eventId: string) => Event;
         GetEvents: (odataQuery?: OData | string) => Promise<(EventDataModel & {
-            _self?: Event;
+            _node?: Event;
         })[] & {
             _next?: () => Promise<(EventDataModel & {
-                _self?: Event;
+                _node?: Event;
             })[] & any, Error>;
-            _self?: Events;
+            _node?: Events;
         }, Error>;
     }
     class CalendarView extends CollectionNode {
@@ -463,30 +463,30 @@ declare module kurve {
         private $;
         dateRange: (startDate: Date, endDate: Date) => string;
         GetCalendarView: (odataQuery?: OData | string) => Promise<(EventDataModel & {
-            _self?: Event;
+            _node?: Event;
         })[] & {
             _next?: () => Promise<(EventDataModel & {
-                _self?: Event;
+                _node?: Event;
             })[] & any, Error>;
-            _self?: CalendarView;
+            _node?: CalendarView;
         }, Error>;
     }
     class MailFolder extends Node {
         constructor(graph: Graph, path: string, mailFolderId: string);
         GetMailFolder: (odataQuery?: OData | string) => Promise<MailFolderDataModel & {
-            _self?: MailFolder;
+            _node?: MailFolder;
         }, Error>;
     }
     class MailFolders extends CollectionNode {
         constructor(graph: Graph, path?: string);
         $: (mailFolderId: string) => MailFolder;
         GetMailFolders: (odataQuery?: OData | string) => Promise<(MailFolderDataModel & {
-            _self?: MailFolder;
+            _node?: MailFolder;
         })[] & {
             _next?: () => Promise<(MailFolderDataModel & {
-                _self?: MailFolder;
+                _node?: MailFolder;
             })[] & any, Error>;
-            _self?: MailFolders;
+            _node?: MailFolders;
         }, Error>;
     }
     class Photo extends Node {
@@ -498,44 +498,44 @@ declare module kurve {
             contact: string[];
         };
         GetPhotoProperties: (odataQuery?: OData | string) => Promise<ProfilePhotoDataModel & {
-            _self?: Photo;
+            _node?: Photo;
         }, Error>;
         GetPhotoImage: (odataQuery?: OData | string) => Promise<any, Error>;
     }
     class Manager extends Node {
         constructor(graph: Graph, path?: string);
         GetManager: (odataQuery?: OData | string) => Promise<UserDataModel & {
-            _self?: Manager;
+            _node?: Manager;
         }, Error>;
     }
     class MemberOf extends CollectionNode {
         constructor(graph: Graph, path?: string);
         GetGroups: (odataQuery?: OData | string) => Promise<(GroupDataModel & {
-            _self?: Group;
+            _node?: Group;
         })[] & {
             _next?: () => Promise<(GroupDataModel & {
-                _self?: Group;
+                _node?: Group;
             })[] & any, Error>;
-            _self?: MemberOf;
+            _node?: MemberOf;
         }, Error>;
     }
     class DirectReport extends Node {
         protected graph: Graph;
         constructor(graph: Graph, path?: string, userId?: string);
         GetDirectReport: (odataQuery?: OData | string) => Promise<UserDataModel & {
-            _self?: DirectReport;
+            _node?: DirectReport;
         }, Error>;
     }
     class DirectReports extends CollectionNode {
         constructor(graph: Graph, path?: string);
         $: (userId: string) => DirectReport;
         GetDirectReports: (odataQuery?: OData | string) => Promise<(UserDataModel & {
-            _self?: User;
+            _node?: User;
         })[] & {
             _next?: () => Promise<(UserDataModel & {
-                _self?: User;
+                _node?: User;
             })[] & any, Error>;
-            _self?: DirectReports;
+            _node?: DirectReports;
         }, Error>;
     }
     class User extends Node {
@@ -550,7 +550,7 @@ declare module kurve {
         directReports: DirectReports;
         memberOf: MemberOf;
         GetUser: (odataQuery?: OData | string) => Promise<UserDataModel & {
-            _self?: User;
+            _node?: User;
         }, Error>;
     }
     class Users extends CollectionNode {
@@ -558,19 +558,19 @@ declare module kurve {
         $: (userId: string) => User;
         static $: (graph: Graph) => (userId: string) => User;
         GetUsers: (odataQuery?: OData | string) => Promise<(UserDataModel & {
-            _self?: User;
+            _node?: User;
         })[] & {
             _next?: () => Promise<(UserDataModel & {
-                _self?: User;
+                _node?: User;
             })[] & any, Error>;
-            _self?: Users;
+            _node?: Users;
         }, Error>;
     }
     class Group extends Node {
         protected graph: Graph;
         constructor(graph: Graph, path: string, groupId: string);
         GetGroup: (odataQuery?: OData | string) => Promise<GroupDataModel & {
-            _self?: Group;
+            _node?: Group;
         }, Error>;
     }
     class Groups extends CollectionNode {
@@ -578,12 +578,12 @@ declare module kurve {
         $: (groupId: string) => Group;
         static $: (graph: Graph) => (groupId: string) => Group;
         GetGroups: (odataQuery?: OData | string) => Promise<(GroupDataModel & {
-            _self?: Group;
+            _node?: Group;
         })[] & {
             _next?: () => Promise<(GroupDataModel & {
-                _self?: Group;
+                _node?: Group;
             })[] & any, Error>;
-            _self?: Groups;
+            _node?: Groups;
         }, Error>;
     }
 }

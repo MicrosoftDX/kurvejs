@@ -852,7 +852,7 @@ var Graph = (function () {
         enumerable: true,
         configurable: true
     });
-    Graph.prototype.Get = function (path, self, scopes, responseType) {
+    Graph.prototype.Get = function (path, node, scopes, responseType) {
         console.log("GET", path, scopes);
         var d = new Deferred();
         this.get(path, function (error, result) {
@@ -864,15 +864,15 @@ var Graph = (function () {
                     d.reject(errorODATA);
                     return;
                 }
-                d.resolve(singletonFromResponse(jsonResult, self));
+                d.resolve(singletonFromResponse(jsonResult, node));
             }
             else {
-                d.resolve(singletonFromResponse(result, self));
+                d.resolve(singletonFromResponse(result, node));
             }
         }, responseType, scopes);
         return d.promise;
     };
-    Graph.prototype.GetCollection = function (path, self, childFactory, scopes) {
+    Graph.prototype.GetCollection = function (path, node, childFactory, scopes) {
         var _this = this;
         console.log("GET collection", path, scopes);
         var d = new Deferred();
@@ -884,11 +884,11 @@ var Graph = (function () {
                 d.reject(errorODATA);
                 return;
             }
-            d.resolve(collectionFromResponse(jsonResult, self, _this, childFactory, scopes));
+            d.resolve(collectionFromResponse(jsonResult, node, _this, childFactory, scopes));
         }, null, scopes);
         return d.promise;
     };
-    Graph.prototype.Post = function (object, path, self, scopes) {
+    Graph.prototype.Post = function (object, path, node, scopes) {
         console.log("POST", path, scopes);
         var d = new Deferred();
         /*
@@ -902,7 +902,7 @@ var Graph = (function () {
                             return;
                         }
         
-                        d.resolve(new Response<Model, N>({}, self));
+                        d.resolve(new Response<Model, N>({}, node));
                     });
         */
         return d.promise;
@@ -1048,39 +1048,75 @@ Each endpoint exposes the set of available Graph operations through strongly typ
 Certain Graph endpoints are implemented as OData "Functions". These are not treated as Graph nodes. They're just methods:
 
     graph.me.events.$("123").DeclineEvent(eventResponse:EventResponse)
-        POST "/me/events/123/microsoft.graph.decline
+        POST "/me/events/123/microsoft.graph.decline""
 
 Graph operations are exposed through Promises:
 
     graph.me.messages
     .GetMessages()
-    .then(collection =>
-        collection.items.forEach(message =>
+    .then(messages =>
+        messages.forEach(message =>
             console.log(message.subject)
         )
     )
 
-All operations return a "self" property which allows you to continue along the Graph path from the point where you left off:
+All operations return a "_node" property which allows you to continue along the Graph path from the point where you left off:
 
-    graph.me.messages.$("123").GetMessage().then(singleton =>
-        console.log(singleton.item.subject);
-        singleton.self.attachments.GetAttachments().then(collection => // singleton.self === graph.me.messages.$("123")
-            collection.items.forEach(attachment =>
+    graph.me.messages.$("123").GetMessage().then(message =>
+        console.log(message.subject);
+        message._node.attachments.GetAttachments().then(attachments => // attachments._node === graph.me.messages.$("123").attachments
+            attachments.forEach(attachment =>
                 console.log(attachment.contentBytes)
             )
         )
     )
 
-Operations which return paginated collections can return a "next" request object. This can be utilized in a recursive function:
+Members of returned collections also have a "_node" object:
 
-    ListMessageSubjects(messages:Messages, odata?:string) {
-        messages.GetMessages(odata).then(collection => {
-            collection.items.forEach(message => console.log(message.subject));
-            if (collection.next)
-                ListMessageSubjects(collection.next); // don't need odata after the first time
+        me.messages.GetMessages().then(messages =>
+            messages.forEach(message =>
+                message._node.attachments.GetAttachments().then(attachments =>
+                    attachments.forEach(attachment =>
+                        console.log(attachment.id);
+                    )
+                )
+            )
+        )
+
+In this example message._node returns the expected node in the graph. But consider
+the case of:
+
+    me/directReports/{userId}
+    
+This returns a user object, but you can't do user operations. This operation is disallowed:
+
+    me/directReports/{userId}/manager
+    
+Instead you must start again at the beginning:
+
+    users/{userId}/manager
+    
+We facilitate this by setting the "_node" property on members of certain collections accordingly:
+
+        me.directReports.GetDirectReports().then(users =>
+            users.forEach(user =>
+                user._node.manager.GetManager()     // equivalent to users.$(user.id).manager.GetManager();
+            )
+        )
+
+Operations which return paginated collections can return a "_next" request object. This can be utilized in a recursive function:
+
+    ListMessageSubjects(messages:Singleton<MessageDataModel, Message>) {
+        messages.forEach(message => console.log(message.subject));
+        if (messages._next)
+            messages._next().then(nextMessages =>
+                ListMessageSubjects(nextMessages)
+            )
         })
     }
-    ListMessageSubjects(graph.me.messages, new OData().select("subject").toString());
+    graph.me.messages.GetMessages(new OData().select("subject")).then(messages =>
+        ListMessageSubjects(messages)
+    );
     
 (With async/await support, an iteration pattern can be used intead of recursion)
 
@@ -1208,20 +1244,20 @@ var pathWithQuery = function (path, odataQuery) {
     var query = odataQuery && odataQuery.toString();
     return path + (query ? "?" + query : "");
 };
-function singletonFromResponse(response, self) {
+function singletonFromResponse(response, node) {
     var singleton = response;
-    singleton._self = self;
+    singleton._node = node;
     return singleton;
 }
 exports.singletonFromResponse = singletonFromResponse;
-function collectionFromResponse(response, self, graph, childFactory, scopes) {
+function collectionFromResponse(response, node, graph, childFactory, scopes) {
     var collection = response;
-    collection._self = self;
+    collection._node = node;
     var nextLink = response["@odata.nextLink"];
     if (nextLink)
-        collection._next = function () { return graph.GetCollection(nextLink, self, childFactory, scopes); };
+        collection._next = function () { return graph.GetCollection(nextLink, node, childFactory, scopes); };
     if (childFactory)
-        collection.forEach(function (item) { return item._self = item["id"] && childFactory(item["id"]); });
+        collection.forEach(function (item) { return item._node = item["id"] && childFactory(item["id"]); });
     return collection;
 }
 exports.collectionFromResponse = collectionFromResponse;
