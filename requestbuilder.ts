@@ -82,7 +82,7 @@ We facilitate this by setting the "_node" property on members of certain collect
 
 Operations which return paginated collections can return a "_next" request object. This can be utilized in a recursive function:
 
-    ListMessageSubjects(messages:Singleton<MessageDataModel, Message>) {
+    ListMessageSubjects(messages:Collection<MessageDataModel, Messages, Message>) {
         messages.forEach(message => console.log(message.subject));
         if (messages._next)
             messages._next().then(nextMessages =>
