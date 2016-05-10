@@ -205,12 +205,15 @@ let pathWithQuery = (path:string, odataQuery?:ODataQuery) => {
     return path + (query ? "?" + query : "");
 }
 
+
 export type Singleton<Model, N extends Node> = Model & {
-    _node?: N
+    _node?: N,
+    _item: Model
 };
 
 export function singletonFromResponse<Model, N extends Node>(response:any, node:N) {
     let singleton = response as Singleton<Model, N>;
+    singleton._item = response as Model;
     singleton._node = node;
     return singleton;
 }
@@ -219,12 +222,16 @@ export type ChildFactory<Model, N extends Node> = (id:string) => N;
 
 export type Collection<Model, C extends CollectionNode, N extends Node> = Array<Singleton<Model, N>> & {
     _next?: () => Promise<Collection<Model, C, N>, Error>,
-    _node?: C
+    _node?: C,
+    _raw: any,
+    _items: Model[]
 };
 
 export function collectionFromResponse<Model, C extends CollectionNode, N extends Node>(response:any, node:C, graph:Graph, childFactory?:ChildFactory<Model, N>, scopes?:string[]) {
-    let collection = response as Collection<Model, C, N>;
+    let collection = response.value as Collection<Model, C, N>;
     collection._node = node;
+    collection._raw = response;
+    collection._items = response.value as Model[];
     let nextLink = response["@odata.nextLink"];
     if (nextLink)
         collection._next = () => graph.GetCollection<Model, C, N>(nextLink, node, childFactory, scopes);
