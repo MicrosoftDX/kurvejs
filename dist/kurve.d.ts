@@ -139,9 +139,6 @@ declare namespace Kurve {
         me: User;
         users: Users;
         groups: Groups;
-        Get<Model, N extends Node>(path: string, node: N, scopes?: string[], responseType?: string): Promise<Singleton<Model, N>, Error>;
-        GetCollection<Model, C extends CollectionNode, N extends Node>(path: string, node: C, childFactory: ChildFactory<Model, N>, scopes?: string[]): Promise<Collection<Model, C, N>, Error>;
-        Post<Model, N extends Node>(object: Model, path: string, node: N, scopes?: string[]): Promise<Singleton<Model, N>, Error>;
         get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
         private findAccessToken(callback, scopes?);
         post(object: string, url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void;
@@ -366,29 +363,13 @@ declare namespace Kurve {
         top: (items: Number) => this;
         skip: (items: Number) => this;
     }
-    type Singleton<Model, N extends Node> = Model & {
-        _node?: N;
-        _item: Model;
-    };
-    function singletonFromResponse<Model, N extends Node>(response: any, node: N): Model & {
+    type GraphObject<Model, N extends Node> = Model & {
         _node?: N;
         _item: Model;
     };
     type ChildFactory<Model, N extends Node> = (id: string) => N;
-    type Collection<Model, C extends CollectionNode, N extends Node> = Array<Singleton<Model, N>> & {
-        _next?: () => Promise<Collection<Model, C, N>, Error>;
-        _node?: C;
-        _raw: any;
-        _items: Model[];
-    };
-    function collectionFromResponse<Model, C extends CollectionNode, N extends Node>(response: any, node: C, graph: Graph, childFactory?: ChildFactory<Model, N>, scopes?: string[]): (Model & {
-        _node?: N;
-        _item: Model;
-    })[] & {
-        _next?: () => Promise<(Model & {
-            _node?: N;
-            _item: Model;
-        })[] & any, Error>;
+    type GraphCollection<Model, C extends CollectionNode, N extends Node> = Array<GraphObject<Model, N>> & {
+        _next?: () => Promise<GraphCollection<Model, C, N>, Error>;
         _node?: C;
         _raw: any;
         _items: Model[];
@@ -399,11 +380,30 @@ declare namespace Kurve {
         constructor(graph: Graph, path: string);
         protected scopesForV2: (scopes: string[]) => string[];
         pathWithQuery: (odataQuery?: OData | string, pathSuffix?: string) => string;
+        protected graphObjectFromResponse: <Model, N extends Node>(response: any, node: N) => Model & {
+            _node?: N;
+            _item: Model;
+        };
+        protected get<Model, N extends Node>(path: string, node: N, scopes?: string[], responseType?: string): Promise<GraphObject<Model, N>, Error>;
+        protected post<Model, N extends Node>(object: Model, path: string, node: N, scopes?: string[]): Promise<GraphObject<Model, N>, Error>;
     }
     abstract class CollectionNode extends Node {
         private _nextLink;
         pathWithQuery: (odataQuery?: OData | string, pathSuffix?: string) => string;
         nextLink: string;
+        protected graphCollectionFromResponse: <Model, C extends CollectionNode, N extends Node>(response: any, node: C, childFactory?: (id: string) => N, scopes?: string[]) => (Model & {
+            _node?: N;
+            _item: Model;
+        })[] & {
+            _next?: () => Promise<(Model & {
+                _node?: N;
+                _item: Model;
+            })[] & any, Error>;
+            _node?: C;
+            _raw: any;
+            _items: Model[];
+        };
+        protected getCollection<Model, C extends CollectionNode, N extends Node>(path: string, node: C, childFactory: ChildFactory<Model, N>, scopes?: string[]): Promise<GraphCollection<Model, C, N>, Error>;
     }
     class Attachment extends Node {
         private context;

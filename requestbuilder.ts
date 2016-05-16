@@ -205,40 +205,19 @@ let pathWithQuery = (path:string, odataQuery?:ODataQuery) => {
     return path + (query ? "?" + query : "");
 }
 
-
-export type Singleton<Model, N extends Node> = Model & {
+export type GraphObject<Model, N extends Node> = Model & {
     _node?: N,
     _item: Model
 };
 
-export function singletonFromResponse<Model, N extends Node>(response:any, node:N) {
-    let singleton = response as Singleton<Model, N>;
-    singleton._item = response as Model;
-    singleton._node = node;
-    return singleton;
-}
-
 export type ChildFactory<Model, N extends Node> = (id:string) => N;
 
-export type Collection<Model, C extends CollectionNode, N extends Node> = Array<Singleton<Model, N>> & {
-    _next?: () => Promise<Collection<Model, C, N>, Error>,
+export type GraphCollection<Model, C extends CollectionNode, N extends Node> = Array<GraphObject<Model, N>> & {
+    _next?: () => Promise<GraphCollection<Model, C, N>, Error>,
     _node?: C,
     _raw: any,
     _items: Model[]
 };
-
-export function collectionFromResponse<Model, C extends CollectionNode, N extends Node>(response:any, node:C, graph:Graph, childFactory?:ChildFactory<Model, N>, scopes?:string[]) {
-    let collection = response.value as Collection<Model, C, N>;
-    collection._node = node;
-    collection._raw = response;
-    collection._items = response.value as Model[];
-    let nextLink = response["@odata.nextLink"];
-    if (nextLink)
-        collection._next = () => graph.GetCollection<Model, C, N>(nextLink, node, childFactory, scopes);
-    if (childFactory)
-        collection.forEach(item => item._node = item["id"] && childFactory(item["id"]));
-    return collection;
-}
 
 export abstract class Node {
     constructor(protected graph:Graph, protected path:string) {
@@ -249,6 +228,60 @@ export abstract class Node {
         this.graph.KurveIdentity && this.graph.KurveIdentity.getCurrentEndPointVersion() === EndPointVersion.v2 ? scopes : null;
     
     pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
+    
+    protected graphObjectFromResponse = <Model, N extends Node>(response:any, node:N) => {
+        let singleton = response as GraphObject<Model, N>;
+        singleton._item = response as Model;
+        singleton._node = node;
+        return singleton;
+    }
+
+    protected get<Model, N extends Node>(path:string, node:N, scopes?:string[], responseType?:string): Promise<GraphObject<Model, N>, Error> {
+        console.log("GET", path, scopes);
+        var d = new Deferred<GraphObject<Model, N>, Error>();
+
+        this.graph.get(path, (error, result) => {
+            if (!responseType) {
+                var jsonResult = JSON.parse(result) ;
+
+                if (jsonResult.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = jsonResult.error;
+                    d.reject(errorODATA);
+                    return;
+                }
+                d.resolve(this.graphObjectFromResponse<Model, N>(jsonResult, node));
+            } else {
+                d.resolve(this.graphObjectFromResponse<Model, N>(result, node));
+            }
+
+            
+        }, responseType, scopes);
+
+        return d.promise;
+        }
+
+    protected post<Model, N extends Node>(object:Model, path:string, node:N, scopes?:string[]): Promise<GraphObject<Model, N>, Error> {
+        console.log("POST", path, scopes);
+        var d = new Deferred<GraphObject<Model, N>, Error>();
+        
+/*
+        this.graph.post(object, path, (error, result) => {
+            var jsonResult = JSON.parse(result) ;
+
+            if (jsonResult.error) {
+                var errorODATA = new Error();
+                errorODATA.other = jsonResult.error;
+                d.reject(errorODATA);
+                return;
+            }
+
+            d.resolve(new Response<Model, N>({}, node));
+        });
+*/
+        return d.promise;
+        }
+
 }
 
 export abstract class CollectionNode extends Node {    
@@ -259,6 +292,39 @@ export abstract class CollectionNode extends Node {
     set nextLink(pathWithQuery:string) {
         this._nextLink = pathWithQuery;
     }
+    
+    protected graphCollectionFromResponse = <Model, C extends CollectionNode, N extends Node>(response:any, node:C, childFactory?:ChildFactory<Model, N>, scopes?:string[]) => {
+        let collection = response.value as GraphCollection<Model, C, N>;
+        collection._node = node;
+        collection._raw = response;
+        collection._items = response.value as Model[];
+        let nextLink = response["@odata.nextLink"];
+        if (nextLink)
+            collection._next = () => this.getCollection<Model, C, N>(nextLink, node, childFactory, scopes);
+        if (childFactory)
+            collection.forEach(item => item._node = item["id"] && childFactory(item["id"]));
+        return collection;
+    }
+
+    protected getCollection<Model, C extends CollectionNode, N extends Node>(path:string, node:C, childFactory:ChildFactory<Model, N>, scopes?:string[]): Promise<GraphCollection<Model, C, N>, Error> {
+        console.log("GET collection", path, scopes);
+        var d = new Deferred<GraphCollection<Model, C, N>, Error>();
+
+        this.graph.get(path, (error, result) => {
+            var jsonResult = JSON.parse(result) ;
+
+            if (jsonResult.error) {
+                var errorODATA = new Error();
+                errorODATA.other = jsonResult.error;
+                d.reject(errorODATA);
+                return;
+            }
+            
+            d.resolve(this.graphCollectionFromResponse<Model, C, N>(jsonResult, node, childFactory, scopes));
+        }, null, scopes);
+
+        return d.promise;
+        }
 }
 
 export class Attachment extends Node {
@@ -271,7 +337,7 @@ export class Attachment extends Node {
         events: [Scopes.Calendars.Read],
     }
     
-    GetAttachment = (odataQuery?:ODataQuery) => this.graph.Get<AttachmentDataModel, Attachment>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Attachment.scopes[this.context]));
+    GetAttachment = (odataQuery?:ODataQuery) => this.get<AttachmentDataModel, Attachment>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Attachment.scopes[this.context]));
 /*    
     PATCH = this.graph.PATCH<AttachmentDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<AttachmentDataModel>(this.path, this.query);
@@ -284,7 +350,7 @@ export class Attachments extends CollectionNode {
 
     $ = (attachmentId:string) => new Attachment(this.graph, this.path, this.context, attachmentId);
     
-    GetAttachments = (odataQuery?:ODataQuery) => this.graph.GetCollection<AttachmentDataModel, Attachments, Attachment>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2(Attachment.scopes[this.context]));
+    GetAttachments = (odataQuery?:ODataQuery) => this.getCollection<AttachmentDataModel, Attachments, Attachment>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2(Attachment.scopes[this.context]));
 /*
     POST = this.graph.POST<AttachmentDataModel>(this.path, this.query);
 */
@@ -297,8 +363,8 @@ export class Message extends Node {
     
     get attachments() { return new Attachments(this.graph, this.path, "messages"); }
 
-    GetMessage  = (odataQuery?:ODataQuery) => this.graph.Get<MessageDataModel, Message>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Mail.Read]));
-    SendMessage = (odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Message>(null, this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), this, this.scopesForV2([Scopes.Mail.Send]));
+    GetMessage  = (odataQuery?:ODataQuery) => this.get<MessageDataModel, Message>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Mail.Read]));
+    SendMessage = (odataQuery?:ODataQuery) => this.post<MessageDataModel, Message>(null, this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), this, this.scopesForV2([Scopes.Mail.Send]));
 /*
     PATCH = this.graph.PATCH<MessageDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<MessageDataModel>(this.path, this.query);
@@ -312,8 +378,8 @@ export class Messages extends CollectionNode {
 
     $ = (messageId:string) => new Message(this.graph, this.path, messageId);
 
-    GetMessages     = (odataQuery?:ODataQuery) => this.graph.GetCollection<MessageDataModel, Messages, Message>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Mail.Read]));
-    CreateMessage   = (object:MessageDataModel, odataQuery?:ODataQuery) => this.graph.Post<MessageDataModel, Messages>(object, this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Mail.ReadWrite]));
+    GetMessages     = (odataQuery?:ODataQuery) => this.getCollection<MessageDataModel, Messages, Message>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Mail.Read]));
+    CreateMessage   = (object:MessageDataModel, odataQuery?:ODataQuery) => this.post<MessageDataModel, Messages>(object, this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Mail.ReadWrite]));
 }
 
 export class Event extends Node {
@@ -323,7 +389,7 @@ export class Event extends Node {
 
     get attachments() { return new Attachments(this.graph, this.path, "events"); }
 
-    GetEvent = (odataQuery?:ODataQuery) => this.graph.Get<EventDataModel, Event>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Calendars.Read]));
+    GetEvent = (odataQuery?:ODataQuery) => this.get<EventDataModel, Event>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Calendars.Read]));
 /*
     PATCH = this.graph.PATCH<EventDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<EventDataModel>(this.path, this.query);
@@ -337,7 +403,7 @@ export class Events extends CollectionNode {
 
     $ = (eventId:string) => new Event(this.graph, this.path, eventId);
 
-    GetEvents = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, Events, Event>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Calendars.Read]));
+    GetEvents = (odataQuery?:ODataQuery) => this.getCollection<EventDataModel, Events, Event>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Calendars.Read]));
 /*
     POST = this.graph.POST<EventDataModel>(this.path, this.query);
 */
@@ -353,7 +419,7 @@ export class CalendarView extends CollectionNode {
     
     dateRange = (startDate:Date, endDate:Date) => `startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`
 
-    GetCalendarView = (odataQuery?:ODataQuery) => this.graph.GetCollection<EventDataModel, CalendarView, Event>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Calendars.Read]));
+    GetCalendarView = (odataQuery?:ODataQuery) => this.getCollection<EventDataModel, CalendarView, Event>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Calendars.Read]));
 }
 
 
@@ -362,7 +428,7 @@ export class MailFolder extends Node {
         super(graph, path + (mailFolderId ? "/" + mailFolderId : ""));
     }
 
-    GetMailFolder = (odataQuery?:ODataQuery) => this.graph.Get<MailFolderDataModel, MailFolder>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Mail.Read]));
+    GetMailFolder = (odataQuery?:ODataQuery) => this.get<MailFolderDataModel, MailFolder>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Mail.Read]));
 }
 
 export class MailFolders extends CollectionNode {
@@ -372,7 +438,7 @@ export class MailFolders extends CollectionNode {
 
     $ = (mailFolderId:string) => new MailFolder(this.graph, this.path, mailFolderId);
 
-    GetMailFolders = (odataQuery?:ODataQuery) => this.graph.GetCollection<MailFolderDataModel, MailFolders, MailFolder>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Mail.Read]));
+    GetMailFolders = (odataQuery?:ODataQuery) => this.getCollection<MailFolderDataModel, MailFolders, MailFolder>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Mail.Read]));
 }
 
 
@@ -387,8 +453,8 @@ export class Photo extends Node {
         contact: [Scopes.Contacts.Read]
     }
 
-    GetPhotoProperties = (odataQuery?:ODataQuery) => this.graph.Get<ProfilePhotoDataModel, Photo>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Photo.scopes[this.context]));
-    GetPhotoImage = (odataQuery?:ODataQuery) => this.graph.Get<any, any>(this.pathWithQuery(odataQuery, "/$value"), this, this.scopesForV2(Photo.scopes[this.context]), "blob");
+    GetPhotoProperties = (odataQuery?:ODataQuery) => this.get<ProfilePhotoDataModel, Photo>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Photo.scopes[this.context]));
+    GetPhotoImage = (odataQuery?:ODataQuery) => this.get<any, any>(this.pathWithQuery(odataQuery, "/$value"), this, this.scopesForV2(Photo.scopes[this.context]), "blob");
 }
 
 export class Manager extends Node {
@@ -396,7 +462,7 @@ export class Manager extends Node {
         super(graph, path + "/manager" );
     }
 
-    GetManager = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, Manager>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.ReadAll]));
+    GetManager = (odataQuery?:ODataQuery) => this.get<UserDataModel, Manager>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.ReadAll]));
 }
 
 export class MemberOf extends CollectionNode {
@@ -404,7 +470,7 @@ export class MemberOf extends CollectionNode {
         super(graph, path + "/memberOf");
     }
 
-    GetGroups = (odataQuery?:ODataQuery) => this.graph.GetCollection<GroupDataModel, MemberOf, Group>(this.pathWithQuery(odataQuery), this, Groups.$(this.graph), this.scopesForV2([Scopes.User.ReadAll]));
+    GetGroups = (odataQuery?:ODataQuery) => this.getCollection<GroupDataModel, MemberOf, Group>(this.pathWithQuery(odataQuery), this, Groups.$(this.graph), this.scopesForV2([Scopes.User.ReadAll]));
 }
 
 export class DirectReport extends Node {
@@ -414,7 +480,7 @@ export class DirectReport extends Node {
     
     // seems like this should re-root its response under Users
     
-    GetDirectReport = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, DirectReport>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.Read]));
+    GetDirectReport = (odataQuery?:ODataQuery) => this.get<UserDataModel, DirectReport>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.Read]));
 }
     
 export class DirectReports extends CollectionNode {
@@ -424,7 +490,7 @@ export class DirectReports extends CollectionNode {
 
     $ = (userId:string) => new DirectReport(this.graph, this.path, userId);
     
-    GetDirectReports = (odataQuery?:ODataQuery) => this.graph.GetCollection<UserDataModel, DirectReports, User>(this.pathWithQuery(odataQuery), this, Users.$(this.graph), this.scopesForV2([Scopes.User.Read]));
+    GetDirectReports = (odataQuery?:ODataQuery) => this.getCollection<UserDataModel, DirectReports, User>(this.pathWithQuery(odataQuery), this, Users.$(this.graph), this.scopesForV2([Scopes.User.Read]));
 }
 
 export class User extends Node {
@@ -441,7 +507,7 @@ export class User extends Node {
     get directReports() { return new DirectReports(this.graph, this.path); }
     get memberOf()      { return new MemberOf(this.graph, this.path); }
 
-    GetUser = (odataQuery?:ODataQuery) => this.graph.Get<UserDataModel, User>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.Read]));
+    GetUser = (odataQuery?:ODataQuery) => this.get<UserDataModel, User>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.Read]));
 /*
     PATCH = this.graph.PATCH<UserDataModel>(this.path, this.query);
     DELETE = this.graph.DELETE<UserDataModel>(this.path, this.query);
@@ -457,7 +523,7 @@ export class Users extends CollectionNode {
     
     static $ = (graph:Graph) => graph.users.$; 
 
-    GetUsers = (odataQuery?:ODataQuery) => this.graph.GetCollection<UserDataModel, Users, User>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.User.Read]));
+    GetUsers = (odataQuery?:ODataQuery) => this.getCollection<UserDataModel, Users, User>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.User.Read]));
 /*
     CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
 */
@@ -468,7 +534,7 @@ export class Group extends Node {
         super(graph, path + "/" + groupId);
     }
 
-    GetGroup = (odataQuery?:ODataQuery) => this.graph.Get<GroupDataModel, Group>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Group.ReadAll]));
+    GetGroup = (odataQuery?:ODataQuery) => this.get<GroupDataModel, Group>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.Group.ReadAll]));
 }
 
 export class Groups extends CollectionNode {
@@ -480,7 +546,7 @@ export class Groups extends CollectionNode {
     
     static $ = (graph:Graph) => graph.groups.$;
 
-    GetGroups = (odataQuery?:ODataQuery) => this.graph.GetCollection<GroupDataModel, Groups, Group>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Group.ReadAll]));
+    GetGroups = (odataQuery?:ODataQuery) => this.getCollection<GroupDataModel, Groups, Group>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Group.ReadAll]));
 }
 
 
