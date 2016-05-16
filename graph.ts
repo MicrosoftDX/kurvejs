@@ -1,4 +1,4 @@
-module kurve {
+namespace Kurve {
     export class Graph {
         private req: XMLHttpRequest = null;
         private accessToken: string = null;
@@ -213,5 +213,5 @@ module kurve {
         }
 
     }
-} //remove during bundling
+}
 

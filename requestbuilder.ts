@@ -1,4 +1,4 @@
-module kurve {
+namespace Kurve {
 
 /*
 
@@ -484,4 +484,4 @@ export class Groups extends CollectionNode {
 }
 
 
-} //remove during bundling
+}

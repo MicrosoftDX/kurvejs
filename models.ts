@@ -1,4 +1,4 @@
-module kurve {
+namespace Kurve {
 
 export interface ItemBody {
     contentType?: string;
@@ -160,4 +160,4 @@ export interface AttachmentDataModel {
     contentType?: string;
 }
 
-} //remove during bundling
+}

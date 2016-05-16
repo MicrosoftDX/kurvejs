@@ -1,4 +1,4 @@
-module kurve {
+namespace Kurve {
 
     export enum EndPointVersion {
         v1=1,
@@ -725,4 +725,4 @@ module kurve {
         }
     }
 
-} //remove during bundling
+}
