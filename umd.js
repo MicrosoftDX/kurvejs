@@ -15,8 +15,8 @@
         root.MODULE_NAME = factory();
   }
 }(this, function () {
-    MODULE_SOURCE
-    return MODULE_NAME;
+    __MODULE_SOURCE
+    return __MODULE_NAME;
 }));
 
 //*********************************************************

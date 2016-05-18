@@ -1,9 +1,9 @@
-﻿.DS_Store
+.DS_Store
 npm-debug.log
 /typings/
 /.vs/config
 /node_modules
-/coverage/
-/obj/Debug
 /web.Release.config
 /web.Debug.config
+
+kurve.js

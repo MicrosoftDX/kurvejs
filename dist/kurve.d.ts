@@ -1,4 +1,4 @@
-declare namespace Kurve {
+declare namespace __Kurve {
     class Error {
         status: number;
         statusText: string;
@@ -32,7 +32,7 @@ declare namespace Kurve {
         fail<R>(errorCallback?: (error: E) => R): any;
     }
 }
-declare namespace Kurve {
+declare namespace __Kurve {
     enum EndPointVersion {
         v1 = 1,
         v2 = 2,
@@ -121,7 +121,7 @@ declare namespace Kurve {
         private generateNonce();
     }
 }
-declare namespace Kurve {
+declare namespace __Kurve {
     class Graph {
         private req;
         private accessToken;
@@ -146,7 +146,7 @@ declare namespace Kurve {
         private addAccessTokenAndSend(xhr, callback, scopes?);
     }
 }
-declare namespace Kurve {
+declare namespace __Kurve {
     interface ItemBody {
         contentType?: string;
         content?: string;
@@ -292,7 +292,7 @@ declare namespace Kurve {
         contentType?: string;
     }
 }
-declare namespace Kurve {
+declare namespace __Kurve {
     class Scopes {
         private static rootUrl;
         static General: {
@@ -651,5 +651,5 @@ declare namespace Kurve {
     }
 }
 declare module "kurve" {
-    export = Kurve;
+    export = __Kurve;
 }

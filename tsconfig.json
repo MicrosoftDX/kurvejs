@@ -13,7 +13,7 @@
     "identity.ts",
     "graph.ts",
     "models.ts",
-    "requestbuilder.ts",
+    "querybuilder.ts",
     "kurve.ts"
   ]
 }

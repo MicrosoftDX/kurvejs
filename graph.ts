@@ -1,4 +1,5 @@
-namespace Kurve {
+namespace __Kurve {
+
     export class Graph {
         private req: XMLHttpRequest = null;
         private accessToken: string = null;
@@ -147,5 +148,6 @@ namespace Kurve {
         }
 
     }
+
 }
 
