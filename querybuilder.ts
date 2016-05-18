@@ -28,57 +28,68 @@ Certain Graph endpoints are implemented as OData "Functions". These are not trea
 
 Graph operations are exposed through Promises:
 
-    graph.me.messages
-    .GetMessages()
-    .then(messages =>
+    graph.me.messages.GetMessages().then(messages =>
         messages.forEach(message =>
             console.log(message.subject)
         )
     )
 
-All operations return a "_node" property which allows you to continue along the Graph path from the point where you left off:
+All operations return a "_context" property which represent the current path context:
 
     graph.me.messages.$("123").GetMessage().then(message =>
         console.log(message.subject);
-        message._node.attachments.GetAttachments().then(attachments => // message._node === graph.me.messages.$("123")
+        message._context.attachments.GetAttachments().then(attachments => // message._context === graph.me.messages.$("123")
             attachments.forEach(attachment => 
                 console.log(attachment.contentBytes)
             )
         )
     )
 
-Members of returned collections also have a "_node" object:
+Members of returned collections also have a "_context" object:
 
-        me.messages.GetMessages().then(messages =>
-            messages.forEach(message =>
-                message._node.attachments.GetAttachments().then(attachments =>
-                    attachments.forEach(attachment =>
-                        console.log(attachment.id);
-                    )
+    me.messages.GetMessages().then(messages =>
+        messages.forEach(message =>
+            message._context.attachments.GetAttachments().then(attachments => // message._context === graph.me.messages.$(message.id)
+                attachments.forEach(attachment =>
+                    console.log(attachment.id);
                 )
             )
         )
+    )
 
-In this example message._node returns the expected node in the graph.
-But consider the case of:
+Now consider these two cases:
 
+    me/manager
     me/directReports/{userId}
     
-This returns a user object, but you can't do user operations. This operation is disallowed:
+In both cases, GetUser() returns a user object, but you can't do user operations on that place in the graph.
+For example, these nodes are invalid:
 
+    me/manager/directReports
     me/directReports/{userId}/manager
     
 Instead you must start again at the beginning:
 
+    users/{userId}/directReports
     users/{userId}/manager
     
-We facilitate this by setting the "_node" property on members of certain collections accordingly: 
+We facilitate this by setting the "_context" property intelligently: 
 
-        me.directReports.GetDirectReports().then(users =>
+    me.manager.GetUser().then(user =>
+        user._context.directReports.GetUsers().then(users =>   // user._context === users.${user.id}
             users.forEach(user =>
-                user._node.manager.GetManager()     // equivalent to users.$(user.id).manager.GetManager();
+                console.log(user.displayName)
             )
         )
+    )
+
+    me.directReports.GetUsers().then(users =>
+        users.forEach(user =>
+            user._context.manager.GetManager().then(user =>     // user._context === users.$(user.id)
+                console.log(user.displayName)
+            )
+        )
+    )
 
 Operations which return paginated collections can return a "_next" request object. This can be utilized in a recursive function:
 
@@ -95,6 +106,16 @@ Operations which return paginated collections can return a "_next" request objec
     );
     
 (With async/await support, an iteration pattern can be used intead of recursion)
+
+The returned types are necessarily somewhat complex. You can access the simple models through _item(s)
+
+    graph.users.GetUsers().then(users =>
+        // users._items is type UserDataModel[]
+    )
+
+    graph.users.${userid}.GetUser().then(user =>
+        // user._item is type UserDataModel
+    )
 
 Every Graph operation may include OData queries:
 
@@ -207,7 +228,7 @@ namespace __Kurve {
     }
 
     export type GraphObject<Model, N extends Node> = Model & {
-        _node?: N,
+        _context?: N,
         _item: Model
     };
 
@@ -215,7 +236,7 @@ namespace __Kurve {
 
     export type GraphCollection<Model, C extends CollectionNode, N extends Node> = Array<GraphObject<Model, N>> & {
         _next?: () => Promise<GraphCollection<Model, C, N>, Error>,
-        _node?: C,
+        _context?: C,
         _raw: any,
         _items: Model[]
     };
@@ -230,14 +251,14 @@ namespace __Kurve {
         
         pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
         
-        protected graphObjectFromResponse = <Model, N extends Node>(response:any, node:N) => {
+        protected graphObjectFromResponse = <Model, N extends Node>(response:any, node:N, childFactory?:ChildFactory<Model, N>) => {
             let singleton = response as GraphObject<Model, N>;
             singleton._item = response as Model;
-            singleton._node = node;
+            singleton._context = childFactory ? childFactory(singleton._item["id"]) : node;
             return singleton;
         }
 
-        protected get<Model, N extends Node>(path:string, node:N, scopes?:string[], responseType?:string): Promise<GraphObject<Model, N>, Error> {
+        protected get<Model, N extends Node>(path:string, node:N, scopes?:string[], childFactory?:ChildFactory<Model, N>, responseType?:string): Promise<GraphObject<Model, N>, Error> {
             console.log("GET", path, scopes);
             var d = new Deferred<GraphObject<Model, N>, Error>();
 
@@ -296,14 +317,14 @@ namespace __Kurve {
         
         protected graphCollectionFromResponse = <Model, C extends CollectionNode, N extends Node>(response:any, node:C, childFactory?:ChildFactory<Model, N>, scopes?:string[]) => {
             let collection = response.value as GraphCollection<Model, C, N>;
-            collection._node = node;
+            collection._context = node;
             collection._raw = response;
             collection._items = response.value as Model[];
             let nextLink = response["@odata.nextLink"];
             if (nextLink)
                 collection._next = () => this.getCollection<Model, C, N>(nextLink, node, childFactory, scopes);
             if (childFactory)
-                collection.forEach(item => item._node = item["id"] && childFactory(item["id"]));
+                collection.forEach(item => item._context = item["id"] && childFactory(item["id"]));
             return collection;
         }
 
@@ -420,7 +441,7 @@ namespace __Kurve {
         
         dateRange = (startDate:Date, endDate:Date) => `startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`
 
-        GetCalendarView = (odataQuery?:ODataQuery) => this.getCollection<EventDataModel, CalendarView, Event>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Calendars.Read]));
+        GetEvents = (odataQuery?:ODataQuery) => this.getCollection<EventDataModel, CalendarView, Event>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Calendars.Read]));
     }
 
 
@@ -455,7 +476,7 @@ namespace __Kurve {
         }
 
         GetPhotoProperties = (odataQuery?:ODataQuery) => this.get<ProfilePhotoDataModel, Photo>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Photo.scopes[this.context]));
-        GetPhotoImage = (odataQuery?:ODataQuery) => this.get<any, any>(this.pathWithQuery(odataQuery, "/$value"), this, this.scopesForV2(Photo.scopes[this.context]), "blob");
+        GetPhotoImage = (odataQuery?:ODataQuery) => this.get<any, any>(this.pathWithQuery(odataQuery, "/$value"), this, this.scopesForV2(Photo.scopes[this.context]), null, "blob");
     }
 
     export class Manager extends Node {
@@ -463,7 +484,7 @@ namespace __Kurve {
             super(graph, path + "/manager" );
         }
 
-        GetManager = (odataQuery?:ODataQuery) => this.get<UserDataModel, Manager>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.ReadAll]));
+        GetUser = (odataQuery?:ODataQuery) => this.get<UserDataModel, User>(this.pathWithQuery(odataQuery), null, this.scopesForV2([Scopes.User.ReadAll]), Users.$(this.graph));
     }
 
     export class MemberOf extends CollectionNode {
@@ -479,9 +500,7 @@ namespace __Kurve {
             super(graph, path + "/" + userId);
         }
         
-        // seems like this should re-root its response under Users
-        
-        GetDirectReport = (odataQuery?:ODataQuery) => this.get<UserDataModel, DirectReport>(this.pathWithQuery(odataQuery), this, this.scopesForV2([Scopes.User.Read]));
+        GetUser = (odataQuery?:ODataQuery) => this.get<UserDataModel, User>(this.pathWithQuery(odataQuery), null, this.scopesForV2([Scopes.User.Read]), Users.$(this.graph));
     }
         
     export class DirectReports extends CollectionNode {
@@ -491,7 +510,7 @@ namespace __Kurve {
 
         $ = (userId:string) => new DirectReport(this.graph, this.path, userId);
         
-        GetDirectReports = (odataQuery?:ODataQuery) => this.getCollection<UserDataModel, DirectReports, User>(this.pathWithQuery(odataQuery), this, Users.$(this.graph), this.scopesForV2([Scopes.User.Read]));
+        GetUsers = (odataQuery?:ODataQuery) => this.getCollection<UserDataModel, DirectReports, User>(this.pathWithQuery(odataQuery), this, Users.$(this.graph), this.scopesForV2([Scopes.User.Read]));
     }
 
     export class User extends Node {
