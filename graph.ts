@@ -1,4 +1,4 @@
-namespace __Kurve {
+namespace Kurve {
 
     export class Graph {
         private req: XMLHttpRequest = null;

@@ -1,1 +1,1 @@
-export = __Kurve;
+export = Kurve;

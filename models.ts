@@ -1,4 +1,4 @@
-namespace __Kurve {
+namespace Kurve {
 
     export interface ItemBody {
         contentType?: string;

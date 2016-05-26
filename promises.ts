@@ -1,4 +1,4 @@
-﻿namespace __Kurve {
+﻿namespace Kurve {
     
 // Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
 

@@ -138,7 +138,7 @@ Some operations include parameters which transform into OData queries
 Note: This initial stab only includes a few familiar pieces of the Microsoft Graph.
 */
 
-namespace __Kurve {
+namespace Kurve {
 
     export class Scopes {
         private static rootUrl = "https://graph.microsoft.com/";

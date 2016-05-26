@@ -16,7 +16,7 @@
   }
 }(this, function () {
     MODULE_SOURCE
-    return __MODULE_NAME;
+    return MODULE_NAME;
 }));
 
 //*********************************************************

@@ -1,4 +1,4 @@
-namespace __Kurve {
+namespace Kurve {
 
     export enum EndPointVersion {
         v1=1,
