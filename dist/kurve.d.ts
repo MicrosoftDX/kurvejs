@@ -491,7 +491,6 @@ declare namespace Kurve {
         }, Error>;
     }
     class CalendarView extends CollectionNode {
-        private static suffix;
         constructor(graph: Graph, path?: string);
         private $;
         dateRange: (startDate: Date, endDate: Date) => string;

@@ -356,7 +356,7 @@ namespace Kurve {
 
         static scopes = {
             messages: [Scopes.Mail.Read],
-            events: [Scopes.Calendars.Read],
+            events: [Scopes.Calendars.Read]
         }
         
         GetAttachment = (odataQuery?:ODataQuery) => this.get<AttachmentDataModel, Attachment>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Attachment.scopes[this.context]));
@@ -432,9 +432,8 @@ namespace Kurve {
     }
 
     export class CalendarView extends CollectionNode {
-        private static suffix = "/calendarView";
         constructor(graph:Graph, path:string="") {
-            super(graph, path + CalendarView.suffix);
+            super(graph, path + "/calendarView");
         }
         
         private $ = (eventId:string) => new Event(this.graph, this.path, eventId); // need to adjust this path
