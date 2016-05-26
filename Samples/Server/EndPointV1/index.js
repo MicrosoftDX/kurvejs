@@ -1,7 +1,7 @@
 var http = require('http');
 var https = require('https');
 var crypto = require('crypto');
-var kurve = require('kurve');
+var kurve = require('../../../dist/kurve');
 
 var port = process.env.port || 1337;
 
@@ -20,7 +20,7 @@ http.createServer(function (req, res) {
            graph.me.GetUser().then(function (result){
             
             res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end(result.item.displayName + '\n');
+            res.end(result.displayName + '\n');
                
            });
         }        
