@@ -114,7 +114,7 @@ To find out more about using Kurve JS with AAD B2C, please read <b><a href="./do
 
 ## Using Kurve Graph
 
-See the QueryBuilder [documentation](../docs/graph.md).
+See the QueryBuilder [documentation](./docs/graph.md).
 
 ## FAQ
 
