@@ -1,26 +1,89 @@
 # KurveJS
 
-Kurve<nolink>.JS is an unofficial, open source JavaScript / TypeScript library that aims to provide:
+Kurve<nolink>.JS is an experimental, unofficial, open source JavaScript / TypeScript library that aims to provide:
 
-* Easy authentication and authorization using Azure Active Directory.  With Kurve you don't have to worry about navigating away from you web app for login or token requests.  Kurve also supports Promises making it easier to handle asychronous requests.
+* Easy authentication and authorization using Azure Active Directory.
+* Easy access to the Microsoft Graph REST API, utilizing Intellisense in your TypeScript-aware editor
 
-* Easy access to the Microsoft Graph REST API.  Kurve can automatically and incrementally acquire the tokens and permissions from the user required to ensure graph operations succeed.
+It looks like this:
 
-Kurve works well with most JavaScript and TypeScript frameworks including:
+    const id = new kurve.Identity({
+        clientId: "your-client-id",
+        tokenProcessingUri: "http://yourdomain/login.html",
+        version: kurve.EndPointVersion.v1,
+        mode: kurve.Mode.Client 
+    });
 
-* Angular V1<br/>
-* Angular V2<br/>
-* Ember JS<br/>
-* React<br/>
+    id.loginAsync().then(_ => {
+        const graph = new kurve.Graph({ identity: id }, kurve.Mode.Client);
+
+        graph.me.messages.GetMessages().then(messages => {
+            console.log("my emails:");   
+            messages.forEach(message => 
+                console.log(message.subject)
+            )
+        });
+        
+        graph.me.manager.GetUser(manager => {
+            console.log("my manager", manager.displayName);
+            console.log("their directs:");
+            manager._context.directReports.GetUsers(directs =>
+                directs.forEach(direct =>
+                    console.log(direct.displayName)
+                )
+            )
+        });
+    });
+
+Kurve works well with most JavaScript and TypeScript frameworks including Angular 1, Angular 2, Ember, and React.
 
 Kuve enables developers building web applications - including single application pages - to support a range of authentication and authorization scenarios including:
 
-* AAD app model v1 with a postMessage flow<br/>
-* AAD app model v1 with redirections<br/>
-* AAD app model v2 with a postMessage flow<br/>
-* AAD app model v2 with Active Directoy B2C.  This makes it easy to add third party identity providers such as Facebook and signup/signin/profile edit experiences using AD B2C policies<br/>
+* AAD app model v1 with a postMessage flow
+* AAD app model v1 with redirections
+* AAD app model v2 with a postMessage flow
+* AAD app model v2 with Active Directoy B2C.  This makes it easy to add third party identity providers such as Facebook and signup/signin/profile edit experiences using AD B2C policies
 
-## How does it work?
+## Setup
+
+kurve.js is a UMD file, allowing maximum flexibility.
+
+### node
+
+1. Install kurve from npm:
+
+      npm install kurve
+
+2. If you are using TypeScript you'll need install the typings too: 
+
+      typings install kurve -GS
+    
+### browser via npm
+
+1. Install kurve from npm:
+
+    npm install kurve
+
+2. If you are using TypeScript you'll need install the typings too: 
+
+    typings install kurve -GS
+    
+3. Copy login.html to your source tree
+4. Bundle kurve into your app using webpack, browserify, etc.
+
+### browser via &lt;script/&gt;
+
+1. Include kurve into your html:
+
+    <script src="kurve.js"/>
+
+2. Copy dist/login.html to your source tree
+3. If using TypeScript, add the following:
+
+    /// <reference path="kurve.d.ts"/>  
+    const kurve = window["Kurve"] as typeof Kurve; 
+
+## Using Kurve Identity
 
 The first thing you have to decide before using Kurve is which app model version you will use:
 
@@ -49,11 +112,15 @@ As mentioned above, B2C enables users to sign up to your AAD tenant using extern
 
 To find out more about using Kurve JS with AAD B2C, please read <b><a href="./docs/B2C/intro.md">this introduction document</a></b>. You can also check the example app labeled "B2C" in this repo.
 
+## Using Kurve Graph
+
+See the QueryBuilder [documentation](../docs/graph.md).
+
 ## FAQ
 
 ### Is this a supported library from Microsoft?
 
-No it is not. This is an open source project built unofficially. If you are looking for a supported APIs we encourage you to directly call Microsoft's Graph REST APIs.
+No it is not. This is an experimental unofficial open source project. If you are looking for a supported APIs we encourage you to call Microsoft's Graph REST APIs directly.
 
 ### Can I use/change this library?
 
@@ -63,18 +130,13 @@ You are free to take the code, change and use it any way you want it. But please
 
 You are free to send us your feedback at this Github repo, send pull requests, etc. But please don't expect this to work as an official support channel
 
-### Which files do I need to run this?
-
-At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optionally KurveIdentity.<nolink>js + login.html. You may use the TypeScript libraries and reuse some of the sample app code (index.html and app.<nolink>js) for reference.
-
 # Release Notes
 
 ## 0.5.0
  * Refactored source tree
- * Changed modularization to allow node to access Kurve 
- * Build using npm instead of Gulp
- * Bundle using webpack instead of browserify
- * Create .d.ts using dts-generator
+ * Initial node support 
+ * Build using "npm run build" instead of Gulp
+ * New Graph access via QueryBuilder
 
 ## 0.4.2:
  * Cached tokens can now be persisted to a local store
