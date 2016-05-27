@@ -1,16 +1,25 @@
-# Kurve Graph QueryBuilder
+# Kurve QueryBuilder
 
-Kurve's QueryBuilder allows you to easily discover and access the Microsoft Graph.
+Consider the state of developing against the Microsoft Graph today. For every operation you wish to perform you must look in the documentation to find:
+1. The path, e.g. "me/manager"
+2. The access requirements, e.g. "User.Read.All"
+3. The formats of the request and response objects
 
-Just start typing in Visual Studio Code and other TypeScript-aware editors too see how intellisense helps you explore the graph:
+It's another trip through the documentation to find out other operations that can be performed at the same endpoint, or on the response object.
 
-    const graph = new Graph( ... ); 
+This is what tooling is supposed to help with. This is the problem that Kurve's QueryBuilder solves: leverage Intellisense to let you to easily discover and access the Microsoft Graph.
 
+Here's what it looks like. With a Kurve _graph_ object in hand, just start typing in a TypeScript-aware editor such as Visual Studio Code:
+
+    You type...                 The editor prompts you with...
+    
     graph.                      me, users
     graph.me.                   events, messages, calendarView, mailFolders, GetUser
     graph.me.events.            GetEvents, $
     graph.me.events.$           (eventId:string) => Event
     graph.me.events.$("123").   GetEvent
+
+Nodes in the path (e.g. _events_) are lowerCamelCase. "$" is where you type an id. Operations (e.g. _GetEvent_) are UpperCamelCase.    
 
 Each endpoint exposes the set of available Graph operations through strongly typed methods:
 
@@ -36,7 +45,13 @@ Graph operations are exposed through Promises:
 
 ## Navigating the Graph path from responses
 
-All response objects return a "_context" property which represent the Graph path location of the object. 
+Normal usage of the MS Graph requires building a new path after each operation. If you wish to enumerate through message, outputting the subject line and then the sizes of all attachments, you'd do:
+
+    GET "me/messages/${messageId}"
+    GET "me/messages/${messageId}/attachments"
+    GET "me/messages/${messageId}/attachments/${attachmentId}"
+
+QueryBuilder helps you write more concise code. All response objects return a "_context" property which represent the Graph path location of the returned object, allowing you to pick up where you left off:
 
     graph.me.messages.$("123").GetMessage().then(message =>
         console.log(message.subject);
@@ -93,6 +108,8 @@ We facilitate this by setting the "_context" property intelligently:
         )
     )
 
+In other words, QueryBuilder lets you continue to do operations on the returned object. 
+
 ## Paginated Collections
 
 Operations which return paginated collections can return a "_next" request object. This can be utilized in a recursive function:
@@ -123,13 +140,13 @@ The response types seem complex, but they are actually very simple. For example,
 
     graph.me.GetUser().then(user =>
 
-Here _user_ is type _GraphObject&lt;UserDataModel, User>_ which is just an alias for _UserDataModel & { _context: User }_. In other words, it's a standard Microsoft Graph User object, plus one additional field called __context_, described above.
+_user_ is type _GraphObject&lt;UserDataModel, User>_ which is just an alias for _UserDataModel & { _context: User }_. In other words, it's a standard Microsoft Graph User object, plus one additional field called __context_, described above.
 
 Similarly for collections:
 
     graph.users.Getusers.then(users =>
 
-Here _users_ is type _GraphCollection&lt;UserDataModel, Users, User>_ which is just an alias for _UserDataModel[] & { _context: User, _next?: () => GraphCollection&lt;UserDataModel, Users, User>, _raw:any }_. In other words, it's an array of Microsoft Graph User objects, plus three extra fields described above.
+_users_ is type _GraphCollection&lt;UserDataModel, Users, User>_ which is just an alias for _UserDataModel[] & { _context: User, _next?: () => GraphCollection&lt;UserDataModel, Users, User>, _raw:any }_. In other words, it's an array of Microsoft Graph User objects, plus three extra fields described above.
 
 Because _GraphObject_ and _GraphCollection_ are defined as type intersections, they can be used anywhere the base types are expected, e.g.
 
