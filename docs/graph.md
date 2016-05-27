@@ -1,8 +1,10 @@
+# Kurve Graph QueryBuilder
+
 Kurve's QueryBuilder allows you to easily discover and access the Microsoft Graph.
 
 Just start typing in Visual Studio Code and other TypeScript-aware editors too see how intellisense helps you explore the graph:
 
-    const graph = new Graph(...); 
+    const graph = new Graph( ... ); 
 
     graph.                      me, users
     graph.me.                   events, messages, calendarView, mailFolders, GetUser
@@ -31,6 +33,8 @@ Graph operations are exposed through Promises:
             console.log(message.subject)
         )
     )
+
+## Navigating the Graph path from responses
 
 All operations return a "_context" property which represent the current Graph path location:
 
@@ -89,6 +93,8 @@ We facilitate this by setting the "_context" property intelligently:
         )
     )
 
+## Paginated Collections
+
 Operations which return paginated collections can return a "_next" request object. This can be utilized in a recursive function:
 
     ListMessageSubjects(messages:Kurve.GraphCollection<Kurve.MessageDataModel, Kurve.Messages, Kurve.Message>) {
@@ -105,14 +111,38 @@ Operations which return paginated collections can return a "_next" request objec
     
 (With async/await support, an iteration pattern can be used intead of recursion)
 
-The returned types are necessarily somewhat complex. You can access the simple models through _item(s)
+## Simplified Types
 
-    graph.users.${userid}.GetUser().then(user =>
-        // user._item is type UserDataModel
+The response types are necessarily somewhat complex. Sometimes, for TypeScript typing purposes, you need access to the unenhanced response object. There are two approaches:
+
+    const ShowUserName = (user:Kurve.UserDataModel) => console.log(user.displayName);  
+    
+    graph.users.$(userid).GetUser().then(user =>
+        // You can either coerce the type
+        ShowUserName(user as UserDataModel);
+        // or use the built-in helper
+        ShowUserName(user._item);
     )
+
+The same applies for collections:
+
+    const ShowUsersNames = (users:Kurve.UserDataModel[]) => users.forEach(user => console.log(user.displayName));  
+
     graph.users.GetUsers().then(users =>
-        // users._items is type Kurve.UserDataModel[]
+        // You can either coerce the type
+        ShowUsersNames(users as UserDataModel[]);
+        // or use the built-in helper
+        ShowUsersNames(users._items);
     )
+
+This only applies to satisfying type constraints in TypeScrpt. JavaScript should never need it:
+
+    graph.users.$(userid).GetUser().then(user =>
+        // Works great in vanilla JS
+        ShowUserName(user);
+    )
+
+## OData
 
 Every Graph operation may include OData queries:
 
