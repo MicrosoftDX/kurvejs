@@ -1073,8 +1073,7 @@ var Kurve;
             };
             this.graphObjectFromResponse = function (response, node, childFactory) {
                 var singleton = response;
-                singleton._item = response;
-                singleton._context = childFactory ? childFactory(singleton._item["id"]) : node;
+                singleton._context = childFactory ? childFactory(singleton["id"]) : node;
                 return singleton;
             };
         }
@@ -1120,7 +1119,6 @@ var Kurve;
                 var collection = response.value;
                 collection._context = node;
                 collection._raw = response;
-                collection._items = response.value;
                 var nextLink = response["@odata.nextLink"];
                 if (nextLink)
                     collection._next = function () { return _this.getCollection(nextLink, node, childFactory, scopes); };

@@ -365,14 +365,12 @@ declare namespace Kurve {
     }
     type GraphObject<Model, N extends Node> = Model & {
         _context?: N;
-        _item: Model;
     };
     type ChildFactory<Model, N extends Node> = (id: string) => N;
     type GraphCollection<Model, C extends CollectionNode, N extends Node> = Array<GraphObject<Model, N>> & {
         _next?: () => Promise<GraphCollection<Model, C, N>, Error>;
         _context?: C;
         _raw: any;
-        _items: Model[];
     };
     abstract class Node {
         protected graph: Graph;
@@ -382,7 +380,6 @@ declare namespace Kurve {
         pathWithQuery: (odataQuery?: OData | string, pathSuffix?: string) => string;
         protected graphObjectFromResponse: <Model, N extends Node>(response: any, node: N, childFactory?: (id: string) => N) => Model & {
             _context?: N;
-            _item: Model;
         };
         protected get<Model, N extends Node>(path: string, node: N, scopes?: string[], childFactory?: ChildFactory<Model, N>, responseType?: string): Promise<GraphObject<Model, N>, Error>;
         protected post<Model, N extends Node>(object: Model, path: string, node: N, scopes?: string[]): Promise<GraphObject<Model, N>, Error>;
@@ -393,15 +390,12 @@ declare namespace Kurve {
         nextLink: string;
         protected graphCollectionFromResponse: <Model, C extends CollectionNode, N extends Node>(response: any, node: C, childFactory?: (id: string) => N, scopes?: string[]) => (Model & {
             _context?: N;
-            _item: Model;
         })[] & {
             _next?: () => Promise<(Model & {
                 _context?: N;
-                _item: Model;
             })[] & any, Error>;
             _context?: C;
             _raw: any;
-            _items: Model[];
         };
         protected getCollection<Model, C extends CollectionNode, N extends Node>(path: string, node: C, childFactory: ChildFactory<Model, N>, scopes?: string[]): Promise<GraphCollection<Model, C, N>, Error>;
     }
@@ -414,7 +408,6 @@ declare namespace Kurve {
         };
         GetAttachment: (odataQuery?: OData | string) => Promise<AttachmentDataModel & {
             _context?: Attachment;
-            _item: AttachmentDataModel;
         }, Error>;
     }
     class Attachments extends CollectionNode {
@@ -423,15 +416,12 @@ declare namespace Kurve {
         $: (attachmentId: string) => Attachment;
         GetAttachments: (odataQuery?: OData | string) => Promise<(AttachmentDataModel & {
             _context?: Attachment;
-            _item: AttachmentDataModel;
         })[] & {
             _next?: () => Promise<(AttachmentDataModel & {
                 _context?: Attachment;
-                _item: AttachmentDataModel;
             })[] & any, Error>;
             _context?: Attachments;
             _raw: any;
-            _items: AttachmentDataModel[];
         }, Error>;
     }
     class Message extends Node {
@@ -439,11 +429,9 @@ declare namespace Kurve {
         attachments: Attachments;
         GetMessage: (odataQuery?: OData | string) => Promise<MessageDataModel & {
             _context?: Message;
-            _item: MessageDataModel;
         }, Error>;
         SendMessage: (odataQuery?: OData | string) => Promise<MessageDataModel & {
             _context?: Message;
-            _item: MessageDataModel;
         }, Error>;
     }
     class Messages extends CollectionNode {
@@ -451,19 +439,15 @@ declare namespace Kurve {
         $: (messageId: string) => Message;
         GetMessages: (odataQuery?: OData | string) => Promise<(MessageDataModel & {
             _context?: Message;
-            _item: MessageDataModel;
         })[] & {
             _next?: () => Promise<(MessageDataModel & {
                 _context?: Message;
-                _item: MessageDataModel;
             })[] & any, Error>;
             _context?: Messages;
             _raw: any;
-            _items: MessageDataModel[];
         }, Error>;
         CreateMessage: (object: MessageDataModel, odataQuery?: OData | string) => Promise<MessageDataModel & {
             _context?: Messages;
-            _item: MessageDataModel;
         }, Error>;
     }
     class Event extends Node {
@@ -471,7 +455,6 @@ declare namespace Kurve {
         attachments: Attachments;
         GetEvent: (odataQuery?: OData | string) => Promise<EventDataModel & {
             _context?: Event;
-            _item: EventDataModel;
         }, Error>;
     }
     class Events extends CollectionNode {
@@ -479,15 +462,12 @@ declare namespace Kurve {
         $: (eventId: string) => Event;
         GetEvents: (odataQuery?: OData | string) => Promise<(EventDataModel & {
             _context?: Event;
-            _item: EventDataModel;
         })[] & {
             _next?: () => Promise<(EventDataModel & {
                 _context?: Event;
-                _item: EventDataModel;
             })[] & any, Error>;
             _context?: Events;
             _raw: any;
-            _items: EventDataModel[];
         }, Error>;
     }
     class CalendarView extends CollectionNode {
@@ -496,22 +476,18 @@ declare namespace Kurve {
         dateRange: (startDate: Date, endDate: Date) => string;
         GetEvents: (odataQuery?: OData | string) => Promise<(EventDataModel & {
             _context?: Event;
-            _item: EventDataModel;
         })[] & {
             _next?: () => Promise<(EventDataModel & {
                 _context?: Event;
-                _item: EventDataModel;
             })[] & any, Error>;
             _context?: CalendarView;
             _raw: any;
-            _items: EventDataModel[];
         }, Error>;
     }
     class MailFolder extends Node {
         constructor(graph: Graph, path: string, mailFolderId: string);
         GetMailFolder: (odataQuery?: OData | string) => Promise<MailFolderDataModel & {
             _context?: MailFolder;
-            _item: MailFolderDataModel;
         }, Error>;
     }
     class MailFolders extends CollectionNode {
@@ -519,15 +495,12 @@ declare namespace Kurve {
         $: (mailFolderId: string) => MailFolder;
         GetMailFolders: (odataQuery?: OData | string) => Promise<(MailFolderDataModel & {
             _context?: MailFolder;
-            _item: MailFolderDataModel;
         })[] & {
             _next?: () => Promise<(MailFolderDataModel & {
                 _context?: MailFolder;
-                _item: MailFolderDataModel;
             })[] & any, Error>;
             _context?: MailFolders;
             _raw: any;
-            _items: MailFolderDataModel[];
         }, Error>;
     }
     class Photo extends Node {
@@ -540,7 +513,6 @@ declare namespace Kurve {
         };
         GetPhotoProperties: (odataQuery?: OData | string) => Promise<ProfilePhotoDataModel & {
             _context?: Photo;
-            _item: ProfilePhotoDataModel;
         }, Error>;
         GetPhotoImage: (odataQuery?: OData | string) => Promise<any, Error>;
     }
@@ -548,22 +520,18 @@ declare namespace Kurve {
         constructor(graph: Graph, path?: string);
         GetUser: (odataQuery?: OData | string) => Promise<UserDataModel & {
             _context?: User;
-            _item: UserDataModel;
         }, Error>;
     }
     class MemberOf extends CollectionNode {
         constructor(graph: Graph, path?: string);
         GetGroups: (odataQuery?: OData | string) => Promise<(GroupDataModel & {
             _context?: Group;
-            _item: GroupDataModel;
         })[] & {
             _next?: () => Promise<(GroupDataModel & {
                 _context?: Group;
-                _item: GroupDataModel;
             })[] & any, Error>;
             _context?: MemberOf;
             _raw: any;
-            _items: GroupDataModel[];
         }, Error>;
     }
     class DirectReport extends Node {
@@ -571,7 +539,6 @@ declare namespace Kurve {
         constructor(graph: Graph, path?: string, userId?: string);
         GetUser: (odataQuery?: OData | string) => Promise<UserDataModel & {
             _context?: User;
-            _item: UserDataModel;
         }, Error>;
     }
     class DirectReports extends CollectionNode {
@@ -579,15 +546,12 @@ declare namespace Kurve {
         $: (userId: string) => DirectReport;
         GetUsers: (odataQuery?: OData | string) => Promise<(UserDataModel & {
             _context?: User;
-            _item: UserDataModel;
         })[] & {
             _next?: () => Promise<(UserDataModel & {
                 _context?: User;
-                _item: UserDataModel;
             })[] & any, Error>;
             _context?: DirectReports;
             _raw: any;
-            _items: UserDataModel[];
         }, Error>;
     }
     class User extends Node {
@@ -603,7 +567,6 @@ declare namespace Kurve {
         memberOf: MemberOf;
         GetUser: (odataQuery?: OData | string) => Promise<UserDataModel & {
             _context?: User;
-            _item: UserDataModel;
         }, Error>;
     }
     class Users extends CollectionNode {
@@ -612,15 +575,12 @@ declare namespace Kurve {
         static $: (graph: Graph) => (userId: string) => User;
         GetUsers: (odataQuery?: OData | string) => Promise<(UserDataModel & {
             _context?: User;
-            _item: UserDataModel;
         })[] & {
             _next?: () => Promise<(UserDataModel & {
                 _context?: User;
-                _item: UserDataModel;
             })[] & any, Error>;
             _context?: Users;
             _raw: any;
-            _items: UserDataModel[];
         }, Error>;
     }
     class Group extends Node {
@@ -628,7 +588,6 @@ declare namespace Kurve {
         constructor(graph: Graph, path: string, groupId: string);
         GetGroup: (odataQuery?: OData | string) => Promise<GroupDataModel & {
             _context?: Group;
-            _item: GroupDataModel;
         }, Error>;
     }
     class Groups extends CollectionNode {
@@ -637,15 +596,12 @@ declare namespace Kurve {
         static $: (graph: Graph) => (groupId: string) => Group;
         GetGroups: (odataQuery?: OData | string) => Promise<(GroupDataModel & {
             _context?: Group;
-            _item: GroupDataModel;
         })[] & {
             _next?: () => Promise<(GroupDataModel & {
                 _context?: Group;
-                _item: GroupDataModel;
             })[] & any, Error>;
             _context?: Groups;
             _raw: any;
-            _items: GroupDataModel[];
         }, Error>;
     }
 }

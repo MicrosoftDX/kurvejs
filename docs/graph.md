@@ -111,36 +111,33 @@ Operations which return paginated collections can return a "_next" request objec
     
 (With async/await support, an iteration pattern can be used intead of recursion)
 
-## Simplified Types
-
-The response types are necessarily somewhat complex. Sometimes, for TypeScript typing purposes, you need access to the unenhanced response object. There are two approaches:
-
-    const ShowUserName = (user:Kurve.UserDataModel) => console.log(user.displayName);  
-    
-    graph.users.$(userid).GetUser().then(user =>
-        // You can either coerce the type
-        ShowUserName(user as UserDataModel);
-        // or use the built-in helper
-        ShowUserName(user._item);
-    )
-
-The same applies for collections:
-
-    const ShowUsersNames = (users:Kurve.UserDataModel[]) => users.forEach(user => console.log(user.displayName));  
+Collections also expose a "_raw" property which allows access to the actual JSON returned from the Microsoft Graph.
 
     graph.users.GetUsers().then(users =>
-        // You can either coerce the type
-        ShowUsersNames(users as UserDataModel[]);
-        // or use the built-in helper
-        ShowUsersNames(users._items);
-    )
+        console.log(users._raw["@odata.context"])
+    ); 
 
-This only applies to satisfying type constraints in TypeScrpt. JavaScript should never need it:
+## About Response Types
 
-    graph.users.$(userid).GetUser().then(user =>
-        // Works great in vanilla JS
-        ShowUserName(user);
-    )
+The response types seem complex, but they are actually very simple. For example, in:
+
+    graph.me.GetUser().then(user =>
+
+Here _user_ is type _GraphObject&lt;UserDataModel, User>_ which is just an alias for _UserDataModel & { _context: User }_. In other words, it's a standard Microsoft Graph User object, plus one additional field called __context_, described above.
+
+Similarly for collections:
+
+    graph.users.Getusers.then(users =>
+
+Here _users_ is type _GraphCollection&lt;UserDataModel, Users, User>_ which is just an alias for _UserDataModel[] & { _context: User, _next?: () => GraphCollection&lt;UserDataModel, Users, User>, _raw:any }_. In other words, it's an array of Microsoft Graph User objects, plus three extra fields described above.
+
+Because _GraphObject_ and _GraphCollection_ are defined as type intersections, they can be used anywhere the base types are expected, e.g.
+
+    const showDisplayName = (user:UserDataModel) => console.log(user.displayName);
+    graph.me.GetUser().then(user => showDisplayName(user));
+    
+    const showDisplayNames = (users:UserDataModel[]) => users.forEach(user => console.log(user.displayName));
+    graph.users.GetUsers().then(users => showDisplayNames(users));
 
 ## OData
 

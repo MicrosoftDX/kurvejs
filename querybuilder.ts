@@ -88,8 +88,7 @@ namespace Kurve {
     }
 
     export type GraphObject<Model, N extends Node> = Model & {
-        _context?: N,
-        _item: Model
+        _context?: N
     };
 
     export type ChildFactory<Model, N extends Node> = (id:string) => N;
@@ -98,7 +97,6 @@ namespace Kurve {
         _next?: () => Promise<GraphCollection<Model, C, N>, Error>,
         _context?: C,
         _raw: any,
-        _items: Model[]
     };
 
     export abstract class Node {
@@ -113,8 +111,7 @@ namespace Kurve {
         
         protected graphObjectFromResponse = <Model, N extends Node>(response:any, node:N, childFactory?:ChildFactory<Model, N>) => {
             let singleton = response as GraphObject<Model, N>;
-            singleton._item = response as Model;
-            singleton._context = childFactory ? childFactory(singleton._item["id"]) : node;
+            singleton._context = childFactory ? childFactory(singleton["id"]) : node;
             return singleton;
         }
 
@@ -179,7 +176,6 @@ namespace Kurve {
             let collection = response.value as GraphCollection<Model, C, N>;
             collection._context = node;
             collection._raw = response;
-            collection._items = response.value as Model[];
             let nextLink = response["@odata.nextLink"];
             if (nextLink)
                 collection._next = () => this.getCollection<Model, C, N>(nextLink, node, childFactory, scopes);
