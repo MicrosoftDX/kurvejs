@@ -7,7 +7,8 @@ var AppV1 = (function () {
         var _this = this;
         //Setup
         this.clientId = document.getElementById("AppID").value;
-        this.redirectUri = "http://localhost:8000/dist/login.html";
+        var loc = document.URL;
+        this.redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/EndPointV1")) + "/dist/login.html";
         //Create identity object
         this.identity = new kurve.Identity({
             clientId: this.clientId,
@@ -15,7 +16,6 @@ var AppV1 = (function () {
             version: kurve.EndPointVersion.v1,
             mode: kurve.Mode.Client
         });
-        //or  this.identity.loginAsync().then(() => {
         this.identity.loginAsync().then(function () {
             ////Option 1: Manualy passing the access token
             //// or... this.identity.getAccessToken("https://graph.microsoft.com", ((token) => {
