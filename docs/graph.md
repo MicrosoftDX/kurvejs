@@ -36,7 +36,7 @@ Graph operations are exposed through Promises:
 
 ## Navigating the Graph path from responses
 
-All operations return a "_context" property which represent the current Graph path location:
+All response objects return a "_context" property which represent the Graph path location of the object. 
 
     graph.me.messages.$("123").GetMessage().then(message =>
         console.log(message.subject);
@@ -78,7 +78,7 @@ Instead you must start again at the beginning:
 We facilitate this by setting the "_context" property intelligently: 
 
     graph.me.manager.GetUser().then(user =>
-        user._context.directReports.GetUsers().then(users =>   // user._context === users.${user.id}
+        user._context.directReports.GetUsers().then(users =>   // user._context === users.$(user.id)
             users.forEach(user =>
                 console.log(user.displayName)
             )
