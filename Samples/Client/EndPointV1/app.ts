@@ -2,10 +2,9 @@
 const kurve = window["Kurve"] as typeof Kurve;
 
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
+    const init = () => new AppV1();
 
-module Sample {
-        
-    export class AppV1 {
+    class AppV1 {
         private clientId;
         private redirectUri;
         private identity: Kurve.Identity;
@@ -13,7 +12,9 @@ module Sample {
         constructor() {
             //Setup
             this.clientId = (<HTMLInputElement>document.getElementById("AppID")).value;
-            this.redirectUri = (<HTMLInputElement>document.getElementById("redirectUrl")).value;
+
+            const loc = document.URL;
+            this.redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/EndPointV1")) + "/dist/login.html";
 
             //Create identity object
             this.identity = new kurve.Identity({
@@ -23,7 +24,6 @@ module Sample {
                 mode: kurve.Mode.Client
             });
 
-            //or  this.identity.loginAsync().then(() => {
             this.identity.loginAsync().then(() => {
 
                 ////Option 1: Manualy passing the access token
@@ -257,7 +257,6 @@ module Sample {
 
       
     }
-}
 
 //*********************************************************   
 //   

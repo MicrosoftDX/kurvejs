@@ -114,7 +114,21 @@ To find out more about using Kurve JS with AAD B2C, please read <b><a href="./do
 
 ## Using Kurve Graph
 
-See the QueryBuilder [documentation](./docs/graph.md).
+You can use Kurve Graph without Kurve Identity by passing an access token directly:
+
+    const graph = new kurve.Graph({ defaultAccessToken: token }, mode);
+
+Or else link it to a Kurve.Identity object:
+
+    const graph = new kurve.Graph({ { identity: this.identity }, mode);
+
+Where 'mode' is either kurve.Mode.Client or kurve.Mode.Server
+    
+For information on accessing the graph, see the [QueryBuilder documentation](./docs/graph.md).
+
+## Samples
+
+As samples are updated they will appear [here](./samples.html).
 
 ## FAQ
 
@@ -137,6 +151,7 @@ You are free to send us your feedback at this Github repo, send pull requests, e
  * Initial node support 
  * Build using "npm run build" instead of Gulp
  * New Graph access via QueryBuilder
+ * NOTE: Some samples are out of date
 
 ## 0.4.2:
  * Cached tokens can now be persisted to a local store
