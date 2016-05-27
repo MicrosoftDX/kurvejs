@@ -1,3 +1,5 @@
+/// <reference path="../../../dist/kurve.d.ts" />
+var kurve = window["Kurve"];
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 var Sample;
 (function (Sample) {
@@ -11,7 +13,8 @@ var Sample;
             this.identity = new kurve.Identity({
                 clientId: this.clientId,
                 tokenProcessingUri: this.redirectUri,
-                version: kurve.EndPointVersion.v1
+                version: kurve.EndPointVersion.v1,
+                mode: kurve.Mode.Client
             });
             //or  this.identity.loginAsync().then(() => {
             this.identity.loginAsync().then(function () {
@@ -21,7 +24,7 @@ var Sample;
                 //    this.graph = new Kurve.Graph({ defaultAccessToken: token });
                 //}));
                 //Option 2: Automatically linking to the Identity object
-                _this.graph = new kurve.Graph({ identity: _this.identity });
+                _this.graph = new kurve.Graph({ identity: _this.identity }, kurve.Mode.Client);
                 //Update UI
                 document.getElementById("initDiv").style.display = "none";
                 document.getElementById("scenarios").style.display = "";
@@ -48,26 +51,32 @@ var Sample;
         };
         //Scenario 2: Load users with paging
         AppV1.prototype.loadUsersWithPaging = function () {
+            var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.showUsers(this.graph.users, "$top=5");
+            this.graph.users.GetUsers("$top=5").then(function (users) {
+                return _this.showUsers(users);
+            });
         };
         //Scenario 3: Load users with custom odata query
         AppV1.prototype.loadUsersWithOdataQuery = function (query) {
+            var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.showUsers(this.graph.users, query);
+            this.graph.users.GetUsers(query).then(function (users) {
+                return _this.showUsers(users);
+            });
         };
         //Scenario 4: Load user "me"
         AppV1.prototype.loadUserMe = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(function (user) {
-                return document.getElementById("results").innerHTML += user.item.displayName + "</br>";
+                return document.getElementById("results").innerHTML += user.displayName + "</br>";
             });
         };
         //Scenario 5: Load user by ID
         AppV1.prototype.userById = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.users.$(document.getElementById("userId").value).GetUser().then(function (user) {
-                document.getElementById("results").innerHTML += user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += user.displayName + "</br>";
             }).fail(function (error) {
                 window.alert(error.status);
             });
@@ -77,9 +86,11 @@ var Sample;
             var _this = this;
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                _this.showMessages(user.self.messages, "$top=2");
+                user._context.messages.GetMessages("$top=2").then(function (messages) {
+                    return _this.showMessages(messages);
+                });
             });
         };
         //Scenario 6: Load user "me" and then its events
@@ -87,9 +98,11 @@ var Sample;
             var _this = this;
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Events:" + "</br>";
-                _this.showEvents(user.self.events, "$top=2");
+                user._context.events.GetEvents("$top=2").then(function (events) {
+                    return _this.showEvents(events);
+                });
             });
         };
         //Scenario 7: Load user "me" and then its groups
@@ -97,45 +110,50 @@ var Sample;
             var _this = this;
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Groups:" + "</br>";
-                _this.showGroups(user.self.memberOf, "$top=5");
+                user._context.memberOf.GetGroups("$top=5").then(function (groups) {
+                    return _this.showGroups(groups);
+                });
             });
         };
         //Scenario 8: Load user "me" and then its manager
         AppV1.prototype.loadUserManager = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Manager:" + "</br>";
-                user.self.manager.GetManager().then(function (manager) {
-                    document.getElementById("results").innerHTML += manager.item.displayName + "</br>";
+                user._context.manager.GetUser().then(function (manager) {
+                    document.getElementById("results").innerHTML += manager.displayName + "</br>";
                 });
             });
         };
         //Scenario 9: Load groups with paging
         AppV1.prototype.loadGroupsWithPaging = function () {
+            var _this = this;
             document.getElementById("results").innerHTML = "";
-            this.showGroups(this.graph.groups, "$top=5");
+            this.graph.groups.GetGroups("$top=5").then(function (groups) {
+                return _this.showGroups(groups);
+            });
         };
         //Scenario 10: Load group by ID
         AppV1.prototype.groupById = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.groups.$(document.getElementById("groupId").value).GetGroup().then(function (group) {
-                document.getElementById("results").innerHTML += group.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += group.displayName + "</br>";
             });
         };
         //Scenario 11: Load user "me" and then its messages
         AppV1.prototype.loadUserPhoto = function () {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(function (user) {
-                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Photo:" + "</br>";
-                user.self.photo.GetPhotoProperties().then(function (photo) {
+                user._context.photo.GetPhotoProperties().then(function (photo) {
                     //Photo metadata
                     var x = photo;
                 });
-                user.self.photo.GetPhotoImage().then(function (photoValue) {
+                user._context.photo.GetPhotoImage().then(function (photoValue) {
                     var img = document.createElement("img");
                     var reader = new FileReader();
                     reader.onloadend = function () {
@@ -157,57 +175,45 @@ var Sample;
         //--------------------------------Callbacks---------------------------------------------
         AppV1.prototype.showUsers = function (users, odataQuery) {
             var _this = this;
-            users.GetUsers(odataQuery)
-                .then(function (collection) {
-                collection.items.forEach(function (user) {
-                    return document.getElementById("results").innerHTML += user.displayName + "</br>";
-                });
-                if (collection.next)
-                    _this.showUsers(collection.next);
-            })
-                .fail(function (error) {
+            users.forEach(function (group) {
+                return document.getElementById("results").innerHTML += group.displayName + "</br>";
+            });
+            users._next && users._next().then(function (nextUsers) {
+                return _this.showUsers(nextUsers);
+            }).fail(function (error) {
+                return document.getElementById("results").innerText = JSON.stringify(error);
+            });
+        };
+        AppV1.prototype.showGroups = function (groups) {
+            var _this = this;
+            groups.forEach(function (group) {
+                return document.getElementById("results").innerHTML += group.displayName + "</br>";
+            });
+            groups._next && groups._next().then(function (nextGroups) {
+                return _this.showGroups(nextGroups);
+            }).fail(function (error) {
+                return document.getElementById("results").innerText = JSON.stringify(error);
+            });
+        };
+        AppV1.prototype.showMessages = function (messages) {
+            var _this = this;
+            messages.forEach(function (message) {
+                return document.getElementById("results").innerHTML += message.subject + "</br>";
+            });
+            messages._next && messages._next().then(function (nextMessages) {
+                return _this.showMessages(nextMessages);
+            }).fail(function (error) {
                 return document.getElementById("results").innerText = error.statusText;
             });
         };
-        AppV1.prototype.showGroups = function (groups, odataQuery) {
+        AppV1.prototype.showEvents = function (events) {
             var _this = this;
-            groups.GetGroups(odataQuery)
-                .then(function (collection) {
-                collection.items.forEach(function (group) {
-                    return document.getElementById("results").innerHTML += group.displayName + "</br>";
-                });
-                if (collection.next)
-                    _this.showGroups(collection.next);
-            })
-                .fail(function (error) {
-                document.getElementById("results").innerText = JSON.stringify(error);
+            events.forEach(function (message) {
+                return document.getElementById("results").innerHTML += message.subject + "</br>";
             });
-        };
-        AppV1.prototype.showMessages = function (messages, odataQuery) {
-            var _this = this;
-            messages.GetMessages(odataQuery)
-                .then(function (collection) {
-                collection.items.forEach(function (message) {
-                    return document.getElementById("results").innerHTML += message.subject + "</br>";
-                });
-                if (collection.next)
-                    _this.showMessages(collection.next);
-            })
-                .fail(function (error) {
-                return document.getElementById("results").innerText = error.statusText;
-            });
-        };
-        AppV1.prototype.showEvents = function (events, odataQuery) {
-            var _this = this;
-            events.GetEvents(odataQuery)
-                .then(function (collection) {
-                collection.items.forEach(function (event) {
-                    return document.getElementById("results").innerHTML += event.subject + "</br>";
-                });
-                if (events.next)
-                    _this.showEvents(collection.next);
-            })
-                .fail(function (error) {
+            events._next && events._next().then(function (nextEvents) {
+                return _this.showEvents(nextEvents);
+            }).fail(function (error) {
                 return document.getElementById("results").innerText = error.statusText;
             });
         };

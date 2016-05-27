@@ -4,17 +4,16 @@
     "preserveConstEnums": true,
     "target": "es5",
     "sourceMap": true,
-    "noLib":false,
-    "module":"commonjs",
-    "declaration":true
+    "noLib": false,
+    "declaration": true,
+    "outFile": "dist/kurve.js"
   },
   "files": [
-    "kurve.ts",
-     "promises.ts",
-    "graph.ts",
+    "promises.ts",
     "identity.ts",
-   
+    "graph.ts",
     "models.ts",
-    "requestbuilder.ts"
+    "querybuilder.ts",
+    "kurve.ts"
   ]
 }

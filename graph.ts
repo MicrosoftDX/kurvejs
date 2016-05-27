@@ -1,4 +1,5 @@
-module kurve {
+namespace Kurve {
+
     export class Graph {
         private req: XMLHttpRequest = null;
         private accessToken: string = null;
@@ -24,72 +25,6 @@ module kurve {
         get users() { return new Users(this, this.baseUrl); }
         get groups() { return new Groups(this, this.baseUrl); }
 
-        public Get<Model, N extends Node>(path:string, node:N, scopes?:string[], responseType?:string): Promise<Singleton<Model, N>, Error> {
-            console.log("GET", path, scopes);
-            var d = new Deferred<Singleton<Model, N>, Error>();
-
-            this.get(path, (error, result) => {
-                if (!responseType) {
-                    var jsonResult = JSON.parse(result) ;
-
-                    if (jsonResult.error) {
-                        var errorODATA = new Error();
-                        errorODATA.other = jsonResult.error;
-                        d.reject(errorODATA);
-                        return;
-                    }
-                    d.resolve(singletonFromResponse<Model, N>(jsonResult, node));
-                } else {
-                    d.resolve(singletonFromResponse<Model, N>(result, node));
-                }
-
-                
-            }, responseType, scopes);
-
-            return d.promise;
-         }
-         
-        public GetCollection<Model, C extends CollectionNode, N extends Node>(path:string, node:C, childFactory:ChildFactory<Model, N>, scopes?:string[]): Promise<Collection<Model, C, N>, Error> {
-            console.log("GET collection", path, scopes);
-            var d = new Deferred<Collection<Model, C, N>, Error>();
-
-            this.get(path, (error, result) => {
-                var jsonResult = JSON.parse(result) ;
-
-                if (jsonResult.error) {
-                    var errorODATA = new Error();
-                    errorODATA.other = jsonResult.error;
-                    d.reject(errorODATA);
-                    return;
-                }
-                
-                d.resolve(collectionFromResponse<Model, C, N>(jsonResult, node, this, childFactory, scopes));
-            }, null, scopes);
-
-            return d.promise;
-         }
-
-        public Post<Model, N extends Node>(object:Model, path:string, node:N, scopes?:string[]): Promise<Singleton<Model, N>, Error> {
-            console.log("POST", path, scopes);
-            var d = new Deferred<Singleton<Model, N>, Error>();
-            
-/*
-            this.post(object, path, (error, result) => {
-                var jsonResult = JSON.parse(result) ;
-
-                if (jsonResult.error) {
-                    var errorODATA = new Error();
-                    errorODATA.other = jsonResult.error;
-                    d.reject(errorODATA);
-                    return;
-                }
-
-                d.resolve(new Response<Model, N>({}, node));
-            });
-*/
-            return d.promise;
-         }
- 
         public get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void {
             if (this.mode === Mode.Client) {
                 var xhr = new XMLHttpRequest();
@@ -213,5 +148,6 @@ module kurve {
         }
 
     }
-} //remove during bundling
+
+}
 

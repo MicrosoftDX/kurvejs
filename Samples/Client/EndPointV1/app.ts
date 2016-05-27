@@ -1,12 +1,15 @@
-﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
+﻿/// <reference path="../../../dist/kurve.d.ts" />
+const kurve = window["Kurve"] as typeof Kurve;
+
+// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 
 module Sample {
-   
+        
     export class AppV1 {
         private clientId;
         private redirectUri;
-        private identity: kurve.Identity;
-        private graph: kurve.Graph;
+        private identity: Kurve.Identity;
+        private graph: Kurve.Graph;
         constructor() {
             //Setup
             this.clientId = (<HTMLInputElement>document.getElementById("AppID")).value;
@@ -16,7 +19,8 @@ module Sample {
             this.identity = new kurve.Identity({
                 clientId: this.clientId,
                 tokenProcessingUri: this.redirectUri,
-                version: kurve.EndPointVersion.v1
+                version: kurve.EndPointVersion.v1,
+                mode: kurve.Mode.Client
             });
 
             //or  this.identity.loginAsync().then(() => {
@@ -29,7 +33,7 @@ module Sample {
                 //}));
 
                 //Option 2: Automatically linking to the Identity object
-                this.graph = new kurve.Graph({ identity: this.identity });
+                this.graph = new kurve.Graph({ identity: this.identity }, kurve.Mode.Client);
 
                 //Update UI
 
@@ -67,20 +71,24 @@ module Sample {
         //Scenario 2: Load users with paging
         private loadUsersWithPaging(): void {
             document.getElementById("results").innerHTML = "";
-            this.showUsers(this.graph.users, "$top=5");
+            this.graph.users.GetUsers("$top=5").then(users =>
+                this.showUsers(users)
+            );
         }
 
         //Scenario 3: Load users with custom odata query
         private loadUsersWithOdataQuery(query: string): void {
             document.getElementById("results").innerHTML = "";
-            this.showUsers(this.graph.users, query);
+            this.graph.users.GetUsers(query).then(users =>
+                this.showUsers(users)
+            );
         }
 
         //Scenario 4: Load user "me"
         private loadUserMe(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(user =>
-                document.getElementById("results").innerHTML += user.item.displayName + "</br>"
+                document.getElementById("results").innerHTML += user.displayName + "</br>"
             );
         }
 
@@ -89,7 +97,7 @@ module Sample {
             document.getElementById("results").innerHTML = "";
 
             this.graph.users.$((<HTMLInputElement>document.getElementById("userId")).value).GetUser().then((user) => {
-                document.getElementById("results").innerHTML += user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += user.displayName + "</br>";
             }).fail((error) => {
                 window.alert(error.status);
             });
@@ -99,9 +107,11 @@ module Sample {
         private loadUserMessages(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(user => {
-                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                this.showMessages(user.self.messages, "$top=2");
+                user._context.messages.GetMessages("$top=2").then(messages =>
+                    this.showMessages(messages)
+                );
             });
         }
 
@@ -110,9 +120,11 @@ module Sample {
         private loadUserEvents(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(user => {
-                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Events:" + "</br>";
-                this.showEvents(user.self.events, "$top=2");
+                user._context.events.GetEvents("$top=2").then(events =>
+                    this.showEvents(events)
+                );
             });
         }
 
@@ -120,9 +132,11 @@ module Sample {
         private loadUserGroups(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(user => {
-                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Groups:" + "</br>";
-                this.showGroups(user.self.memberOf, "$top=5");
+                user._context.memberOf.GetGroups("$top=5").then(groups =>
+                    this.showGroups(groups)
+                );
             });
         }
 
@@ -130,10 +144,10 @@ module Sample {
         private loadUserManager(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then((user) => {
-                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Manager:" + "</br>";
-                user.self.manager.GetManager().then((manager) => {
-                    document.getElementById("results").innerHTML += manager.item.displayName + "</br>";
+                user._context.manager.GetUser().then(manager => {
+                    document.getElementById("results").innerHTML += manager.displayName + "</br>";
                 });
             });
         }
@@ -141,7 +155,9 @@ module Sample {
         //Scenario 9: Load groups with paging
         private loadGroupsWithPaging(): void {
             document.getElementById("results").innerHTML = "";
-            this.showGroups(this.graph.groups, "$top=5");
+            this.graph.groups.GetGroups("$top=5").then(groups =>
+                this.showGroups(groups)
+            );
         }
 
         //Scenario 10: Load group by ID
@@ -149,7 +165,7 @@ module Sample {
             document.getElementById("results").innerHTML = "";
 
             this.graph.groups.$((<HTMLInputElement>document.getElementById("groupId")).value).GetGroup().then((group) => {
-                document.getElementById("results").innerHTML += group.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += group.displayName + "</br>";
             });
         }
 
@@ -157,15 +173,15 @@ module Sample {
         private loadUserPhoto(): void {
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then((user) => {
-                document.getElementById("results").innerHTML += "User:" + user.item.displayName + "</br>";
+                document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Photo:" + "</br>";
 
-                user.self.photo.GetPhotoProperties().then((photo) => {
+                user._context.photo.GetPhotoProperties().then((photo) => {
                         //Photo metadata
                         var x = photo;
                 });
 
-                user.self.photo.GetPhotoImage().then((photoValue) => {
+                user._context.photo.GetPhotoImage().then((photoValue) => {
                     var img = document.createElement("img");
                     var reader = new FileReader();
                     reader.onloadend = () => {
@@ -191,68 +207,52 @@ module Sample {
 
         //--------------------------------Callbacks---------------------------------------------
 
-        private showUsers(users: kurve.Users, odataQuery?: string): void {
-            users.GetUsers(odataQuery)
-                .then(collection => {
-                    collection.items.forEach(user =>
-                        document.getElementById("results").innerHTML += user.displayName + "</br>"
-                    );
+        private showUsers(users: Kurve.GraphCollection<Kurve.UserDataModel, Kurve.Users, Kurve.User>, odataQuery?: string): void {
+            users.forEach(group =>
+                document.getElementById("results").innerHTML += group.displayName + "</br>"
+            );
 
-                    if (collection.next)
-                        this.showUsers(collection.next);
-                })
-                .fail(error =>
-                    document.getElementById("results").innerText = error.statusText
-                )
+            users._next && users._next().then(nextUsers =>
+                this.showUsers(nextUsers)
+            ).fail(error =>
+                document.getElementById("results").innerText = JSON.stringify(error)
+            );
         }
 
 
-        private showGroups(groups: kurve.Groups, odataQuery?: string): void {
-            groups.GetGroups(odataQuery)
-                .then(collection => {
-                    collection.items.forEach(group =>
-                        document.getElementById("results").innerHTML += group.displayName + "</br>"
-                    );
+        private showGroups<GraphNode extends Kurve.CollectionNode>(groups: Kurve.GraphCollection<Kurve.GroupDataModel, GraphNode, Kurve.Group>): void {
+            groups.forEach(group =>
+                document.getElementById("results").innerHTML += group.displayName + "</br>"
+            );
 
-                    if (collection.next)
-                        this.showGroups(collection.next);
-                })
-                .fail((error) => {
-                    document.getElementById("results").innerText = JSON.stringify(error);
-                });
+            groups._next && groups._next().then(nextGroups =>
+                this.showGroups(nextGroups)
+            ).fail(error =>
+                document.getElementById("results").innerText = JSON.stringify(error)
+            );
         }
 
-        private showMessages(messages: kurve.Messages, odataQuery?: string): void {
-            messages.GetMessages(odataQuery)
-                .then(collection => {
-                    collection.items.forEach(message =>
-                        document.getElementById("results").innerHTML += message.subject + "</br>"
-                    );
-
-                    if (collection.next)
-                        this.showMessages(collection.next);
-                })
-                .fail(error =>
-                    document.getElementById("results").innerText = error.statusText
-                )
-
+        private showMessages(messages: Kurve.GraphCollection<Kurve.MessageDataModel, Kurve.Messages, Kurve.Message>): void {
+            messages.forEach(message =>
+                document.getElementById("results").innerHTML += message.subject + "</br>"
+            );
+            messages._next && messages._next().then(nextMessages =>
+                this.showMessages(nextMessages)
+            ).fail(error =>
+                document.getElementById("results").innerText = error.statusText
+            );
         }
        
 
-        private showEvents(events: kurve.Events, odataQuery?: string): void {
-            events.GetEvents(odataQuery)
-                .then(collection => {
-                    collection.items.forEach(event =>
-                        document.getElementById("results").innerHTML += event.subject + "</br>"
-                    );
-
-                    if (events.next)
-                        this.showEvents(collection.next);
-                })
-                .fail(error =>
-                    document.getElementById("results").innerText = error.statusText
-                )
-
+        private showEvents(events: Kurve.GraphCollection<Kurve.EventDataModel, Kurve.Events, Kurve.Event>): void {
+            events.forEach(message =>
+                document.getElementById("results").innerHTML += message.subject + "</br>"
+            );
+            events._next && events._next().then(nextEvents =>
+                this.showEvents(nextEvents)
+            ).fail(error =>
+                document.getElementById("results").innerText = error.statusText
+            );
         }
 
       

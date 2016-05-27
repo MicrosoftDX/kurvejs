@@ -1,18 +1,33 @@
-var __extends = (this && this.__extends) || function (d, b) {
+// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
+    
+// UMD format adapted from https://github.com/umdjs/umd/blob/master/templates/returnExports.js
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module.
+        define([], factory);
+    } else if (typeof module === 'object' && module.exports) {
+        // Node. Does not work with strict CommonJS, but
+        // only CommonJS-like environments that support module.exports,
+        // like Node.
+        module.exports = factory();
+    } else {
+        // Browser globals (root is window)
+        root.Kurve = factory();
+  }
+}(this, function () {
+    var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
-// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
-var kurve;
-(function (kurve) {
-    // Adapted from the original source: https://github.com/DirtyHairy/typescript-deferred
+var Kurve;
+(function (Kurve) {
     var Error = (function () {
         function Error() {
         }
         return Error;
-    })();
-    kurve.Error = Error;
+    }());
+    Kurve.Error = Error;
     function DispatchDeferred(closure) {
         setTimeout(closure, 0);
     }
@@ -68,7 +83,7 @@ var kurve;
             }
         };
         return Client;
-    })();
+    }());
     var Deferred = (function () {
         function Deferred(dispatcher) {
             this._stack = [];
@@ -171,8 +186,8 @@ var kurve;
             return this;
         };
         return Deferred;
-    })();
-    kurve.Deferred = Deferred;
+    }());
+    Kurve.Deferred = Deferred;
     var Promise = (function () {
         function Promise(_deferred) {
             this._deferred = _deferred;
@@ -184,18 +199,21 @@ var kurve;
             return this._deferred.then(undefined, errorCallback);
         };
         return Promise;
-    })();
-    kurve.Promise = Promise;
+    }());
+    Kurve.Promise = Promise;
+})(Kurve || (Kurve = {}));
+var Kurve;
+(function (Kurve) {
     (function (EndPointVersion) {
         EndPointVersion[EndPointVersion["v1"] = 1] = "v1";
         EndPointVersion[EndPointVersion["v2"] = 2] = "v2";
-    })(kurve.EndPointVersion || (kurve.EndPointVersion = {}));
-    var EndPointVersion = kurve.EndPointVersion;
+    })(Kurve.EndPointVersion || (Kurve.EndPointVersion = {}));
+    var EndPointVersion = Kurve.EndPointVersion;
     (function (Mode) {
         Mode[Mode["Client"] = 1] = "Client";
         Mode[Mode["Node"] = 2] = "Node";
-    })(kurve.Mode || (kurve.Mode = {}));
-    var Mode = kurve.Mode;
+    })(Kurve.Mode || (Kurve.Mode = {}));
+    var Mode = Kurve.Mode;
     var CachedToken = (function () {
         function CachedToken(id, scopes, resource, token, expiry) {
             this.id = id;
@@ -222,7 +240,7 @@ var kurve;
             });
         };
         return CachedToken;
-    })();
+    }());
     var TokenCache = (function () {
         function TokenCache(tokenStorage) {
             var _this = this;
@@ -276,13 +294,13 @@ var kurve;
             delete this.cachedTokens[key];
         };
         return TokenCache;
-    })();
+    }());
     var IdToken = (function () {
         function IdToken() {
         }
         return IdToken;
-    })();
-    kurve.IdToken = IdToken;
+    }());
+    Kurve.IdToken = IdToken;
     var Identity = (function () {
         function Identity(identitySettings) {
             var _this = this;
@@ -290,7 +308,6 @@ var kurve;
             this.mode = Mode.Client;
             this.clientId = identitySettings.clientId;
             this.tokenProcessorUrl = identitySettings.tokenProcessingUri;
-            //          this.req = new XMLHttpRequest();
             if (identitySettings.version)
                 this.version = identitySettings.version;
             else
@@ -300,18 +317,16 @@ var kurve;
             this.mode = identitySettings.mode;
             if (this.mode === Mode.Client) {
                 this.tokenCache = new TokenCache(identitySettings.tokenStorage);
-                //Callback handler from other windows
                 window.addEventListener("message", function (event) {
                     if (event.data.type === "id_token") {
                         if (event.data.error) {
-                            var e = new Error();
+                            var e = new Kurve.Error();
                             e.text = event.data.error;
                             _this.loginCallback(e);
                         }
                         else {
-                            //check for state
                             if (_this.state !== event.data.state) {
-                                var error = new Error();
+                                var error = new Kurve.Error();
                                 error.statusText = "Invalid state";
                                 _this.loginCallback(error);
                             }
@@ -323,7 +338,7 @@ var kurve;
                     }
                     else if (event.data.type === "access_token") {
                         if (event.data.error) {
-                            var e = new Error();
+                            var e = new Kurve.Error();
                             e.text = event.data.error;
                             _this.getTokenCallback(null, e);
                         }
@@ -332,7 +347,7 @@ var kurve;
                             var iframe = document.getElementById("tokenIFrame");
                             iframe.parentNode.removeChild(iframe);
                             if (event.data.state !== _this.state) {
-                                var error = new Error();
+                                var error = new Kurve.Error();
                                 error.statusText = "Invalid state";
                                 _this.getTokenCallback(null, error);
                             }
@@ -379,7 +394,7 @@ var kurve;
                     this.loginCallback && this.loginCallback(null);
                 }
                 else {
-                    var error = new Error();
+                    var error = new Kurve.Error();
                     error.statusText = "Invalid state";
                     this.loginCallback && this.loginCallback(error);
                 }
@@ -434,7 +449,7 @@ var kurve;
             return this.version;
         };
         Identity.prototype.getAccessTokenAsync = function (resource) {
-            var d = new Deferred();
+            var d = new Kurve.Deferred();
             this.getAccessToken(resource, (function (error, token) {
                 if (error) {
                     d.reject(error);
@@ -448,7 +463,7 @@ var kurve;
         Identity.prototype.getAccessToken = function (resource, callback) {
             var _this = this;
             if (this.version !== EndPointVersion.v1) {
-                var e = new Error();
+                var e = new Kurve.Error();
                 e.statusText = "Currently this identity class is using v2 OAuth mode. You need to use getAccessTokenForScopes() method";
                 callback(e);
                 return;
@@ -458,8 +473,6 @@ var kurve;
                 if (token) {
                     return callback(null, token.token);
                 }
-                //If we got this far, we need to go get this token
-                //Need to create the iFrame to invoke the acquire token
                 this.getTokenCallback = (function (token, error) {
                     if (error) {
                         callback(error);
@@ -510,7 +523,6 @@ var kurve;
                     response.on('data', function (chunk) {
                         var chunkJson = JSON.parse(chunk);
                         var t = _this.decodeAccessToken(chunkJson.access_token, resource);
-                        // this.tokenCache.add(t); //TODO: Persist/retrieve token cache no server
                         callback(null, chunkJson.access_token);
                     });
                 });
@@ -539,7 +551,7 @@ var kurve;
             var code = this.token("code=", url);
             var accessToken = this.token("#access_token", url);
             var cookies = this.parseNodeCookies(req);
-            var d = new Deferred();
+            var d = new Kurve.Deferred();
             if (this.version === EndPointVersion.v1) {
                 if (code) {
                     var codeFromRequest = params["code"][0];
@@ -590,14 +602,12 @@ var kurve;
                             post_req.end();
                         }
                         else {
-                            //same state has been reused, not allowed
                             res.writeHead(500, "Replay detected", { 'content-type': 'text/plain' });
                             res.end("Replay detected");
                             d.resolve(false);
                         }
                     }
                     else {
-                        //state doesn't match any of our cached ones
                         res.writeHead(500, "State doesn't match", { 'content-type': 'text/plain' });
                         res.end("State doesn't match");
                         d.resolve(false);
@@ -626,14 +636,13 @@ var kurve;
                 }
             }
             else {
-                //TODO: v2
                 d.resolve(false);
                 return d.promise;
             }
         };
         Identity.prototype.getAccessTokenForScopesAsync = function (scopes, promptForConsent) {
             if (promptForConsent === void 0) { promptForConsent = false; }
-            var d = new Deferred();
+            var d = new Kurve.Deferred();
             this.getAccessTokenForScopes(scopes, promptForConsent, function (token, error) {
                 if (error) {
                     d.reject(error);
@@ -647,7 +656,7 @@ var kurve;
         Identity.prototype.getAccessTokenForScopes = function (scopes, promptForConsent, callback) {
             var _this = this;
             if (this.version !== EndPointVersion.v2) {
-                var e = new Error();
+                var e = new Kurve.Error();
                 e.statusText = "Dynamic scopes require v2 mode. Currently this identity class is using v1";
                 callback(null, e);
                 return;
@@ -656,15 +665,12 @@ var kurve;
             if (token) {
                 return callback(token.token, null);
             }
-            //If we got this far, we don't have a valid cached token, so will need to get one.
-            //Need to create the iFrame to invoke the acquire token
             this.getTokenCallback = (function (token, error) {
                 if (error) {
                     if (promptForConsent || !error.text) {
                         callback(null, error);
                     }
                     else if (error.text.indexOf("AADSTS65001") >= 0) {
-                        //We will need to try getting the consent
                         _this.getAccessTokenForScopes(scopes, true, _this.getTokenCallback);
                     }
                     else {
@@ -705,8 +711,7 @@ var kurve;
             }
         };
         Identity.prototype.loginAsync = function (loginSettings) {
-            //TODO: Not node compatible
-            var d = new Deferred();
+            var d = new Kurve.Deferred();
             this.login(function (error) {
                 if (error) {
                     d.reject(error);
@@ -718,20 +723,19 @@ var kurve;
             return d.promise;
         };
         Identity.prototype.login = function (callback, loginSettings) {
-            //TODO: Not node compatible
             this.loginCallback = callback;
             if (!loginSettings)
                 loginSettings = {};
             if (loginSettings.policy)
                 this.policy = loginSettings.policy;
             if (loginSettings.scopes && this.version === EndPointVersion.v1) {
-                var e = new Error();
+                var e = new Kurve.Error();
                 e.text = "Scopes can only be used with OAuth v2.";
                 callback(e);
                 return;
             }
             if (loginSettings.policy && !loginSettings.tenant) {
-                var e = new Error();
+                var e = new Kurve.Error();
                 e.text = "In order to use policy (AAD B2C) a tenant must be specified as well.";
                 callback(e);
                 return;
@@ -760,8 +764,7 @@ var kurve;
             window.open(loginURL, "_blank");
         };
         Identity.prototype.loginNoWindowAsync = function (toUrl) {
-            //TODO: Not node compatible
-            var d = new Deferred();
+            var d = new Kurve.Deferred();
             this.loginNoWindow(function (error) {
                 if (error) {
                     d.reject(error);
@@ -773,13 +776,12 @@ var kurve;
             return d.promise;
         };
         Identity.prototype.loginNoWindow = function (callback, toUrl) {
-            //TODO: Not node compatible
             this.loginCallback = callback;
             this.state = "clientId=" + this.clientId + "&" + "tokenProcessorUrl=" + this.tokenProcessorUrl;
             this.nonce = this.generateNonce();
             var redirected = this.checkForIdentityRedirect();
             if (!redirected) {
-                var redirectUri = (toUrl) ? toUrl : window.location.href.split("#")[0]; // default the no login window scenario to return to the current page
+                var redirectUri = (toUrl) ? toUrl : window.location.href.split("#")[0];
                 var url = "https://login.microsoftonline.com/common/oauth2/authorize?response_type=id_token" +
                     "&client_id=" + encodeURIComponent(this.clientId) +
                     "&redirect_uri=" + encodeURIComponent(redirectUri) +
@@ -789,7 +791,6 @@ var kurve;
             }
         };
         Identity.prototype.logOut = function () {
-            //TODO: Not node compatible
             this.tokenCache.clear();
             var url = "https://login.microsoftonline.com/common/oauth2/logout?post_logout_redirect_uri=" + encodeURI(window.location.href);
             window.location.href = url;
@@ -819,8 +820,11 @@ var kurve;
             return text;
         };
         return Identity;
-    })();
-    kurve.Identity = Identity;
+    }());
+    Kurve.Identity = Identity;
+})(Kurve || (Kurve = {}));
+var Kurve;
+(function (Kurve) {
     var Graph = (function () {
         function Graph(identityInfo, mode, https) {
             this.req = null;
@@ -839,78 +843,23 @@ var kurve;
             }
         }
         Object.defineProperty(Graph.prototype, "me", {
-            get: function () { return new User(this, this.baseUrl); },
+            get: function () { return new Kurve.User(this, this.baseUrl); },
             enumerable: true,
             configurable: true
         });
         Object.defineProperty(Graph.prototype, "users", {
-            get: function () { return new Users(this, this.baseUrl); },
+            get: function () { return new Kurve.Users(this, this.baseUrl); },
             enumerable: true,
             configurable: true
         });
         Object.defineProperty(Graph.prototype, "groups", {
-            get: function () { return new Groups(this, this.baseUrl); },
+            get: function () { return new Kurve.Groups(this, this.baseUrl); },
             enumerable: true,
             configurable: true
         });
-        Graph.prototype.Get = function (path, node, scopes, responseType) {
-            console.log("GET", path, scopes);
-            var d = new Deferred();
-            this.get(path, function (error, result) {
-                if (!responseType) {
-                    var jsonResult = JSON.parse(result);
-                    if (jsonResult.error) {
-                        var errorODATA = new Error();
-                        errorODATA.other = jsonResult.error;
-                        d.reject(errorODATA);
-                        return;
-                    }
-                    d.resolve(singletonFromResponse(jsonResult, node));
-                }
-                else {
-                    d.resolve(singletonFromResponse(result, node));
-                }
-            }, responseType, scopes);
-            return d.promise;
-        };
-        Graph.prototype.GetCollection = function (path, node, childFactory, scopes) {
-            var _this = this;
-            console.log("GET collection", path, scopes);
-            var d = new Deferred();
-            this.get(path, function (error, result) {
-                var jsonResult = JSON.parse(result);
-                if (jsonResult.error) {
-                    var errorODATA = new Error();
-                    errorODATA.other = jsonResult.error;
-                    d.reject(errorODATA);
-                    return;
-                }
-                d.resolve(collectionFromResponse(jsonResult, node, _this, childFactory, scopes));
-            }, null, scopes);
-            return d.promise;
-        };
-        Graph.prototype.Post = function (object, path, node, scopes) {
-            console.log("POST", path, scopes);
-            var d = new Deferred();
-            /*
-                        this.post(object, path, (error, result) => {
-                            var jsonResult = JSON.parse(result) ;
-            
-                            if (jsonResult.error) {
-                                var errorODATA = new Error();
-                                errorODATA.other = jsonResult.error;
-                                d.reject(errorODATA);
-                                return;
-                            }
-            
-                            d.resolve(new Response<Model, N>({}, node));
-                        });
-            */
-            return d.promise;
-        };
         Graph.prototype.get = function (url, callback, responseType, scopes) {
             var _this = this;
-            if (this.mode === Mode.Client) {
+            if (this.mode === Kurve.Mode.Client) {
                 var xhr = new XMLHttpRequest();
                 if (responseType)
                     xhr.responseType = responseType;
@@ -957,9 +906,7 @@ var kurve;
                 callback(this.accessToken, null);
             }
             else {
-                //Using the integrated Identity object
                 if (scopes) {
-                    //v2 scope based tokens
                     this.KurveIdentity.getAccessTokenForScopes(scopes, false, (function (token, error) {
                         if (error)
                             callback(null, error);
@@ -969,7 +916,6 @@ var kurve;
                     }));
                 }
                 else {
-                    //v1 resource based tokens
                     this.KurveIdentity.getAccessToken(this.defaultResourceID, (function (error, token) {
                         if (error)
                             callback(null, error);
@@ -981,28 +927,9 @@ var kurve;
             }
         };
         Graph.prototype.post = function (object, url, callback, responseType, scopes) {
-            /*
-                        var xhr = new XMLHttpRequest();
-                        if (responseType)
-                            xhr.responseType = responseType;
-                        xhr.onreadystatechange = () => {
-                            if (xhr.readyState === 4)
-                                if (xhr.status === 202)
-                                    callback(null, responseType ? xhr.response : xhr.responseText);
-                                else
-                                    callback(this.generateError(xhr));
-                        }
-                        xhr.send(object)
-                        xhr.open("GET", url);
-                        this.addAccessTokenAndSend(xhr, (addTokenError: Error) => {
-                            if (addTokenError) {
-                                callback(addTokenError);
-                            }
-                        }, scopes);
-            */
         };
         Graph.prototype.generateError = function (xhr) {
-            var response = new Error();
+            var response = new Kurve.Error();
             response.status = xhr.status;
             response.statusText = xhr.statusText;
             if (xhr.responseType === '' || xhr.responseType === 'text')
@@ -1023,124 +950,11 @@ var kurve;
             }, scopes);
         };
         return Graph;
-    })();
-    kurve.Graph = Graph;
-    /*
-    
-    RequestBuilder allows you to discover and access the Microsoft Graph using Visual Studio Code intellisense.
-    
-    Just start typing and see how intellisense helps you explore the graph:
-    
-        graph.                      me, users
-        graph.me.                   events, messages, calendarView, mailFolders, GetUser, odata, select, ...
-        graph.me.events.            GetEvents, $, odata, select, ...
-        graph.me.events.$           (eventId:string) => Event
-        graph.me.events.$("123").   GetEvent, odata, select, ...
-    
-    Each endpoint exposes the set of available Graph operations through strongly typed methods:
-    
-        graph.me.GetUser() => UserDataModel
-            GET "/me"
-        graph.me.events.GetEvents => EventDataModel[]
-            GET "/me/events"
-        graph.me.events.CreateEvent(event:EventDataModel)
-            POST "/me/events"
-    
-    Certain Graph endpoints are implemented as OData "Functions". These are not treated as Graph nodes. They're just methods:
-    
-        graph.me.events.$("123").DeclineEvent(eventResponse:EventResponse)
-            POST "/me/events/123/microsoft.graph.decline""
-    
-    Graph operations are exposed through Promises:
-    
-        graph.me.messages
-        .GetMessages()
-        .then(messages =>
-            messages.forEach(message =>
-                console.log(message.subject)
-            )
-        )
-    
-    All operations return a "_node" property which allows you to continue along the Graph path from the point where you left off:
-    
-        graph.me.messages.$("123").GetMessage().then(message =>
-            console.log(message.subject);
-            message._node.attachments.GetAttachments().then(attachments => // attachments._node === graph.me.messages.$("123").attachments
-                attachments.forEach(attachment =>
-                    console.log(attachment.contentBytes)
-                )
-            )
-        )
-    
-    Members of returned collections also have a "_node" object:
-    
-            me.messages.GetMessages().then(messages =>
-                messages.forEach(message =>
-                    message._node.attachments.GetAttachments().then(attachments =>
-                        attachments.forEach(attachment =>
-                            console.log(attachment.id);
-                        )
-                    )
-                )
-            )
-    
-    In this example message._node returns the expected node in the graph. But consider
-    the case of:
-    
-        me/directReports/{userId}
-        
-    This returns a user object, but you can't do user operations. This operation is disallowed:
-    
-        me/directReports/{userId}/manager
-        
-    Instead you must start again at the beginning:
-    
-        users/{userId}/manager
-        
-    We facilitate this by setting the "_node" property on members of certain collections accordingly:
-    
-            me.directReports.GetDirectReports().then(users =>
-                users.forEach(user =>
-                    user._node.manager.GetManager()     // equivalent to users.$(user.id).manager.GetManager();
-                )
-            )
-    
-    Operations which return paginated collections can return a "_next" request object. This can be utilized in a recursive function:
-    
-        ListMessageSubjects(messages:Singleton<MessageDataModel, Message>) {
-            messages.forEach(message => console.log(message.subject));
-            if (messages._next)
-                messages._next().then(nextMessages =>
-                    ListMessageSubjects(nextMessages)
-                )
-            })
-        }
-        graph.me.messages.GetMessages(new OData().select("subject")).then(messages =>
-            ListMessageSubjects(messages)
-        );
-        
-    (With async/await support, an iteration pattern can be used intead of recursion)
-    
-    Every Graph operation may include OData queries:
-    
-        graph.me.messages.GetMessages("$select=subject,id&$orderby=id")
-            /me/messages/$select=subject,id&$orderby=id
-    
-    There is an optional OData helper to aid in constructing more complex queries:
-    
-        graph.me.messages.GetMessages(new OData()
-            .select("subject", "id")
-            .orderby("id")
-        )
-            /me/messages/$select=subject,id&$orderby=id
-    
-    Some operations include parameters which transform into OData queries
-    
-        graph.me.calendarView.GetCalendarView([start],[end], [odataQuery])
-            /me/calendarView?startDateTime=[start]&endDateTime=[end]&[odataQuery]
-    
-    Note: This initial stab only includes a few familiar pieces of the Microsoft Graph.
-    */
+    }());
+    Kurve.Graph = Graph;
+})(Kurve || (Kurve = {}));
+var Kurve;
+(function (Kurve) {
     var Scopes = (function () {
         function Scopes() {
         }
@@ -1201,8 +1015,8 @@ var kurve;
             ReadWriteAll: Scopes.rootUrl + "Notes.ReadWrite.All",
         };
         return Scopes;
-    })();
-    kurve.Scopes = Scopes;
+    }());
+    Kurve.Scopes = Scopes;
     var queryUnion = function (query1, query2) { return (query1 ? query1 + (query2 ? "&" + query2 : "") : query2); };
     var OData = (function () {
         function OData(query) {
@@ -1239,46 +1053,60 @@ var kurve;
             this.skip = function (items) { return _this.odata("$skip=" + items); };
         }
         return OData;
-    })();
-    kurve.OData = OData;
+    }());
+    Kurve.OData = OData;
     var pathWithQuery = function (path, odataQuery) {
         var query = odataQuery && odataQuery.toString();
         return path + (query ? "?" + query : "");
     };
-    function singletonFromResponse(response, node) {
-        var singleton = response;
-        singleton._node = node;
-        return singleton;
-    }
-    kurve.singletonFromResponse = singletonFromResponse;
-    function collectionFromResponse(response, node, graph, childFactory, scopes) {
-        var collection = response;
-        collection._node = node;
-        var nextLink = response["@odata.nextLink"];
-        if (nextLink)
-            collection._next = function () { return graph.GetCollection(nextLink, node, childFactory, scopes); };
-        if (childFactory)
-            collection.forEach(function (item) { return item._node = item["id"] && childFactory(item["id"]); });
-        return collection;
-    }
-    kurve.collectionFromResponse = collectionFromResponse;
     var Node = (function () {
         function Node(graph, path) {
             var _this = this;
             this.graph = graph;
             this.path = path;
-            //Only adds scopes when linked to a v2 Oauth of kurve identity
             this.scopesForV2 = function (scopes) {
-                return _this.graph.KurveIdentity && _this.graph.KurveIdentity.getCurrentEndPointVersion() === EndPointVersion.v2 ? scopes : null;
+                return _this.graph.KurveIdentity && _this.graph.KurveIdentity.getCurrentEndPointVersion() === Kurve.EndPointVersion.v2 ? scopes : null;
             };
             this.pathWithQuery = function (odataQuery, pathSuffix) {
                 if (pathSuffix === void 0) { pathSuffix = ""; }
                 return pathWithQuery(_this.path + pathSuffix, odataQuery);
             };
+            this.graphObjectFromResponse = function (response, node, childFactory) {
+                var singleton = response;
+                singleton._item = response;
+                singleton._context = childFactory ? childFactory(singleton._item["id"]) : node;
+                return singleton;
+            };
         }
+        Node.prototype.get = function (path, node, scopes, childFactory, responseType) {
+            var _this = this;
+            console.log("GET", path, scopes);
+            var d = new Kurve.Deferred();
+            this.graph.get(path, function (error, result) {
+                if (!responseType) {
+                    var jsonResult = JSON.parse(result);
+                    if (jsonResult.error) {
+                        var errorODATA = new Kurve.Error();
+                        errorODATA.other = jsonResult.error;
+                        d.reject(errorODATA);
+                        return;
+                    }
+                    d.resolve(_this.graphObjectFromResponse(jsonResult, node));
+                }
+                else {
+                    d.resolve(_this.graphObjectFromResponse(result, node));
+                }
+            }, responseType, scopes);
+            return d.promise;
+        };
+        Node.prototype.post = function (object, path, node, scopes) {
+            console.log("POST", path, scopes);
+            var d = new Kurve.Deferred();
+            return d.promise;
+        };
         return Node;
-    })();
-    kurve.Node = Node;
+    }());
+    Kurve.Node = Node;
     var CollectionNode = (function (_super) {
         __extends(CollectionNode, _super);
         function CollectionNode() {
@@ -1288,6 +1116,18 @@ var kurve;
                 if (pathSuffix === void 0) { pathSuffix = ""; }
                 return _this._nextLink || pathWithQuery(_this.path + pathSuffix, odataQuery);
             };
+            this.graphCollectionFromResponse = function (response, node, childFactory, scopes) {
+                var collection = response.value;
+                collection._context = node;
+                collection._raw = response;
+                collection._items = response.value;
+                var nextLink = response["@odata.nextLink"];
+                if (nextLink)
+                    collection._next = function () { return _this.getCollection(nextLink, node, childFactory, scopes); };
+                if (childFactory)
+                    collection.forEach(function (item) { return item._context = item["id"] && childFactory(item["id"]); });
+                return collection;
+            };
         }
         Object.defineProperty(CollectionNode.prototype, "nextLink", {
             set: function (pathWithQuery) {
@@ -1296,9 +1136,25 @@ var kurve;
             enumerable: true,
             configurable: true
         });
+        CollectionNode.prototype.getCollection = function (path, node, childFactory, scopes) {
+            var _this = this;
+            console.log("GET collection", path, scopes);
+            var d = new Kurve.Deferred();
+            this.graph.get(path, function (error, result) {
+                var jsonResult = JSON.parse(result);
+                if (jsonResult.error) {
+                    var errorODATA = new Kurve.Error();
+                    errorODATA.other = jsonResult.error;
+                    d.reject(errorODATA);
+                    return;
+                }
+                d.resolve(_this.graphCollectionFromResponse(jsonResult, node, childFactory, scopes));
+            }, null, scopes);
+            return d.promise;
+        };
         return CollectionNode;
-    })(Node);
-    kurve.CollectionNode = CollectionNode;
+    }(Node));
+    Kurve.CollectionNode = CollectionNode;
     var Attachment = (function (_super) {
         __extends(Attachment, _super);
         function Attachment(graph, path, context, attachmentId) {
@@ -1306,15 +1162,15 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + (attachmentId ? "/" + attachmentId : ""));
             this.context = context;
-            this.GetAttachment = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2(Attachment.scopes[_this.context])); };
+            this.GetAttachment = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2(Attachment.scopes[_this.context])); };
         }
         Attachment.scopes = {
             messages: [Scopes.Mail.Read],
-            events: [Scopes.Calendars.Read],
+            events: [Scopes.Calendars.Read]
         };
         return Attachment;
-    })(Node);
-    kurve.Attachment = Attachment;
+    }(Node));
+    Kurve.Attachment = Attachment;
     var Attachments = (function (_super) {
         __extends(Attachments, _super);
         function Attachments(graph, path, context) {
@@ -1323,19 +1179,19 @@ var kurve;
             _super.call(this, graph, path + "/attachments");
             this.context = context;
             this.$ = function (attachmentId) { return new Attachment(_this.graph, _this.path, _this.context, attachmentId); };
-            this.GetAttachments = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2(Attachment.scopes[_this.context])); };
+            this.GetAttachments = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2(Attachment.scopes[_this.context])); };
         }
         return Attachments;
-    })(CollectionNode);
-    kurve.Attachments = Attachments;
+    }(CollectionNode));
+    Kurve.Attachments = Attachments;
     var Message = (function (_super) {
         __extends(Message, _super);
         function Message(graph, path, messageId) {
             var _this = this;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + (messageId ? "/" + messageId : ""));
-            this.GetMessage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Mail.Read])); };
-            this.SendMessage = function (odataQuery) { return _this.graph.Post(null, _this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), _this, _this.scopesForV2([Scopes.Mail.Send])); };
+            this.GetMessage = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Mail.Read])); };
+            this.SendMessage = function (odataQuery) { return _this.post(null, _this.pathWithQuery(odataQuery, "/microsoft.graph.sendMail"), _this, _this.scopesForV2([Scopes.Mail.Send])); };
         }
         Object.defineProperty(Message.prototype, "attachments", {
             get: function () { return new Attachments(this.graph, this.path, "messages"); },
@@ -1343,8 +1199,8 @@ var kurve;
             configurable: true
         });
         return Message;
-    })(Node);
-    kurve.Message = Message;
+    }(Node));
+    Kurve.Message = Message;
     var Messages = (function (_super) {
         __extends(Messages, _super);
         function Messages(graph, path) {
@@ -1352,19 +1208,19 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/messages");
             this.$ = function (messageId) { return new Message(_this.graph, _this.path, messageId); };
-            this.GetMessages = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Mail.Read])); };
-            this.CreateMessage = function (object, odataQuery) { return _this.graph.Post(object, _this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Mail.ReadWrite])); };
+            this.GetMessages = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Mail.Read])); };
+            this.CreateMessage = function (object, odataQuery) { return _this.post(object, _this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Mail.ReadWrite])); };
         }
         return Messages;
-    })(CollectionNode);
-    kurve.Messages = Messages;
+    }(CollectionNode));
+    Kurve.Messages = Messages;
     var Event = (function (_super) {
         __extends(Event, _super);
         function Event(graph, path, eventId) {
             var _this = this;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + (eventId ? "/" + eventId : ""));
-            this.GetEvent = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Calendars.Read])); };
+            this.GetEvent = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Calendars.Read])); };
         }
         Object.defineProperty(Event.prototype, "attachments", {
             get: function () { return new Attachments(this.graph, this.path, "events"); },
@@ -1372,8 +1228,8 @@ var kurve;
             configurable: true
         });
         return Event;
-    })(Node);
-    kurve.Event = Event;
+    }(Node));
+    Kurve.Event = Event;
     var Events = (function (_super) {
         __extends(Events, _super);
         function Events(graph, path) {
@@ -1381,36 +1237,35 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/events");
             this.$ = function (eventId) { return new Event(_this.graph, _this.path, eventId); };
-            this.GetEvents = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Calendars.Read])); };
+            this.GetEvents = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Calendars.Read])); };
         }
         return Events;
-    })(CollectionNode);
-    kurve.Events = Events;
+    }(CollectionNode));
+    Kurve.Events = Events;
     var CalendarView = (function (_super) {
         __extends(CalendarView, _super);
         function CalendarView(graph, path) {
             var _this = this;
             if (path === void 0) { path = ""; }
-            _super.call(this, graph, path + CalendarView.suffix);
-            this.$ = function (eventId) { return new Event(_this.graph, _this.path, eventId); }; // need to adjust this path
+            _super.call(this, graph, path + "/calendarView");
+            this.$ = function (eventId) { return new Event(_this.graph, _this.path, eventId); };
             this.dateRange = function (startDate, endDate) { return ("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString()); };
-            this.GetCalendarView = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Calendars.Read])); };
+            this.GetEvents = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Calendars.Read])); };
         }
-        CalendarView.suffix = "/calendarView";
         return CalendarView;
-    })(CollectionNode);
-    kurve.CalendarView = CalendarView;
+    }(CollectionNode));
+    Kurve.CalendarView = CalendarView;
     var MailFolder = (function (_super) {
         __extends(MailFolder, _super);
         function MailFolder(graph, path, mailFolderId) {
             var _this = this;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + (mailFolderId ? "/" + mailFolderId : ""));
-            this.GetMailFolder = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Mail.Read])); };
+            this.GetMailFolder = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Mail.Read])); };
         }
         return MailFolder;
-    })(Node);
-    kurve.MailFolder = MailFolder;
+    }(Node));
+    Kurve.MailFolder = MailFolder;
     var MailFolders = (function (_super) {
         __extends(MailFolders, _super);
         function MailFolders(graph, path) {
@@ -1418,11 +1273,11 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/mailFolders");
             this.$ = function (mailFolderId) { return new MailFolder(_this.graph, _this.path, mailFolderId); };
-            this.GetMailFolders = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Mail.Read])); };
+            this.GetMailFolders = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Mail.Read])); };
         }
         return MailFolders;
-    })(CollectionNode);
-    kurve.MailFolders = MailFolders;
+    }(CollectionNode));
+    Kurve.MailFolders = MailFolders;
     var Photo = (function (_super) {
         __extends(Photo, _super);
         function Photo(graph, path, context) {
@@ -1430,8 +1285,8 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/photo");
             this.context = context;
-            this.GetPhotoProperties = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2(Photo.scopes[_this.context])); };
-            this.GetPhotoImage = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery, "/$value"), _this, _this.scopesForV2(Photo.scopes[_this.context]), "blob"); };
+            this.GetPhotoProperties = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2(Photo.scopes[_this.context])); };
+            this.GetPhotoImage = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery, "/$value"), _this, _this.scopesForV2(Photo.scopes[_this.context]), null, "blob"); };
         }
         Photo.scopes = {
             user: [Scopes.User.ReadBasicAll],
@@ -1439,30 +1294,30 @@ var kurve;
             contact: [Scopes.Contacts.Read]
         };
         return Photo;
-    })(Node);
-    kurve.Photo = Photo;
+    }(Node));
+    Kurve.Photo = Photo;
     var Manager = (function (_super) {
         __extends(Manager, _super);
         function Manager(graph, path) {
             var _this = this;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/manager");
-            this.GetManager = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.User.ReadAll])); };
+            this.GetUser = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), null, _this.scopesForV2([Scopes.User.ReadAll]), Users.$(_this.graph)); };
         }
         return Manager;
-    })(Node);
-    kurve.Manager = Manager;
+    }(Node));
+    Kurve.Manager = Manager;
     var MemberOf = (function (_super) {
         __extends(MemberOf, _super);
         function MemberOf(graph, path) {
             var _this = this;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/memberOf");
-            this.GetGroups = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, Groups.$(_this.graph), _this.scopesForV2([Scopes.User.ReadAll])); };
+            this.GetGroups = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, Groups.$(_this.graph), _this.scopesForV2([Scopes.User.ReadAll])); };
         }
         return MemberOf;
-    })(CollectionNode);
-    kurve.MemberOf = MemberOf;
+    }(CollectionNode));
+    Kurve.MemberOf = MemberOf;
     var DirectReport = (function (_super) {
         __extends(DirectReport, _super);
         function DirectReport(graph, path, userId) {
@@ -1470,12 +1325,11 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/" + userId);
             this.graph = graph;
-            // seems like this should re-root its response under Users
-            this.GetDirectReport = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.User.Read])); };
+            this.GetUser = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), null, _this.scopesForV2([Scopes.User.Read]), Users.$(_this.graph)); };
         }
         return DirectReport;
-    })(Node);
-    kurve.DirectReport = DirectReport;
+    }(Node));
+    Kurve.DirectReport = DirectReport;
     var DirectReports = (function (_super) {
         __extends(DirectReports, _super);
         function DirectReports(graph, path) {
@@ -1483,11 +1337,11 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/directReports");
             this.$ = function (userId) { return new DirectReport(_this.graph, _this.path, userId); };
-            this.GetDirectReports = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, Users.$(_this.graph), _this.scopesForV2([Scopes.User.Read])); };
+            this.GetUsers = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, Users.$(_this.graph), _this.scopesForV2([Scopes.User.Read])); };
         }
         return DirectReports;
-    })(CollectionNode);
-    kurve.DirectReports = DirectReports;
+    }(CollectionNode));
+    Kurve.DirectReports = DirectReports;
     var User = (function (_super) {
         __extends(User, _super);
         function User(graph, path, userId) {
@@ -1495,7 +1349,7 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, userId ? path + "/" + userId : path + "/me");
             this.graph = graph;
-            this.GetUser = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.User.Read])); };
+            this.GetUser = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.User.Read])); };
         }
         Object.defineProperty(User.prototype, "messages", {
             get: function () { return new Messages(this.graph, this.path); },
@@ -1538,8 +1392,8 @@ var kurve;
             configurable: true
         });
         return User;
-    })(Node);
-    kurve.User = User;
+    }(Node));
+    Kurve.User = User;
     var Users = (function (_super) {
         __extends(Users, _super);
         function Users(graph, path) {
@@ -1547,12 +1401,12 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/users");
             this.$ = function (userId) { return new User(_this.graph, _this.path, userId); };
-            this.GetUsers = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.User.Read])); };
+            this.GetUsers = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.User.Read])); };
         }
         Users.$ = function (graph) { return graph.users.$; };
         return Users;
-    })(CollectionNode);
-    kurve.Users = Users;
+    }(CollectionNode));
+    Kurve.Users = Users;
     var Group = (function (_super) {
         __extends(Group, _super);
         function Group(graph, path, groupId) {
@@ -1560,11 +1414,11 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/" + groupId);
             this.graph = graph;
-            this.GetGroup = function (odataQuery) { return _this.graph.Get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Group.ReadAll])); };
+            this.GetGroup = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), _this, _this.scopesForV2([Scopes.Group.ReadAll])); };
         }
         return Group;
-    })(Node);
-    kurve.Group = Group;
+    }(Node));
+    Kurve.Group = Group;
     var Groups = (function (_super) {
         __extends(Groups, _super);
         function Groups(graph, path) {
@@ -1572,13 +1426,17 @@ var kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/groups");
             this.$ = function (groupId) { return new Group(_this.graph, _this.path, groupId); };
-            this.GetGroups = function (odataQuery) { return _this.graph.GetCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Group.ReadAll])); };
+            this.GetGroups = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Group.ReadAll])); };
         }
         Groups.$ = function (graph) { return graph.groups.$; };
         return Groups;
-    })(CollectionNode);
-    kurve.Groups = Groups;
-})(kurve || (kurve = {}));
+    }(CollectionNode));
+    Kurve.Groups = Groups;
+})(Kurve || (Kurve = {}));
+//# sourceMappingURL=kurve.js.map
+    return Kurve;
+}));
+
 //*********************************************************
 //
 //Kurve js, https://github.com/microsoftdx/kurvejs
@@ -1594,8 +1452,16 @@ var kurve;
 // distribute, sublicense, and/or sell copies of the Software, and to
 // permit persons to whom the Software is furnished to do so, subject to
 // the following conditions:
+
+
+
+
 // The above copyright notice and this permission notice shall be
 // included in all copies or substantial portions of the Software.
+
+
+
+
 // THE SOFTWARE IS PROVIDED ""AS IS"", WITHOUT WARRANTY OF ANY KIND,
 // EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -1605,3 +1471,4 @@ var kurve;
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 //*********************************************************
+
