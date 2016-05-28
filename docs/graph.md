@@ -1,6 +1,7 @@
 # Kurve QueryBuilder
 
 Consider the state of developing against the Microsoft Graph today. For every operation you wish to perform you must look in the documentation to find:
+
 1. The path, e.g. "me/manager"
 2. The access requirements, e.g. "User.Read.All"
 3. The formats of the request and response objects
