@@ -88,15 +88,15 @@ namespace Kurve {
     }
 
     export type GraphObject<Model, N extends Node> = Model & {
-        _context?: N
+        _context: N
     };
 
     export type ChildFactory<Model, N extends Node> = (id:string) => N;
 
-    export type GraphCollection<Model, C extends CollectionNode, N extends Node> = Array<GraphObject<Model, N>> & {
-        _next?: () => Promise<GraphCollection<Model, C, N>, Error>,
-        _context?: C,
-        _raw: any,
+    export interface GraphCollection<Model, C extends CollectionNode, N extends Node> {
+        value: Array<GraphObject<Model, N>>,
+        _context: C,
+        _next?: () => Promise<GraphCollection<Model, C, N>, Error>
     };
 
     export abstract class Node {
@@ -173,14 +173,12 @@ namespace Kurve {
         }
         
         protected graphCollectionFromResponse = <Model, C extends CollectionNode, N extends Node>(response:any, node:C, childFactory?:ChildFactory<Model, N>, scopes?:string[]) => {
-            let collection = response.value as GraphCollection<Model, C, N>;
+            const collection = response as GraphCollection<Model,C,N>;
             collection._context = node;
-            collection._raw = response;
-            let nextLink = response["@odata.nextLink"];
-            if (nextLink)
-                collection._next = () => this.getCollection<Model, C, N>(nextLink, node, childFactory, scopes);
+            const nextLink = response["@odata.nextLink"];
+            collection._next = nextLink ? () => this.getCollection<Model, C, N>(nextLink, node, childFactory, scopes) : null
             if (childFactory)
-                collection.forEach(item => item._context = item["id"] && childFactory(item["id"]));
+                collection.value.forEach(item => item._context = item["id"] && childFactory(item["id"]));
             return collection;
         }
 
