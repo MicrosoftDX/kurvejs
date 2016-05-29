@@ -24,9 +24,9 @@ Nodes in the path (e.g. _events_) are lowerCamelCase. "$" is where you type an i
 
 Each endpoint exposes the set of available Graph operations through strongly typed methods:
 
-    graph.me.GetUser() => Kurve.UserDataModel
+    graph.me.GetUser()
         GET "/me"
-    graph.me.events.GetEvents() => Kurve.EventDataModel[]
+    graph.me.events.GetEvents()
         GET "/me/events"
     graph.me.events.CreateEvent(event:Kurve.EventDataModel)
         POST "/me/events"
@@ -129,15 +129,9 @@ Operations which return paginated collections can return a "_next" request objec
     
 (With async/await support, an iteration pattern can be used intead of recursion)
 
-Collections also expose a "_raw" property which allows access to the actual JSON returned from the Microsoft Graph.
-
-    graph.users.GetUsers().then(users =>
-        console.log(users._raw["@odata.context"])
-    ); 
-
 ## About Response Types
 
-The response types seem complex, but they are actually very simple. For example, in:
+The response types seem complex, but they are actually just the normal Microsoft Graph responses plus some extra properties. 
 
     graph.me.GetUser().then(user =>
 
@@ -160,10 +154,16 @@ _users_ is type _GraphCollection&lt;UserDataModel, Users, User>_ which looks lik
         _next?: () => GraphCollection&lt;UserDataModel, Users, User>, _raw:any } // also as described above
     }
 
+This is the normal Microsoft Graph response with two new properties, plus a new property added to each element of _value_.  
+
 You can pass _value_ anywhere an array of the base type is expected:
 
     const showDisplayNames = (users:UserDataModel[]) => users.value.forEach(user => console.log(user.displayName));
     graph.users.GetUsers().then(users => showDisplayNames(users.value));
+
+You can also directly access the collection metadata:
+
+    graph.users.Getusers.then(users => console.log(users["@odata.context], users["@data.nextLink"]);
 
 ## OData
 
