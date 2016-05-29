@@ -52,7 +52,7 @@ var AppV1 = (function () {
     AppV1.prototype.loadUsersWithPaging = function () {
         var _this = this;
         document.getElementById("results").innerHTML = "";
-        this.graph.users.GetUsers("$top=5").then(function (users) {
+        this.graph.users.GetUsers().then(function (users) {
             return _this.showUsers(users);
         });
     };
@@ -87,7 +87,7 @@ var AppV1 = (function () {
         this.graph.me.GetUser().then(function (user) {
             document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
             document.getElementById("results").innerHTML += "Messages:" + "</br>";
-            user._context.messages.GetMessages("$top=2").then(function (messages) {
+            user._context.messages.GetMessages().then(function (messages) {
                 return _this.showMessages(messages);
             });
         });
@@ -99,7 +99,7 @@ var AppV1 = (function () {
         this.graph.me.GetUser().then(function (user) {
             document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
             document.getElementById("results").innerHTML += "Events:" + "</br>";
-            user._context.events.GetEvents("$top=2").then(function (events) {
+            user._context.events.GetEvents().then(function (events) {
                 return _this.showEvents(events);
             });
         });
@@ -131,8 +131,8 @@ var AppV1 = (function () {
     AppV1.prototype.loadGroupsWithPaging = function () {
         var _this = this;
         document.getElementById("results").innerHTML = "";
-        this.graph.groups.GetGroups("$top=5").then(function (groups) {
-            return _this.showGroups(groups);
+        this.graph.groups.GetGroups().then(function (groups) {
+            return _this.showGroups(groups, 5);
         });
     };
     //Scenario 10: Load group by ID
@@ -172,44 +172,60 @@ var AppV1 = (function () {
         document.getElementById("results").innerText = JSON.stringify(this.identity.getIdToken());
     };
     //--------------------------------Callbacks---------------------------------------------
-    AppV1.prototype.showUsers = function (users, odataQuery) {
+    AppV1.prototype.showUsers = function (users, limit) {
         var _this = this;
-        users.forEach(function (group) {
-            return document.getElementById("results").innerHTML += group.displayName + "</br>";
-        });
+        if (limit === void 0) { limit = 5; }
+        for (var _i = 0, _a = users.value; _i < _a.length; _i++) {
+            var user = _a[_i];
+            document.getElementById("results").innerHTML += user.displayName + "</br>";
+            if (limit-- <= 0)
+                return;
+        }
         users._next && users._next().then(function (nextUsers) {
-            return _this.showUsers(nextUsers);
+            return _this.showUsers(nextUsers, limit);
         }).fail(function (error) {
             return document.getElementById("results").innerText = JSON.stringify(error);
         });
     };
-    AppV1.prototype.showGroups = function (groups) {
+    AppV1.prototype.showGroups = function (groups, limit) {
         var _this = this;
-        groups.forEach(function (group) {
-            return document.getElementById("results").innerHTML += group.displayName + "</br>";
-        });
+        if (limit === void 0) { limit = 5; }
+        for (var _i = 0, _a = groups.value; _i < _a.length; _i++) {
+            var group = _a[_i];
+            document.getElementById("results").innerHTML += group.displayName + "</br>";
+            if (limit-- <= 0)
+                return;
+        }
         groups._next && groups._next().then(function (nextGroups) {
             return _this.showGroups(nextGroups);
         }).fail(function (error) {
             return document.getElementById("results").innerText = JSON.stringify(error);
         });
     };
-    AppV1.prototype.showMessages = function (messages) {
+    AppV1.prototype.showMessages = function (messages, limit) {
         var _this = this;
-        messages.forEach(function (message) {
-            return document.getElementById("results").innerHTML += message.subject + "</br>";
-        });
+        if (limit === void 0) { limit = 5; }
+        for (var _i = 0, _a = messages.value; _i < _a.length; _i++) {
+            var message = _a[_i];
+            document.getElementById("results").innerHTML += message.subject + "</br>";
+            if (limit-- <= 0)
+                return;
+        }
         messages._next && messages._next().then(function (nextMessages) {
-            return _this.showMessages(nextMessages);
+            return _this.showMessages(nextMessages, limit);
         }).fail(function (error) {
             return document.getElementById("results").innerText = error.statusText;
         });
     };
-    AppV1.prototype.showEvents = function (events) {
+    AppV1.prototype.showEvents = function (events, limit) {
         var _this = this;
-        events.forEach(function (message) {
-            return document.getElementById("results").innerHTML += message.subject + "</br>";
-        });
+        if (limit === void 0) { limit = 5; }
+        for (var _i = 0, _a = events.value; _i < _a.length; _i++) {
+            var event_1 = _a[_i];
+            document.getElementById("results").innerHTML += event_1.subject + "</br>";
+            if (limit-- <= 0)
+                return;
+        }
         events._next && events._next().then(function (nextEvents) {
             return _this.showEvents(nextEvents);
         }).fail(function (error) {

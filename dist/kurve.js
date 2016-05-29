@@ -1059,6 +1059,7 @@ var Kurve;
         var query = odataQuery && odataQuery.toString();
         return path + (query ? "?" + query : "");
     };
+    ;
     var Node = (function () {
         function Node(graph, path) {
             var _this = this;
@@ -1116,14 +1117,12 @@ var Kurve;
                 return _this._nextLink || pathWithQuery(_this.path + pathSuffix, odataQuery);
             };
             this.graphCollectionFromResponse = function (response, node, childFactory, scopes) {
-                var collection = response.value;
+                var collection = response;
                 collection._context = node;
-                collection._raw = response;
                 var nextLink = response["@odata.nextLink"];
-                if (nextLink)
-                    collection._next = function () { return _this.getCollection(nextLink, node, childFactory, scopes); };
+                collection._next = nextLink ? function () { return _this.getCollection(nextLink, node, childFactory, scopes); } : null;
                 if (childFactory)
-                    collection.forEach(function (item) { return item._context = item["id"] && childFactory(item["id"]); });
+                    collection.value.forEach(function (item) { return item._context = item["id"] && childFactory(item["id"]); });
                 return collection;
             };
         }

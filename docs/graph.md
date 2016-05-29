@@ -39,7 +39,7 @@ Certain Graph endpoints are implemented as OData "Functions". These are not trea
 Graph operations are exposed through Promises:
 
     graph.me.messages.GetMessages().then(messages =>
-        messages.forEach(message =>
+        messages.value.forEach(message =>
             console.log(message.subject)
         )
     )
@@ -57,7 +57,7 @@ QueryBuilder helps you write more concise code. All response objects return a "_
     graph.me.messages.$("123").GetMessage().then(message =>
         console.log(message.subject);
         message._context.attachments.GetAttachments().then(attachments => // message._context === graph.me.messages.$("123")
-            attachments.forEach(attachment => 
+            attachments.value.forEach(attachment => 
                 console.log(attachment.contentBytes)
             )
         )
@@ -66,9 +66,9 @@ QueryBuilder helps you write more concise code. All response objects return a "_
 Members of returned collections also have a "_context" property:
 
     graph.me.messages.GetMessages().then(messages =>
-        messages.forEach(message =>
+        messages.value.forEach(message =>
             message._context.attachments.GetAttachments().then(attachments => // message._context === graph.me.messages.$(message.id)
-                attachments.forEach(attachment =>
+                attachments.value.forEach(attachment =>
                     console.log(attachment.id);
                 )
             )
@@ -95,14 +95,14 @@ We facilitate this by setting the "_context" property intelligently:
 
     graph.me.manager.GetUser().then(user =>
         user._context.directReports.GetUsers().then(users =>   // user._context === users.$(user.id)
-            users.forEach(user =>
+            users.value.forEach(user =>
                 console.log(user.displayName)
             )
         )
     )
 
     graph.me.directReports.GetUsers().then(users =>
-        users.forEach(user =>
+        users.value.forEach(user =>
             user._context.manager.GetManager().then(manager =>     // user._context === users.$(user.id)
                 console.log(manager.displayName)
             )
@@ -116,7 +116,7 @@ In other words, QueryBuilder lets you continue to do operations on the returned 
 Operations which return paginated collections can return a "_next" request object. This can be utilized in a recursive function:
 
     ListMessageSubjects(messages:Kurve.GraphCollection<Kurve.MessageDataModel, Kurve.Messages, Kurve.Message>) {
-        messages.forEach(message => console.log(message.subject));
+        messages.value.forEach(message => console.log(message.subject));
         if (messages._next)
             messages._next().then(nextMessages =>
                 ListMessageSubjects(nextMessages)
@@ -141,21 +141,29 @@ The response types seem complex, but they are actually very simple. For example,
 
     graph.me.GetUser().then(user =>
 
-_user_ is type _GraphObject&lt;UserDataModel, User>_ which is just an alias for _UserDataModel & { _context: User }_. In other words, it's a standard Microsoft Graph User object, plus one additional field called __context_, described above.
+_user_ is type _GraphObject&lt;UserDataModel, User>_ which is an alias for _UserDataModel & { _context: User }_. In other words, it's a standard Microsoft Graph User object, plus one additional field called __context_, described above.
 
-Similarly for collections:
-
-    graph.users.Getusers.then(users =>
-
-_users_ is type _GraphCollection&lt;UserDataModel, Users, User>_ which is just an alias for _UserDataModel[] & { _context: User, _next?: () => GraphCollection&lt;UserDataModel, Users, User>, _raw:any }_. In other words, it's an array of Microsoft Graph User objects, plus three extra fields described above.
-
-Because _GraphObject_ and _GraphCollection_ are defined as type intersections, they can be used anywhere the base types are expected, e.g.
+Because its defined as a type intersection, it can be used anywhere the base type is expected, e.g.
 
     const showDisplayName = (user:UserDataModel) => console.log(user.displayName);
     graph.me.GetUser().then(user => showDisplayName(user));
-    
-    const showDisplayNames = (users:UserDataModel[]) => users.forEach(user => console.log(user.displayName));
-    graph.users.GetUsers().then(users => showDisplayNames(users));
+
+Now let's look at collections:
+
+    graph.users.Getusers.then(users =>
+
+_users_ is type _GraphCollection&lt;UserDataModel, Users, User>_ which looks like:
+
+    {
+        value: Array<GraphObject<UserDataModel, User>>, // an array of the type described above
+        _context: User, // as described above 
+        _next?: () => GraphCollection&lt;UserDataModel, Users, User>, _raw:any } // also as described above
+    }
+
+You can pass _value_ anywhere an array of the base type is expected:
+
+    const showDisplayNames = (users:UserDataModel[]) => users.value.forEach(user => console.log(user.displayName));
+    graph.users.GetUsers().then(users => showDisplayNames(users.value));
 
 ## OData
 

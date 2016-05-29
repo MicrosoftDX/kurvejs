@@ -71,7 +71,7 @@ const kurve = window["Kurve"] as typeof Kurve;
         //Scenario 2: Load users with paging
         private loadUsersWithPaging(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.users.GetUsers("$top=5").then(users =>
+            this.graph.users.GetUsers().then(users =>
                 this.showUsers(users)
             );
         }
@@ -109,7 +109,7 @@ const kurve = window["Kurve"] as typeof Kurve;
             this.graph.me.GetUser().then(user => {
                 document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Messages:" + "</br>";
-                user._context.messages.GetMessages("$top=2").then(messages =>
+                user._context.messages.GetMessages().then(messages =>
                     this.showMessages(messages)
                 );
             });
@@ -122,7 +122,7 @@ const kurve = window["Kurve"] as typeof Kurve;
             this.graph.me.GetUser().then(user => {
                 document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
                 document.getElementById("results").innerHTML += "Events:" + "</br>";
-                user._context.events.GetEvents("$top=2").then(events =>
+                user._context.events.GetEvents().then(events =>
                     this.showEvents(events)
                 );
             });
@@ -155,8 +155,8 @@ const kurve = window["Kurve"] as typeof Kurve;
         //Scenario 9: Load groups with paging
         private loadGroupsWithPaging(): void {
             document.getElementById("results").innerHTML = "";
-            this.graph.groups.GetGroups("$top=5").then(groups =>
-                this.showGroups(groups)
+            this.graph.groups.GetGroups().then(groups =>
+                this.showGroups(groups, 5)
             );
         }
 
@@ -207,23 +207,27 @@ const kurve = window["Kurve"] as typeof Kurve;
 
         //--------------------------------Callbacks---------------------------------------------
 
-        private showUsers(users: Kurve.GraphCollection<Kurve.UserDataModel, Kurve.Users, Kurve.User>, odataQuery?: string): void {
-            users.forEach(group =>
-                document.getElementById("results").innerHTML += group.displayName + "</br>"
-            );
+        private showUsers(users: Kurve.GraphCollection<Kurve.UserDataModel, Kurve.Users, Kurve.User>, limit:number = 5): void {
+            for (let user of users.value) {
+                document.getElementById("results").innerHTML += user.displayName + "</br>";
+                if (limit-- <= 0)
+                    return;
+            }
 
             users._next && users._next().then(nextUsers =>
-                this.showUsers(nextUsers)
+                this.showUsers(nextUsers, limit)
             ).fail(error =>
                 document.getElementById("results").innerText = JSON.stringify(error)
             );
         }
 
 
-        private showGroups<GraphNode extends Kurve.CollectionNode>(groups: Kurve.GraphCollection<Kurve.GroupDataModel, GraphNode, Kurve.Group>): void {
-            groups.forEach(group =>
+        private showGroups<GraphNode extends Kurve.CollectionNode>(groups: Kurve.GraphCollection<Kurve.GroupDataModel, GraphNode, Kurve.Group>, limit:number = 5): void {
+            for (let group of groups.value) {
                 document.getElementById("results").innerHTML += group.displayName + "</br>"
-            );
+                if (limit-- <= 0)
+                    return;
+            }
 
             groups._next && groups._next().then(nextGroups =>
                 this.showGroups(nextGroups)
@@ -232,22 +236,28 @@ const kurve = window["Kurve"] as typeof Kurve;
             );
         }
 
-        private showMessages(messages: Kurve.GraphCollection<Kurve.MessageDataModel, Kurve.Messages, Kurve.Message>): void {
-            messages.forEach(message =>
+        private showMessages(messages: Kurve.GraphCollection<Kurve.MessageDataModel, Kurve.Messages, Kurve.Message>, limit:number = 5): void {
+            for (let message of messages.value) {
                 document.getElementById("results").innerHTML += message.subject + "</br>"
-            );
+                if (limit-- <= 0)
+                    return;
+            }
+            
             messages._next && messages._next().then(nextMessages =>
-                this.showMessages(nextMessages)
+                this.showMessages(nextMessages, limit)
             ).fail(error =>
                 document.getElementById("results").innerText = error.statusText
             );
         }
        
 
-        private showEvents(events: Kurve.GraphCollection<Kurve.EventDataModel, Kurve.Events, Kurve.Event>): void {
-            events.forEach(message =>
-                document.getElementById("results").innerHTML += message.subject + "</br>"
-            );
+        private showEvents(events: Kurve.GraphCollection<Kurve.EventDataModel, Kurve.Events, Kurve.Event>, limit:number = 5): void {
+            for (let event of events.value) {
+                document.getElementById("results").innerHTML += event.subject + "</br>"
+                if (limit-- <= 0)
+                    return;
+            }
+
             events._next && events._next().then(nextEvents =>
                 this.showEvents(nextEvents)
             ).fail(error =>
