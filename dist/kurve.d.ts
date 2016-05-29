@@ -366,7 +366,7 @@ declare namespace Kurve {
     type GraphObject<Model, N extends Node> = Model & {
         _context: N;
     };
-    interface ChildFactory<Model, N extends Node> {
+    interface Context<N extends Node> {
         (id: string): N;
     }
     abstract class Node {
@@ -375,10 +375,10 @@ declare namespace Kurve {
         constructor(graph: Graph, path: string);
         protected scopesForV2: (scopes: string[]) => string[];
         pathWithQuery: (odataQuery?: OData | string, pathSuffix?: string) => string;
-        protected graphObjectFromResponse: <Model, N extends Node>(response: any, node: N, childFactory?: ChildFactory<Model, N>) => Model & {
+        protected graphObjectFromResponse: <Model, N extends Node>(response: any, node: N, context?: Context<N>) => Model & {
             _context: N;
         };
-        protected get<Model, N extends Node>(path: string, node: N, scopes?: string[], childFactory?: ChildFactory<Model, N>, responseType?: string): Promise<GraphObject<Model, N>, Error>;
+        protected get<Model, N extends Node>(path: string, node: N, scopes?: string[], context?: Context<N>, responseType?: string): Promise<GraphObject<Model, N>, Error>;
         protected post<Model, N extends Node>(object: Model, path: string, node: N, scopes?: string[]): Promise<GraphObject<Model, N>, Error>;
     }
     interface GraphCollection<Model, C extends CollectionNode, N extends Node> {
@@ -388,8 +388,8 @@ declare namespace Kurve {
     }
     abstract class CollectionNode extends Node {
         pathWithQuery: (odataQuery?: OData | string, pathSuffix?: string) => string;
-        protected graphCollectionFromResponse: <Model, C extends CollectionNode, N extends Node>(response: any, node: C, childFactory?: ChildFactory<Model, N>, scopes?: string[]) => GraphCollection<Model, C, N>;
-        protected getCollection<Model, C extends CollectionNode, N extends Node>(path: string, node: C, childFactory: ChildFactory<Model, N>, scopes?: string[]): Promise<GraphCollection<Model, C, N>, Error>;
+        protected graphCollectionFromResponse: <Model, C extends CollectionNode, N extends Node>(response: any, node: C, context?: Context<N>, scopes?: string[]) => GraphCollection<Model, C, N>;
+        protected getCollection<Model, C extends CollectionNode, N extends Node>(path: string, node: C, context: Context<N>, scopes?: string[]): Promise<GraphCollection<Model, C, N>, Error>;
     }
     class Attachment extends Node {
         private context;

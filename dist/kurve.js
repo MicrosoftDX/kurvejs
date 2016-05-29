@@ -1071,13 +1071,13 @@ var Kurve;
                 if (pathSuffix === void 0) { pathSuffix = ""; }
                 return pathWithQuery(_this.path + pathSuffix, odataQuery);
             };
-            this.graphObjectFromResponse = function (response, node, childFactory) {
+            this.graphObjectFromResponse = function (response, node, context) {
                 var singleton = response;
-                singleton._context = childFactory ? childFactory(singleton["id"]) : node;
+                singleton._context = context ? context(singleton["id"]) : node;
                 return singleton;
             };
         }
-        Node.prototype.get = function (path, node, scopes, childFactory, responseType) {
+        Node.prototype.get = function (path, node, scopes, context, responseType) {
             var _this = this;
             console.log("GET", path, scopes);
             var d = new Kurve.Deferred();
@@ -1090,7 +1090,7 @@ var Kurve;
                         d.reject(errorODATA);
                         return;
                     }
-                    d.resolve(_this.graphObjectFromResponse(jsonResult, node));
+                    d.resolve(_this.graphObjectFromResponse(jsonResult, node, context));
                 }
                 else {
                     d.resolve(_this.graphObjectFromResponse(result, node));
@@ -1116,17 +1116,17 @@ var Kurve;
                 if (pathSuffix === void 0) { pathSuffix = ""; }
                 return pathWithQuery(_this.path + pathSuffix, odataQuery);
             };
-            this.graphCollectionFromResponse = function (response, node, childFactory, scopes) {
+            this.graphCollectionFromResponse = function (response, node, context, scopes) {
                 var collection = response;
                 collection._context = node;
                 var nextLink = response["@odata.nextLink"];
-                collection._next = nextLink ? function () { return _this.getCollection(nextLink, node, childFactory, scopes); } : null;
-                if (childFactory)
-                    collection.value.forEach(function (item) { return item._context = item["id"] && childFactory(item["id"]); });
+                collection._next = nextLink ? function () { return _this.getCollection(nextLink, node, context, scopes); } : null;
+                if (context)
+                    collection.value.forEach(function (item) { return item._context = item["id"] && context(item["id"]); });
                 return collection;
             };
         }
-        CollectionNode.prototype.getCollection = function (path, node, childFactory, scopes) {
+        CollectionNode.prototype.getCollection = function (path, node, context, scopes) {
             var _this = this;
             console.log("GET collection", path, scopes);
             var d = new Kurve.Deferred();
@@ -1138,7 +1138,7 @@ var Kurve;
                     d.reject(errorODATA);
                     return;
                 }
-                d.resolve(_this.graphCollectionFromResponse(jsonResult, node, childFactory, scopes));
+                d.resolve(_this.graphCollectionFromResponse(jsonResult, node, context, scopes));
             }, null, scopes);
             return d.promise;
         };
