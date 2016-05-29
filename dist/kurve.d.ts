@@ -508,7 +508,6 @@ declare namespace Kurve {
     class Users extends CollectionNode {
         constructor(graph: Graph, path?: string);
         $: (userId: string) => User;
-        static $: (graph: Graph) => (userId: string) => User;
         GetUsers: (odataQuery?: OData | string) => Promise<GraphCollection<UserDataModel, Users, User>, Error>;
     }
     class Group extends Node {
@@ -521,7 +520,6 @@ declare namespace Kurve {
     class Groups extends CollectionNode {
         constructor(graph: Graph, path?: string);
         $: (groupId: string) => Group;
-        static $: (graph: Graph) => (groupId: string) => Group;
         GetGroups: (odataQuery?: OData | string) => Promise<GraphCollection<GroupDataModel, Groups, Group>, Error>;
     }
 }

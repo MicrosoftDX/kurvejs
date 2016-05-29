@@ -1292,7 +1292,7 @@ var Kurve;
             var _this = this;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/manager");
-            this.GetUser = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), null, _this.scopesForV2([Scopes.User.ReadAll]), Users.$(_this.graph)); };
+            this.GetUser = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), null, _this.scopesForV2([Scopes.User.ReadAll]), _this.graph.users.$); };
         }
         return Manager;
     }(Node));
@@ -1303,7 +1303,7 @@ var Kurve;
             var _this = this;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/memberOf");
-            this.GetGroups = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, Groups.$(_this.graph), _this.scopesForV2([Scopes.User.ReadAll])); };
+            this.GetGroups = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.graph.groups.$, _this.scopesForV2([Scopes.User.ReadAll])); };
         }
         return MemberOf;
     }(CollectionNode));
@@ -1315,7 +1315,7 @@ var Kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/" + userId);
             this.graph = graph;
-            this.GetUser = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), null, _this.scopesForV2([Scopes.User.Read]), Users.$(_this.graph)); };
+            this.GetUser = function (odataQuery) { return _this.get(_this.pathWithQuery(odataQuery), null, _this.scopesForV2([Scopes.User.Read]), _this.graph.users.$); };
         }
         return DirectReport;
     }(Node));
@@ -1327,7 +1327,7 @@ var Kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/directReports");
             this.$ = function (userId) { return new DirectReport(_this.graph, _this.path, userId); };
-            this.GetUsers = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, Users.$(_this.graph), _this.scopesForV2([Scopes.User.Read])); };
+            this.GetUsers = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.graph.users.$, _this.scopesForV2([Scopes.User.Read])); };
         }
         return DirectReports;
     }(CollectionNode));
@@ -1393,7 +1393,6 @@ var Kurve;
             this.$ = function (userId) { return new User(_this.graph, _this.path, userId); };
             this.GetUsers = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.User.Read])); };
         }
-        Users.$ = function (graph) { return graph.users.$; };
         return Users;
     }(CollectionNode));
     Kurve.Users = Users;
@@ -1418,7 +1417,6 @@ var Kurve;
             this.$ = function (groupId) { return new Group(_this.graph, _this.path, groupId); };
             this.GetGroups = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Group.ReadAll])); };
         }
-        Groups.$ = function (graph) { return graph.groups.$; };
         return Groups;
     }(CollectionNode));
     Kurve.Groups = Groups;
