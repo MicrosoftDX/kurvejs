@@ -385,9 +385,7 @@ declare namespace Kurve {
         protected post<Model, N extends Node>(object: Model, path: string, node: N, scopes?: string[]): Promise<GraphObject<Model, N>, Error>;
     }
     abstract class CollectionNode extends Node {
-        private _nextLink;
         pathWithQuery: (odataQuery?: OData | string, pathSuffix?: string) => string;
-        nextLink: string;
         protected graphCollectionFromResponse: <Model, C extends CollectionNode, N extends Node>(response: any, node: C, childFactory?: (id: string) => N, scopes?: string[]) => GraphCollection<Model, C, N>;
         protected getCollection<Model, C extends CollectionNode, N extends Node>(path: string, node: C, childFactory: ChildFactory<Model, N>, scopes?: string[]): Promise<GraphCollection<Model, C, N>, Error>;
     }

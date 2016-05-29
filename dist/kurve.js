@@ -1114,7 +1114,7 @@ var Kurve;
             _super.apply(this, arguments);
             this.pathWithQuery = function (odataQuery, pathSuffix) {
                 if (pathSuffix === void 0) { pathSuffix = ""; }
-                return _this._nextLink || pathWithQuery(_this.path + pathSuffix, odataQuery);
+                return pathWithQuery(_this.path + pathSuffix, odataQuery);
             };
             this.graphCollectionFromResponse = function (response, node, childFactory, scopes) {
                 var collection = response;
@@ -1126,13 +1126,6 @@ var Kurve;
                 return collection;
             };
         }
-        Object.defineProperty(CollectionNode.prototype, "nextLink", {
-            set: function (pathWithQuery) {
-                this._nextLink = pathWithQuery;
-            },
-            enumerable: true,
-            configurable: true
-        });
         CollectionNode.prototype.getCollection = function (path, node, childFactory, scopes) {
             var _this = this;
             console.log("GET collection", path, scopes);

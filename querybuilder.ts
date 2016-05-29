@@ -164,13 +164,7 @@ namespace Kurve {
     }
 
     export abstract class CollectionNode extends Node {    
-        private _nextLink:string;   // this is only set when the collection in question is from a nextLink
-
-        pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => this._nextLink || pathWithQuery(this.path + pathSuffix, odataQuery);
-        
-        set nextLink(pathWithQuery:string) {
-            this._nextLink = pathWithQuery;
-        }
+        pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
         
         protected graphCollectionFromResponse = <Model, C extends CollectionNode, N extends Node>(response:any, node:C, childFactory?:ChildFactory<Model, N>, scopes?:string[]) => {
             const collection = response as GraphCollection<Model,C,N>;
