@@ -10,7 +10,7 @@ It's another trip through the documentation to find out other operations that ca
 
 This is what tooling is supposed to help with. This is the problem that Kurve's QueryBuilder solves: leverage Intellisense to let you to easily discover and access the Microsoft Graph.
 
-Here's what it looks like. With a Kurve _graph_ object in hand, just start typing in a TypeScript-aware editor such as Visual Studio Code:
+Here's what it looks like. With a Kurve.Graph object in hand, just start typing in a TypeScript-aware editor such as Visual Studio Code:
 
     You type...                 The editor prompts you with...
     
@@ -20,7 +20,7 @@ Here's what it looks like. With a Kurve _graph_ object in hand, just start typin
     graph.me.events.$           (eventId:string) => Event
     graph.me.events.$("123").   GetEvent
 
-Nodes in the path (e.g. _events_) are lowerCamelCase. "$" is where you type an id. Operations (e.g. _GetEvent_) are UpperCamelCase.    
+Nodes in the path (e.g. _events_) are lowerCamelCase. "$" is where you type an object id. Operations (e.g. _GetEvent_) are UpperCamelCase.    
 
 Each endpoint exposes the set of available Graph operations through strongly typed methods:
 
