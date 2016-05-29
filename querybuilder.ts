@@ -59,7 +59,7 @@ namespace Kurve {
         }
     }
 
-    let queryUnion = (query1:string, query2:string) => (query1 ? query1 + (query2 ? "&" + query2 : "" ) : query2); 
+    const queryUnion = (query1:string, query2:string) => (query1 ? query1 + (query2 ? "&" + query2 : "" ) : query2); 
 
     export class OData {
         constructor(public query?:string) {
@@ -82,7 +82,7 @@ namespace Kurve {
 
     type ODataQuery = OData | string;
 
-    let pathWithQuery = (path:string, odataQuery?:ODataQuery) => {
+    const pathWithQuery = (path:string, odataQuery?:ODataQuery) => {
         let query = odataQuery && odataQuery.toString();
         return path + (query ? "?" + query : "");
     }
@@ -91,13 +91,9 @@ namespace Kurve {
         _context: N
     };
 
-    export type ChildFactory<Model, N extends Node> = (id:string) => N;
-
-    export interface GraphCollection<Model, C extends CollectionNode, N extends Node> {
-        value: Array<GraphObject<Model, N>>,
-        _context: C,
-        _next?: () => Promise<GraphCollection<Model, C, N>, Error>
-    };
+    export interface ChildFactory<N extends Node> {
+        (id:string): N
+    }
 
     export abstract class Node {
         constructor(protected graph:Graph, protected path:string) {
@@ -109,22 +105,22 @@ namespace Kurve {
         
         pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
         
-        protected graphObjectFromResponse = <Model, N extends Node>(response:any, node:N, childFactory?:ChildFactory<Model, N>) => {
-            let singleton = response as GraphObject<Model, N>;
+        protected graphObjectFromResponse = <Model, N extends Node>(response:any, node:N, childFactory?:ChildFactory<N>) => {
+            const singleton = response as GraphObject<Model, N>;
             singleton._context = childFactory ? childFactory(singleton["id"]) : node;
             return singleton;
         }
 
-        protected get<Model, N extends Node>(path:string, node:N, scopes?:string[], childFactory?:ChildFactory<Model, N>, responseType?:string): Promise<GraphObject<Model, N>, Error> {
+        protected get<Model, N extends Node>(path:string, node:N, scopes?:string[], childFactory?:ChildFactory<N>, responseType?:string): Promise<GraphObject<Model, N>, Error> {
             console.log("GET", path, scopes);
-            var d = new Deferred<GraphObject<Model, N>, Error>();
+            const d = new Deferred<GraphObject<Model, N>, Error>();
 
             this.graph.get(path, (error, result) => {
                 if (!responseType) {
-                    var jsonResult = JSON.parse(result) ;
+                    const jsonResult = JSON.parse(result) ;
 
                     if (jsonResult.error) {
-                        var errorODATA = new Error();
+                        const errorODATA = new Error();
                         errorODATA.other = jsonResult.error;
                         d.reject(errorODATA);
                         return;
@@ -142,14 +138,14 @@ namespace Kurve {
 
         protected post<Model, N extends Node>(object:Model, path:string, node:N, scopes?:string[]): Promise<GraphObject<Model, N>, Error> {
             console.log("POST", path, scopes);
-            var d = new Deferred<GraphObject<Model, N>, Error>();
+            const d = new Deferred<GraphObject<Model, N>, Error>();
             
     /*
             this.graph.post(object, path, (error, result) => {
-                var jsonResult = JSON.parse(result) ;
+                const jsonResult = JSON.parse(result) ;
 
                 if (jsonResult.error) {
-                    var errorODATA = new Error();
+                    const errorODATA = new Error();
                     errorODATA.other = jsonResult.error;
                     d.reject(errorODATA);
                     return;
@@ -163,10 +159,16 @@ namespace Kurve {
 
     }
 
+    export interface GraphCollection<Model, C extends CollectionNode, N extends Node> {
+        value: Array<GraphObject<Model, N>>,
+        _context: C,
+        _next?: () => Promise<GraphCollection<Model, C, N>, Error>
+    };
+
     export abstract class CollectionNode extends Node {    
         pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
         
-        protected graphCollectionFromResponse = <Model, C extends CollectionNode, N extends Node>(response:any, node:C, childFactory?:ChildFactory<Model, N>, scopes?:string[]) => {
+        protected graphCollectionFromResponse = <Model, C extends CollectionNode, N extends Node>(response:any, node:C, childFactory?:ChildFactory<N>, scopes?:string[]) => {
             const collection = response as GraphCollection<Model,C,N>;
             collection._context = node;
             const nextLink = response["@odata.nextLink"];
@@ -176,15 +178,15 @@ namespace Kurve {
             return collection;
         }
 
-        protected getCollection<Model, C extends CollectionNode, N extends Node>(path:string, node:C, childFactory:ChildFactory<Model, N>, scopes?:string[]): Promise<GraphCollection<Model, C, N>, Error> {
+        protected getCollection<Model, C extends CollectionNode, N extends Node>(path:string, node:C, childFactory:ChildFactory<N>, scopes?:string[]): Promise<GraphCollection<Model, C, N>, Error> {
             console.log("GET collection", path, scopes);
-            var d = new Deferred<GraphCollection<Model, C, N>, Error>();
+            const d = new Deferred<GraphCollection<Model, C, N>, Error>();
 
             this.graph.get(path, (error, result) => {
-                var jsonResult = JSON.parse(result) ;
+                const jsonResult = JSON.parse(result) ;
 
                 if (jsonResult.error) {
-                    var errorODATA = new Error();
+                    const errorODATA = new Error();
                     errorODATA.other = jsonResult.error;
                     d.reject(errorODATA);
                     return;

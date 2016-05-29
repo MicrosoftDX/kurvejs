@@ -1059,7 +1059,6 @@ var Kurve;
         var query = odataQuery && odataQuery.toString();
         return path + (query ? "?" + query : "");
     };
-    ;
     var Node = (function () {
         function Node(graph, path) {
             var _this = this;
@@ -1107,6 +1106,7 @@ var Kurve;
         return Node;
     }());
     Kurve.Node = Node;
+    ;
     var CollectionNode = (function (_super) {
         __extends(CollectionNode, _super);
         function CollectionNode() {
