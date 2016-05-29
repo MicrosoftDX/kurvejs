@@ -106,9 +106,9 @@ namespace Kurve {
         pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
         
         protected graphObjectFromResponse = <Model, N extends Node>(response:any, node:N, context?:Context<N>) => {
-            const singleton = response as GraphObject<Model, N>;
-            singleton._context = context ? context(singleton["id"]) : node;
-            return singleton;
+            const object = response as GraphObject<Model, N>;
+            object._context = context && object["id"] ? context(object["id"]) : node;
+            return object;
         }
 
         protected get<Model, N extends Node>(path:string, node:N, scopes?:string[], context?:Context<N>, responseType?:string): Promise<GraphObject<Model, N>, Error> {
@@ -172,7 +172,7 @@ namespace Kurve {
             const collection = response as GraphCollection<Model,C,N>;
             collection._context = node;
             const nextLink = response["@odata.nextLink"];
-            collection._next = nextLink ? () => this.getCollection<Model, C, N>(nextLink, node, context, scopes) : null
+            collection._next = nextLink ? () => this.getCollection<Model, C, N>(nextLink, node, context, scopes) : null;
             if (context)
                 collection.value.forEach(item => item._context = item["id"] && context(item["id"]));
             return collection;

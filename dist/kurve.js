@@ -1072,9 +1072,9 @@ var Kurve;
                 return pathWithQuery(_this.path + pathSuffix, odataQuery);
             };
             this.graphObjectFromResponse = function (response, node, context) {
-                var singleton = response;
-                singleton._context = context ? context(singleton["id"]) : node;
-                return singleton;
+                var object = response;
+                object._context = context && object["id"] ? context(object["id"]) : node;
+                return object;
             };
         }
         Node.prototype.get = function (path, node, scopes, context, responseType) {
