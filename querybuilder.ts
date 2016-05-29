@@ -333,7 +333,7 @@ namespace Kurve {
             super(graph, path + "/manager" );
         }
 
-        GetUser = (odataQuery?:ODataQuery) => this.get<UserDataModel, User>(this.pathWithQuery(odataQuery), null, this.scopesForV2([Scopes.User.ReadAll]), Users.$(this.graph));
+        GetUser = (odataQuery?:ODataQuery) => this.get<UserDataModel, User>(this.pathWithQuery(odataQuery), null, this.scopesForV2([Scopes.User.ReadAll]), this.graph.users.$);
     }
 
     export class MemberOf extends CollectionNode {
@@ -341,7 +341,7 @@ namespace Kurve {
             super(graph, path + "/memberOf");
         }
 
-        GetGroups = (odataQuery?:ODataQuery) => this.getCollection<GroupDataModel, MemberOf, Group>(this.pathWithQuery(odataQuery), this, Groups.$(this.graph), this.scopesForV2([Scopes.User.ReadAll]));
+        GetGroups = (odataQuery?:ODataQuery) => this.getCollection<GroupDataModel, MemberOf, Group>(this.pathWithQuery(odataQuery), this, this.graph.groups.$, this.scopesForV2([Scopes.User.ReadAll]));
     }
 
     export class DirectReport extends Node {
@@ -349,7 +349,7 @@ namespace Kurve {
             super(graph, path + "/" + userId);
         }
         
-        GetUser = (odataQuery?:ODataQuery) => this.get<UserDataModel, User>(this.pathWithQuery(odataQuery), null, this.scopesForV2([Scopes.User.Read]), Users.$(this.graph));
+        GetUser = (odataQuery?:ODataQuery) => this.get<UserDataModel, User>(this.pathWithQuery(odataQuery), null, this.scopesForV2([Scopes.User.Read]), this.graph.users.$);
     }
         
     export class DirectReports extends CollectionNode {
@@ -359,7 +359,7 @@ namespace Kurve {
 
         $ = (userId:string) => new DirectReport(this.graph, this.path, userId);
         
-        GetUsers = (odataQuery?:ODataQuery) => this.getCollection<UserDataModel, DirectReports, User>(this.pathWithQuery(odataQuery), this, Users.$(this.graph), this.scopesForV2([Scopes.User.Read]));
+        GetUsers = (odataQuery?:ODataQuery) => this.getCollection<UserDataModel, DirectReports, User>(this.pathWithQuery(odataQuery), this, this.graph.users.$, this.scopesForV2([Scopes.User.Read]));
     }
 
     export class User extends Node {
@@ -390,8 +390,6 @@ namespace Kurve {
         
         $ = (userId:string) => new User(this.graph, this.path, userId);
         
-        static $ = (graph:Graph) => graph.users.$; 
-
         GetUsers = (odataQuery?:ODataQuery) => this.getCollection<UserDataModel, Users, User>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.User.Read]));
     /*
         CreateUser = this.graph.POST<UserDataModel>(this.path, this.query);
@@ -413,8 +411,6 @@ namespace Kurve {
         
         $ = (groupId:string) => new Group(this.graph, this.path, groupId);
         
-        static $ = (graph:Graph) => graph.groups.$;
-
         GetGroups = (odataQuery?:ODataQuery) => this.getCollection<GroupDataModel, Groups, Group>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Group.ReadAll]));
     }
 
