@@ -84,7 +84,7 @@ If you are using TypeScript you'll need install the typings too:
 typings install kurve -GS
 ```
     
-Copy login.html to your source tree
+Copy login.html to your source tree.
 
 Include kurve.js into your project:
 
@@ -102,7 +102,8 @@ Include kurve.js into your html:
 <script src="kurve.js"/>
 ```
 
-Copy login.html to your source tree
+Copy login.html to your source tree.
+
 If using TypeScript, add the following:
 
 ```typescript
