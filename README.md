@@ -7,33 +7,35 @@ Kurve<nolink>.JS is an experimental, unofficial, open source JavaScript / TypeSc
 
 It looks like this:
 
-    const id = new kurve.Identity({
-        clientId: "your-client-id",
-        tokenProcessingUri: "http://yourdomain/login.html",
-        version: kurve.EndPointVersion.v1,
-        mode: kurve.Mode.Client 
-    });
+```typescript
+const id = new kurve.Identity({
+    clientId: "your-client-id",
+    tokenProcessingUri: "http://yourdomain/login.html",
+    version: kurve.EndPointVersion.v1,
+    mode: kurve.Mode.Client 
+});
 
-    id.loginAsync().then(_ => {
-        const graph = new kurve.Graph({ identity: id }, kurve.Mode.Client);
+id.loginAsync().then(_ => {
+    const graph = new kurve.Graph({ identity: id }, kurve.Mode.Client);
 
-        graph.me.messages.GetMessages().then(messages => {
-            console.log("my emails:");   
-            messages.forEach(message => 
-                console.log(message.subject)
-            )
-        });
-        
-        graph.me.manager.GetUser(manager => {
-            console.log("my manager", manager.displayName);
-            console.log("their directs:");
-            manager._context.directReports.GetUsers(directs =>
-                directs.forEach(direct =>
-                    console.log(direct.displayName)
-                )
-            )
-        });
+    graph.me.messages.GetMessages().then(messages => {
+        console.log("my emails:");   
+        messages.value.forEach(message => 
+            console.log(message.subject)
+        )
     });
+    
+    graph.me.manager.GetUser(manager => {
+        console.log("my manager", manager.displayName);
+        console.log("their directs:");
+        manager._context.directReports.GetUsers(directs =>
+            directs.value.forEach(direct =>
+                console.log(direct.displayName)
+            )
+        )
+    });
+});
+```
 
 Kurve works well with most JavaScript and TypeScript frameworks including Angular 1, Angular 2, Ember, and React.
 
@@ -52,31 +54,43 @@ kurve.js is a UMD file, allowing maximum flexibility.
 
 1. Install kurve from npm:
 
-        npm install kurve
+```
+npm install kurve
+```
 
 2. If you are using TypeScript you'll need install the typings too: 
 
-        typings install kurve -GS
+```
+typings install kurve -GS
+```
 
 3. Include kurve.js into your project:
 
-        import kurve = require ("kurve");
+```typescript
+import kurve = require ("kurve");
+```
     
 ### browser via npm
 
 1. Install kurve from npm:
 
-        npm install kurve
+```
+npm install kurve
+```
 
 2. If you are using TypeScript you'll need install the typings too: 
 
-        typings install kurve -GS
+```
+typings install kurve -GS
+```
     
 3. Copy login.html to your source tree
 
 4. Include kurve.js into your project:
 
-        import kurve = require ("kurve");
+```typescript
+import kurve = require ("kurve");
+```
 
 5. Bundle kurve into your app using webpack, browserify, etc.
 
@@ -84,13 +98,17 @@ kurve.js is a UMD file, allowing maximum flexibility.
 
 1. Include kurve.js into your html:
 
-        <script src="kurve.js"/>
+```html
+<script src="kurve.js"/>
+```
 
 2. Copy login.html to your source tree
 3. If using TypeScript, add the following:
 
-        /// <reference path="kurve.d.ts"/>  
-        const kurve = window["Kurve"] as typeof Kurve; 
+```typescript
+/// <reference path="kurve.d.ts"/>  
+const kurve = window["Kurve"] as typeof Kurve; 
+```
 
 ## Using Kurve Identity
 
@@ -125,11 +143,15 @@ To find out more about using Kurve JS with AAD B2C, please read <b><a href="./do
 
 You can use Kurve Graph without Kurve Identity by passing an access token directly:
 
-    const graph = new kurve.Graph({ defaultAccessToken: token }, mode);
+```typescript
+const graph = new kurve.Graph({ defaultAccessToken: token }, mode);
+```
 
 Or else link it to a Kurve.Identity object:
 
-    const graph = new kurve.Graph({ { identity: this.identity }, mode);
+```typescript
+const graph = new kurve.Graph({ { identity: this.identity }, mode);
+```
 
 Where 'mode' is either kurve.Mode.Client or kurve.Mode.Server
     
