@@ -52,19 +52,19 @@ kurve.js is a UMD file, allowing maximum flexibility.
 
 ### node
 
-1. Install kurve from npm:
+Install kurve from npm:
 
 ```
 npm install kurve
 ```
 
-2. If you are using TypeScript you'll need install the typings too: 
+If you are using TypeScript you'll need install the typings too: 
 
 ```
 typings install kurve -GS
 ```
 
-3. Include kurve.js into your project:
+Include kurve.js into your project:
 
 ```typescript
 import kurve = require ("kurve");
@@ -72,38 +72,38 @@ import kurve = require ("kurve");
     
 ### browser via npm
 
-1. Install kurve from npm:
+Install kurve from npm:
 
 ```
 npm install kurve
 ```
 
-2. If you are using TypeScript you'll need install the typings too: 
+If you are using TypeScript you'll need install the typings too: 
 
 ```
 typings install kurve -GS
 ```
     
-3. Copy login.html to your source tree
+Copy login.html to your source tree
 
-4. Include kurve.js into your project:
+Include kurve.js into your project:
 
 ```typescript
 import kurve = require ("kurve");
 ```
 
-5. Bundle kurve into your app using webpack, browserify, etc.
+Bundle kurve into your app using webpack, browserify, etc.
 
 ### browser via &lt;script/&gt;
 
-1. Include kurve.js into your html:
+Include kurve.js into your html:
 
 ```html
 <script src="kurve.js"/>
 ```
 
-2. Copy login.html to your source tree
-3. If using TypeScript, add the following:
+Copy login.html to your source tree
+If using TypeScript, add the following:
 
 ```typescript
 /// <reference path="kurve.d.ts"/>  
