@@ -8,13 +8,12 @@ Consider the state of developing against the Microsoft Graph today. For every op
 
 It's another trip through the documentation to find out other operations that can be performed at the same endpoint, or on the response object.
 
-This is what tooling is supposed to help with. This is the problem that Kurve's QueryBuilder solves: leverage Intellisense to let you to easily discover and access the Microsoft Graph.
+This is what tooling is supposed to help with. This is what QueryBuilder does: leverage Intellisense to let you to easily discover and access the Microsoft Graph.
 
 Here's what it looks like. With a Kurve.Graph object in hand, just start typing in a TypeScript-aware editor such as Visual Studio Code:
 
 ```typescript
 //You type...               //The editor prompts you with...
-
 graph.                      me, users
 graph.me.                   events, messages, calendarView, mailFolders, GetUser
 graph.me.events.            GetEvents, $
@@ -38,18 +37,18 @@ graph.me.events.CreateEvent(event:Kurve.EventDataModel)
 Certain Graph endpoints are implemented as OData "Functions". These are not treated as Graph nodes. They're just methods: 
 
 ```typescript
-    graph.me.photo.GetPhotoImage()
-        // POST "/me/photo/$value"
+graph.me.photo.GetPhotoImage()
+    // POST "/me/photo/$value"
 ```
 
 Graph operations are exposed through Promises:
 
 ```typescript
-    graph.me.messages.GetMessages().then(messages =>
-        messages.value.forEach(message =>
-            console.log(message.subject)
-        )
+graph.me.messages.GetMessages().then(messages =>
+    messages.value.forEach(message =>
+        console.log(message.subject)
     )
+)
 ```
 
 ## Navigating the Graph path from responses
@@ -154,13 +153,13 @@ graph.me.messages.GetMessages().then(messages =>
 
 ## About Response Types
 
-The response types seem complex, but they are actually just the normal Microsoft Graph responses plus some extra properties. 
+The response types seem complex, but they are just the normal Microsoft Graph responses plus some extra properties. 
 
 ```typescript
 graph.me.GetUser().then(user =>
 ```
 
-_user_ is type _GraphObject&lt;UserDataModel, User>_ which is an alias for _UserDataModel & { _context: User }_. In other words, it's a standard Microsoft Graph User object, plus one additional field called __context_, described above.
+_user_ is type _GraphObject&lt;UserDataModel, User>_ which is an alias for _UserDataModel & { _context: User }_. In other words, it's a standard Microsoft Graph User object, plus one additional field called "_context", described above.
 
 Because its defined as a type intersection, it can be used anywhere the base type is expected, e.g.
 
@@ -178,11 +177,11 @@ graph.users.Getusers.then(users =>
 _users_ is type _GraphCollection&lt;UserDataModel, Users, User>_ which looks like:
 
 ```typescript
-    {
-        value: Array<GraphObject<UserDataModel, User>>, // an array of the type described above
-        _context: User, // as described above 
-        _next?: () => GraphCollection&lt;UserDataModel, Users, User>, _raw:any } // also as described above
-    }
+{
+    value: Array<GraphObject<UserDataModel, User>>, // an array of the type described above
+    _context: User, // as described above 
+    _next?: () => GraphCollection&lt;UserDataModel, Users, User>, _raw:any } // also as described above
+}
 ```
 
 This is the normal Microsoft Graph response with two new properties, plus a new property added to each element of _value_.  
@@ -197,7 +196,7 @@ graph.users.GetUsers().then(users => showDisplayNames(users.value));
 You can also directly access the collection metadata:
 
 ```typescript
-graph.users.Getusers.then(users => console.log(users["@odata.context], users["@data.nextLink"]);
+graph.users.Getusers.then(users => console.log(users["@odata.context"], users["@data.nextLink"]));
 ```
 
 ## OData
@@ -223,5 +222,5 @@ Some nodes expose node-specific ODATA helpers:
 
 ```typescript
 graph.me.calendarView.GetCalendarView(CalendarView.dateRange(start, end))
-    GET "/me/calendarView?startDateTime={start}&endDateTime={end}"
+    // GET "/me/calendarView?startDateTime={start}&endDateTime={end}"
 ```
