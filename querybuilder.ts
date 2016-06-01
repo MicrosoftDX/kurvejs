@@ -325,7 +325,7 @@ namespace Kurve {
         }
 
         GetPhotoProperties = (odataQuery?:ODataQuery) => this.get<ProfilePhotoDataModel, Photo>(this.pathWithQuery(odataQuery), this, this.scopesForV2(Photo.scopes[this.context]));
-        GetPhotoImage = (odataQuery?:ODataQuery) => this.get<any, any>(this.pathWithQuery(odataQuery, "/$value"), this, this.scopesForV2(Photo.scopes[this.context]), null, "blob");
+        GetPhotoImage = (odataQuery?:ODataQuery) => this.get<any, Photo>(this.pathWithQuery(odataQuery, "/$value"), this, this.scopesForV2(Photo.scopes[this.context]), null, "blob");
     }
 
     export class Manager extends Node {
