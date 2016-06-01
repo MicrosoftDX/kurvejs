@@ -1082,7 +1082,10 @@ var Kurve;
             console.log("GET", path, scopes);
             var d = new Kurve.Deferred();
             this.graph.get(path, function (error, result) {
-                if (!responseType) {
+                if (error) {
+                    d.reject(error);
+                }
+                else if (!responseType) {
                     var jsonResult = JSON.parse(result);
                     if (jsonResult.error) {
                         var errorODATA = new Kurve.Error();
@@ -1131,14 +1134,19 @@ var Kurve;
             console.log("GET collection", path, scopes);
             var d = new Kurve.Deferred();
             this.graph.get(path, function (error, result) {
-                var jsonResult = JSON.parse(result);
-                if (jsonResult.error) {
-                    var errorODATA = new Kurve.Error();
-                    errorODATA.other = jsonResult.error;
-                    d.reject(errorODATA);
-                    return;
+                if (error) {
+                    d.reject(error);
                 }
-                d.resolve(_this.graphCollectionFromResponse(jsonResult, node, context, scopes));
+                else {
+                    var jsonResult = JSON.parse(result);
+                    if (jsonResult.error) {
+                        var errorODATA = new Kurve.Error();
+                        errorODATA.other = jsonResult.error;
+                        d.reject(errorODATA);
+                        return;
+                    }
+                    d.resolve(_this.graphCollectionFromResponse(jsonResult, node, context, scopes));
+                }
             }, null, scopes);
             return d.promise;
         };

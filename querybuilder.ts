@@ -116,7 +116,9 @@ namespace Kurve {
             const d = new Deferred<GraphObject<Model, N>, Error>();
 
             this.graph.get(path, (error, result) => {
-                if (!responseType) {
+                if (error) {
+                    d.reject(error);
+                } else if (!responseType) {
                     const jsonResult = JSON.parse(result) ;
 
                     if (jsonResult.error) {
@@ -183,20 +185,23 @@ namespace Kurve {
             const d = new Deferred<GraphCollection<Model, C, N>, Error>();
 
             this.graph.get(path, (error, result) => {
-                const jsonResult = JSON.parse(result) ;
+                if (error) {
+                    d.reject(error);
+                } else {
+                    const jsonResult = JSON.parse(result) ;
 
-                if (jsonResult.error) {
-                    const errorODATA = new Error();
-                    errorODATA.other = jsonResult.error;
-                    d.reject(errorODATA);
-                    return;
+                    if (jsonResult.error) {
+                        const errorODATA = new Error();
+                        errorODATA.other = jsonResult.error;
+                        d.reject(errorODATA);
+                        return;
+                    }
+                    
+                    d.resolve(this.graphCollectionFromResponse<Model, C, N>(jsonResult, node, context, scopes));
+                }}, null, scopes);
+
+                return d.promise;
                 }
-                
-                d.resolve(this.graphCollectionFromResponse<Model, C, N>(jsonResult, node, context, scopes));
-            }, null, scopes);
-
-            return d.promise;
-            }
     }
 
     export class Attachment extends Node {
