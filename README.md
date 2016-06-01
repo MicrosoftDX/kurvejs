@@ -160,7 +160,7 @@ For information on accessing the graph, see the [QueryBuilder documentation](./d
 
 ## Samples
 
-As samples are updated they will appear [here](./samples.html).
+To run samples, start an http server in the root directory of this repository and aim your browser at http://localhost:port/samples.html
 
 ## FAQ
 

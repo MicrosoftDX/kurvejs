@@ -1,22 +1,25 @@
 /// <reference path="../../../dist/kurve.d.ts" />
 var kurve = window["Kurve"];
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
-var init = function () { return new AppV1(); };
-var AppV1 = (function () {
-    function AppV1() {
+var init = function () { return new App(); };
+var App = (function () {
+    function App() {
         var _this = this;
-        //Setup
-        this.clientId = document.getElementById("AppID").value;
+        // Setup
+        var clientId = document.getElementById("AppID").value;
+        var model = document.getElementById("model").value == 'v2' ? kurve.EndPointVersion.v2 : kurve.EndPointVersion.v1;
         var loc = document.URL;
-        this.redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/EndPointV1")) + "/dist/login.html";
-        //Create identity object
+        var redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/VanillaJS")) + "/dist/login.html";
+        // Create identity object
         this.identity = new kurve.Identity({
-            clientId: this.clientId,
-            tokenProcessingUri: this.redirectUri,
-            version: kurve.EndPointVersion.v1,
+            clientId: clientId,
+            tokenProcessingUri: redirectUri,
+            version: model,
             mode: kurve.Mode.Client
         });
-        this.identity.loginAsync().then(function () {
+        var scopes = model == kurve.EndPointVersion.v2 ? { scopes: [kurve.Scopes.Mail.Read, kurve.Scopes.General.OpenId] } : {};
+        // Login
+        this.identity.loginAsync(scopes).then(function (_) {
             ////Option 1: Manualy passing the access token
             //// or... this.identity.getAccessToken("https://graph.microsoft.com", ((token) => {
             //this.identity.getAccessTokenAsync("https://graph.microsoft.com").then(((token) => {
@@ -45,11 +48,11 @@ var AppV1 = (function () {
     }
     //-----------------------------------------------Scenarios---------------------------------------------
     //Scenario 1: Logout
-    AppV1.prototype.logout = function () {
+    App.prototype.logout = function () {
         this.identity.logOut();
     };
     //Scenario 2: Load users with paging
-    AppV1.prototype.loadUsersWithPaging = function () {
+    App.prototype.loadUsersWithPaging = function () {
         var _this = this;
         document.getElementById("results").innerHTML = "";
         this.graph.users.GetUsers().then(function (users) {
@@ -57,7 +60,7 @@ var AppV1 = (function () {
         });
     };
     //Scenario 3: Load users with custom odata query
-    AppV1.prototype.loadUsersWithOdataQuery = function (query) {
+    App.prototype.loadUsersWithOdataQuery = function (query) {
         var _this = this;
         document.getElementById("results").innerHTML = "";
         this.graph.users.GetUsers(query).then(function (users) {
@@ -65,14 +68,16 @@ var AppV1 = (function () {
         });
     };
     //Scenario 4: Load user "me"
-    AppV1.prototype.loadUserMe = function () {
+    App.prototype.loadUserMe = function () {
         document.getElementById("results").innerHTML = "";
         this.graph.me.GetUser().then(function (user) {
             return document.getElementById("results").innerHTML += user.displayName + "</br>";
+        }).fail(function (error) {
+            return document.getElementById("results").innerText = JSON.stringify(error);
         });
     };
     //Scenario 5: Load user by ID
-    AppV1.prototype.userById = function () {
+    App.prototype.userById = function () {
         document.getElementById("results").innerHTML = "";
         this.graph.users.$(document.getElementById("userId").value).GetUser().then(function (user) {
             document.getElementById("results").innerHTML += user.displayName + "</br>";
@@ -81,7 +86,7 @@ var AppV1 = (function () {
         });
     };
     //Scenario 6: Load user "me" and then its messages
-    AppV1.prototype.loadUserMessages = function () {
+    App.prototype.loadUserMessages = function () {
         var _this = this;
         document.getElementById("results").innerHTML = "";
         this.graph.me.GetUser().then(function (user) {
@@ -93,7 +98,7 @@ var AppV1 = (function () {
         });
     };
     //Scenario 6: Load user "me" and then its events
-    AppV1.prototype.loadUserEvents = function () {
+    App.prototype.loadUserEvents = function () {
         var _this = this;
         document.getElementById("results").innerHTML = "";
         this.graph.me.GetUser().then(function (user) {
@@ -105,7 +110,7 @@ var AppV1 = (function () {
         });
     };
     //Scenario 7: Load user "me" and then its groups
-    AppV1.prototype.loadUserGroups = function () {
+    App.prototype.loadUserGroups = function () {
         var _this = this;
         document.getElementById("results").innerHTML = "";
         this.graph.me.GetUser().then(function (user) {
@@ -117,7 +122,7 @@ var AppV1 = (function () {
         });
     };
     //Scenario 8: Load user "me" and then its manager
-    AppV1.prototype.loadUserManager = function () {
+    App.prototype.loadUserManager = function () {
         document.getElementById("results").innerHTML = "";
         this.graph.me.GetUser().then(function (user) {
             document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
@@ -128,7 +133,7 @@ var AppV1 = (function () {
         });
     };
     //Scenario 9: Load groups with paging
-    AppV1.prototype.loadGroupsWithPaging = function () {
+    App.prototype.loadGroupsWithPaging = function () {
         var _this = this;
         document.getElementById("results").innerHTML = "";
         this.graph.groups.GetGroups().then(function (groups) {
@@ -136,14 +141,14 @@ var AppV1 = (function () {
         });
     };
     //Scenario 10: Load group by ID
-    AppV1.prototype.groupById = function () {
+    App.prototype.groupById = function () {
         document.getElementById("results").innerHTML = "";
         this.graph.groups.$(document.getElementById("groupId").value).GetGroup().then(function (group) {
             document.getElementById("results").innerHTML += group.displayName + "</br>";
         });
     };
     //Scenario 11: Load user "me" and then its messages
-    AppV1.prototype.loadUserPhoto = function () {
+    App.prototype.loadUserPhoto = function () {
         document.getElementById("results").innerHTML = "";
         this.graph.me.GetUser().then(function (user) {
             document.getElementById("results").innerHTML += "User:" + user.displayName + "</br>";
@@ -164,15 +169,15 @@ var AppV1 = (function () {
         });
     };
     //Scenario 12: Is logged in?
-    AppV1.prototype.isLoggedIn = function () {
+    App.prototype.isLoggedIn = function () {
         document.getElementById("results").innerText = this.identity.isLoggedIn() ? "True" : "False";
     };
     //Scenario 13: Who am I?
-    AppV1.prototype.whoAmI = function () {
+    App.prototype.whoAmI = function () {
         document.getElementById("results").innerText = JSON.stringify(this.identity.getIdToken());
     };
     //--------------------------------Callbacks---------------------------------------------
-    AppV1.prototype.showUsers = function (users, limit) {
+    App.prototype.showUsers = function (users, limit) {
         var _this = this;
         if (limit === void 0) { limit = 5; }
         for (var _i = 0, _a = users.value; _i < _a.length; _i++) {
@@ -187,7 +192,7 @@ var AppV1 = (function () {
             return document.getElementById("results").innerText = JSON.stringify(error);
         });
     };
-    AppV1.prototype.showGroups = function (groups, limit) {
+    App.prototype.showGroups = function (groups, limit) {
         var _this = this;
         if (limit === void 0) { limit = 5; }
         for (var _i = 0, _a = groups.value; _i < _a.length; _i++) {
@@ -202,7 +207,7 @@ var AppV1 = (function () {
             return document.getElementById("results").innerText = JSON.stringify(error);
         });
     };
-    AppV1.prototype.showMessages = function (messages, limit) {
+    App.prototype.showMessages = function (messages, limit) {
         var _this = this;
         if (limit === void 0) { limit = 5; }
         for (var _i = 0, _a = messages.value; _i < _a.length; _i++) {
@@ -217,7 +222,7 @@ var AppV1 = (function () {
             return document.getElementById("results").innerText = error.statusText;
         });
     };
-    AppV1.prototype.showEvents = function (events, limit) {
+    App.prototype.showEvents = function (events, limit) {
         var _this = this;
         if (limit === void 0) { limit = 5; }
         for (var _i = 0, _a = events.value; _i < _a.length; _i++) {
@@ -232,7 +237,7 @@ var AppV1 = (function () {
             return document.getElementById("results").innerText = error.statusText;
         });
     };
-    return AppV1;
+    return App;
 }());
 //*********************************************************   
 //   

@@ -2,29 +2,31 @@
 const kurve = window["Kurve"] as typeof Kurve;
 
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
-    const init = () => new AppV1();
+    const init = () => new App();
 
-    class AppV1 {
-        private clientId;
-        private redirectUri;
+    class App {
         private identity: Kurve.Identity;
         private graph: Kurve.Graph;
+
         constructor() {
-            //Setup
-            this.clientId = (<HTMLInputElement>document.getElementById("AppID")).value;
-
+            // Setup
+            const clientId = (<HTMLInputElement>document.getElementById("AppID")).value;
+            const model = (<HTMLSelectElement>document.getElementById("model")).value == 'v2' ? kurve.EndPointVersion.v2 : kurve.EndPointVersion.v1;
             const loc = document.URL;
-            this.redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/EndPointV1")) + "/dist/login.html";
+            const redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/VanillaJS")) + "/dist/login.html";
 
-            //Create identity object
+            // Create identity object
             this.identity = new kurve.Identity({
-                clientId: this.clientId,
-                tokenProcessingUri: this.redirectUri,
-                version: kurve.EndPointVersion.v1,
+                clientId: clientId,
+                tokenProcessingUri: redirectUri,
+                version: model,
                 mode: kurve.Mode.Client
             });
+            
+            const scopes = model == kurve.EndPointVersion.v2 ? { scopes: [kurve.Scopes.Mail.Read, kurve.Scopes.General.OpenId] } : {};
 
-            this.identity.loginAsync().then(() => {
+            // Login
+            this.identity.loginAsync(scopes).then(_ => {
 
                 ////Option 1: Manualy passing the access token
                 //// or... this.identity.getAccessToken("https://graph.microsoft.com", ((token) => {
@@ -89,6 +91,8 @@ const kurve = window["Kurve"] as typeof Kurve;
             document.getElementById("results").innerHTML = "";
             this.graph.me.GetUser().then(user =>
                 document.getElementById("results").innerHTML += user.displayName + "</br>"
+            ).fail(error =>
+                document.getElementById("results").innerText = JSON.stringify(error)
             );
         }
 

@@ -9,6 +9,12 @@
     More details <a href="https://azure.microsoft.com/en-us/documentation/articles/mobile-services-how-to-register-active-directory-authentication/">here.</a>. Also, for this sample the registered application needs access to the unified graph api.
     <div id="initDiv">
         <p>App ID: <input type="text" id="AppID" value=""/></p>
+        <p>Model:
+            <select id="model">
+                <option value="v1" selected>v1</option> 
+                <option value="v2">v2</option>
+            </select>
+        </p>
         <button id="btnInit" onclick="init();">Initialize</button>
     </div>
     <div id="scenarios" style="display:none">
