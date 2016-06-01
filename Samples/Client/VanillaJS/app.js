@@ -6,8 +6,8 @@ var App = (function () {
     function App() {
         var _this = this;
         // Setup
-        var clientId = document.getElementById("AppID").value;
         var model = document.getElementById("model").value == 'v2' ? kurve.EndPointVersion.v2 : kurve.EndPointVersion.v1;
+        var clientId = document.getElementById("AppID").value || model == kurve.EndPointVersion.v2 ? "13c5e4af-5ea6-4b48-8989-ca25c96ba1c4" : "636e98ea-3024-4810-a66e-cda4bfa0a489";
         var loc = document.URL;
         var redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/VanillaJS")) + "/dist/login.html";
         // Create identity object

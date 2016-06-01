@@ -10,8 +10,8 @@ const kurve = window["Kurve"] as typeof Kurve;
 
         constructor() {
             // Setup
-            const clientId = (<HTMLInputElement>document.getElementById("AppID")).value;
             const model = (<HTMLSelectElement>document.getElementById("model")).value == 'v2' ? kurve.EndPointVersion.v2 : kurve.EndPointVersion.v1;
+            const clientId = (<HTMLInputElement>document.getElementById("AppID")).value || model == kurve.EndPointVersion.v2 ? "13c5e4af-5ea6-4b48-8989-ca25c96ba1c4" : "636e98ea-3024-4810-a66e-cda4bfa0a489";
             const loc = document.URL;
             const redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/VanillaJS")) + "/dist/login.html";
 
