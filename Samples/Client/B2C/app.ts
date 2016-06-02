@@ -1,21 +1,23 @@
-﻿// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
+﻿/// <reference path="../../../dist/kurve.d.ts" />
+const kurve = window["Kurve"] as typeof Kurve;
+
+// Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 
 module Sample {
     class Error {
     }
     export class AppB2C {
-        private clientId;
-        private redirectUri;
-        private identity: kurve.Identity;
-        private graph: kurve.Graph;
+        private identity: Kurve.Identity;
+        private graph: Kurve.Graph;
        
         constructor() {
             //Setup
-            this.clientId = (<HTMLInputElement>document.getElementById("AppID")).value;
-            this.redirectUri = (<HTMLInputElement>document.getElementById("redirectUrl")).value;
+            const clientId = (<HTMLInputElement>document.getElementById("AppID")).value || "ce40dfd5-6a4d-4909-a1ad-6fc284d5a588";
+            const loc = document.URL;
+            const redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/VanillaJS")) + "/dist/login.html";
 
             //Create identity object
-            this.identity = new kurve.Identity({ clientId: this.clientId, tokenProcessingUri: this.redirectUri, version: kurve.EndPointVersion.v2 });
+            this.identity = new kurve.Identity({ clientId: clientId, tokenProcessingUri: redirectUri, version: kurve.EndPointVersion.v2, mode: kurve.Mode.Client });
 
             //We can request for specific scopes during logon (so user will have to consent them right away and not during the flow of the app
             //The list of available consents is available under Kuve.Scopes module

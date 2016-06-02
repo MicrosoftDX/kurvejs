@@ -1,3 +1,5 @@
+/// <reference path="../../../dist/kurve.d.ts" />
+var kurve = window["Kurve"];
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 var Sample;
 (function (Sample) {
@@ -10,10 +12,11 @@ var Sample;
         function AppB2C() {
             var _this = this;
             //Setup
-            this.clientId = document.getElementById("AppID").value;
-            this.redirectUri = document.getElementById("redirectUrl").value;
+            var clientId = document.getElementById("AppID").value || "ce40dfd5-6a4d-4909-a1ad-6fc284d5a588";
+            var loc = document.URL;
+            var redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/VanillaJS")) + "/dist/login.html";
             //Create identity object
-            this.identity = new kurve.Identity({ clientId: this.clientId, tokenProcessingUri: this.redirectUri, version: kurve.EndPointVersion.v2 });
+            this.identity = new kurve.Identity({ clientId: clientId, tokenProcessingUri: redirectUri, version: kurve.EndPointVersion.v2, mode: kurve.Mode.Client });
             //We can request for specific scopes during logon (so user will have to consent them right away and not during the flow of the app
             //The list of available consents is available under Kuve.Scopes module
             this.identity.loginAsync({ policy: "B2C_1_facebooksignin", tenant: "matb2c.onmicrosoft.com" }).then(function () {
