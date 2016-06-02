@@ -5,9 +5,10 @@
     <meta charset="utf-8" />
 </head>
 <body>
-    This example uses the v1 of the protocol, therefore the application must be registered in Azure Active Directory.<br />
-    More details <a href="https://azure.microsoft.com/en-us/documentation/articles/mobile-services-how-to-register-active-directory-authentication/">here.</a>. Also, for this sample the registered application needs access to the unified graph api.
     <div id="initDiv">
+        <p>This sample uses either v1 or v2 of the protocol. You may use the built-in sample application ID, or provide your own.</p>
+        <p>To register an application for v1, follow these <a href="https://azure.microsoft.com/en-us/documentation/articles/mobile-services-how-to-register-active-directory-authentication/">instructions</a>. Also, for this sample the registered application needs access to the unified graph api.</p>
+        <p>To register an application for v2, go to the <a href="https://apps.dev.microsoft.com/">Application Registration Portal</a> and register a new application. After creating the application, click "add platform" and choose "Web". Make sure you leve the implicit flow checkbox checked.</p>
         <p>App ID: <input type="text" id="AppID" value=""/> (leave blank for to use sample application ID)</p>
         <p>Model:
             <select id="model">
