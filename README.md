@@ -57,13 +57,13 @@ _Note: node support is currently highly experimental._
 Install kurve from npm:
 
 ```
-npm install kurve
+npm install kurvejs
 ```
 
 If you are using TypeScript you'll need install the typings too: 
 
 ```
-typings install kurve -GS
+typings install kurvejs -GS
 ```
 
 Include kurve.js into your project:
@@ -77,13 +77,13 @@ import kurve = require ("kurve");
 Install kurve from npm:
 
 ```
-npm install kurve
+npm install kurvejs
 ```
 
 If you are using TypeScript you'll need install the typings too: 
 
 ```
-typings install kurve -GS
+typings install kurvejs -GS
 ```
     
 Copy login.html to your source tree.
