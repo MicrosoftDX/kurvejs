@@ -52,6 +52,8 @@ kurve.js is a UMD file, allowing maximum flexibility.
 
 ### node
 
+_Note: node support is currently highly experimental._ 
+
 Install kurve from npm:
 
 ```
@@ -201,10 +203,10 @@ You are free to send us your feedback at this Github repo, send pull requests, e
 
 ## 0.5.0
  * Refactored source tree
- * Initial node support 
+ * Initial node support (highly experimental)
  * Build using "npm run build" instead of Gulp
  * New Graph access via QueryBuilder
- * NOTE: Some samples are out of date
+ * Updated documentation & samples
 
 ## 0.4.2:
  * Cached tokens can now be persisted to a local store
