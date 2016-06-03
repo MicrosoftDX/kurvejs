@@ -63,8 +63,8 @@ npm install kurvejs
 Include kurve.js into your project:
 
 ```typescript
-import kurve = require ("kurve"); // typescript
-var kurve = require("kurve");     // javascript
+import kurve = require ("kurvejs"); // typescript
+var kurve = require("kurvejs");     // javascript
 ```
     
 ### browser via npm
@@ -80,8 +80,8 @@ Copy login.html to your source tree.
 Include kurve.js into your project:
 
 ```typescript
-import kurve = require ("kurve"); // typescript
-var kurve = require("kurve");     // javascript
+import kurve = require ("kurvejs"); // typescript
+var kurve = require("kurvejs");     // javascript
 ```
 
 Bundle kurve into your app using webpack, browserify, etc.
