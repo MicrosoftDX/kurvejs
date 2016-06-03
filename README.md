@@ -60,16 +60,11 @@ Install kurve from npm:
 npm install kurvejs
 ```
 
-If you are using TypeScript you'll need install the typings too: 
-
-```
-typings install kurvejs -GS
-```
-
 Include kurve.js into your project:
 
 ```typescript
-import kurve = require ("kurve");
+import kurve = require ("kurve"); // typescript
+var kurve = require("kurve");     // javascript
 ```
     
 ### browser via npm
@@ -79,19 +74,14 @@ Install kurve from npm:
 ```
 npm install kurvejs
 ```
-
-If you are using TypeScript you'll need install the typings too: 
-
-```
-typings install kurvejs -GS
-```
     
 Copy login.html to your source tree.
 
 Include kurve.js into your project:
 
 ```typescript
-import kurve = require ("kurve");
+import kurve = require ("kurve"); // typescript
+var kurve = require("kurve");     // javascript
 ```
 
 Bundle kurve into your app using webpack, browserify, etc.
