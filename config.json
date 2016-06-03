@@ -1,21 +1,30 @@
 {
   "build": {
-    "version": "0.4.2",
+    "version": "1.0.0",
     "filename": "kurve.js",
     "minFilename": "kurve.min",
     "declarationFilename": ".d.ts",
-    "outputDirectory": "./dist",
-    "srcOutputDirectory": "./dist",
-    "srcCompiledJavaScriptFile": "./dist/kurve.js"
+    "outputDirectory": "dist",
+    "srcOutputDirectory": "dist",
+    "srcCompiledJavaScriptFile": "dist/kurve.js",
+    "srcDir":"./",
+    "buildDir":"build/"
+    
   },
   "core": {
     "typescript": [
-      "./promises.ts",
-      "./KurveIdentity.ts",
-      "./KurveGraph.ts",
-	  "./promises.d.ts",
-      "./KurveIdentity.d.ts",
-      "./KurveGraph.d.ts"
+      "promises.ts",
+      "identity.ts",
+      "graph.ts",
+       "models.ts",
+       "requestbuilder.ts"
+    ],
+    "node": [
+      "promises.ts",
+      "identity.ts",
+      "graph.ts",
+       "models.ts",
+       "requestbuilder.ts"
     ]
   }
 }

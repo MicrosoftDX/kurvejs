@@ -1,10 +1,9 @@
-﻿################################################################################
-# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
-################################################################################
-
+.DS_Store
+npm-debug.log
+/typings/
 /.vs/config
 /node_modules
-/obj/Debug
 /web.Release.config
 /web.Debug.config
-/web.config
+
+kurve.js

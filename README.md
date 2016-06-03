@@ -1,26 +1,132 @@
 # KurveJS
 
-Kurve<nolink>.JS is an unofficial, open source JavaScript / TypeScript library that aims to provide:
+Kurve<nolink>.JS is an experimental, unofficial, open source JavaScript / TypeScript library that aims to provide:
 
-* Easy authentication and authorization using Azure Active Directory.  With Kurve you don't have to worry about navigating away from you web app for login or token requests.  Kurve also supports Promises making it easier to handle asychronous requests.
+* Easy authentication and authorization using Azure Active Directory.
+* Easy access to the Microsoft Graph REST API, utilizing Intellisense in your TypeScript-aware editor
 
-* Easy access to the Microsoft Graph REST API.  Kurve can automatically and incrementally acquire the tokens and permissions from the user required to ensure graph operations succeed.
+It looks like this:
 
-Kurve works well with most JavaScript and TypeScript frameworks including:
+```typescript
+const id = new kurve.Identity({
+    clientId: "your-client-id",
+    tokenProcessingUri: "http://yourdomain/login.html",
+    version: kurve.EndPointVersion.v1,
+    mode: kurve.Mode.Client 
+});
 
-* Angular V1<br/>
-* Angular V2<br/>
-* Ember JS<br/>
-* React<br/>
+id.loginAsync().then(_ => {
+    const graph = new kurve.Graph({ identity: id }, kurve.Mode.Client);
+
+    graph.me.messages.GetMessages().then(messages => {
+        console.log("my emails:");   
+        messages.value.forEach(message => 
+            console.log(message.subject)
+        )
+    });
+    
+    graph.me.manager.GetUser(manager => {
+        console.log("my manager", manager.displayName);
+        console.log("their directs:");
+        manager._context.directReports.GetUsers(directs =>
+            directs.value.forEach(direct =>
+                console.log(direct.displayName)
+            )
+        )
+    });
+});
+```
+
+Kurve works well with most JavaScript and TypeScript frameworks including Angular 1, Angular 2, Ember, and React.
 
 Kuve enables developers building web applications - including single application pages - to support a range of authentication and authorization scenarios including:
 
-* AAD app model v1 with a postMessage flow<br/>
-* AAD app model v1 with redirections<br/>
-* AAD app model v2 with a postMessage flow<br/>
-* AAD app model v2 with Active Directoy B2C.  This makes it easy to add third party identity providers such as Facebook and signup/signin/profile edit experiences using AD B2C policies<br/>
+* AAD app model v1 with a postMessage flow
+* AAD app model v1 with redirections
+* AAD app model v2 with a postMessage flow
+* AAD app model v2 with Active Directoy B2C.  This makes it easy to add third party identity providers such as Facebook and signup/signin/profile edit experiences using AD B2C policies
 
-## How does it work?
+## Setup
+
+kurve.js is a UMD file, allowing maximum flexibility.
+
+### node
+
+Install kurve from npm:
+
+```
+npm install kurve
+```
+
+If you are using TypeScript you'll need install the typings too: 
+
+```
+typings install kurve -GS
+```
+
+Include kurve.js into your project:
+
+```typescript
+import kurve = require ("kurve");
+```
+    
+### browser via npm
+
+Install kurve from npm:
+
+```
+npm install kurve
+```
+
+If you are using TypeScript you'll need install the typings too: 
+
+```
+typings install kurve -GS
+```
+    
+Copy login.html to your source tree.
+
+Include kurve.js into your project:
+
+```typescript
+import kurve = require ("kurve");
+```
+
+Bundle kurve into your app using webpack, browserify, etc.
+
+### browser via &lt;script/&gt;
+
+Include kurve.js into your html:
+
+```html
+<script src="kurve.js"/>
+```
+
+Copy login.html to your source tree.
+
+If using TypeScript, add the following:
+
+```typescript
+/// <reference path="kurve.d.ts"/>  
+const kurve = window["Kurve"] as typeof Kurve; 
+```
+
+### TypeScript note: _Kurve_ and _kurve_
+
+Note that _Kurve_ (capitalized) is the namespace that declares the types, where _kurve_ (lowercase) is the module. Use _Kurve_ when declaring types, and _kurve_ for everything else: 
+
+```typescript
+const error:Kurve.Error = new kurve.Error()
+```
+
+## Building Kurve
+
+```
+npm install
+npm run build
+```
+
+## Using Kurve Identity
 
 The first thing you have to decide before using Kurve is which app model version you will use:
 
@@ -28,32 +134,60 @@ The first thing you have to decide before using Kurve is which app model version
 
 App model V1 is the current, production supported model in Azure AD. This model implies that:
 
-1. You will register an application in Azure Active Directory, using the Azure Management Console (<a href="https://manage.windowsazure.com">https://manage.windowsazure.com</a>)
+1. You will register an application in Azure Active Directory, using the Azure Management Console https://manage.windowsazure.com
 2. During that registration, you will pre-set the permissions your application will need. This means that you won't make those decisions about what types of permissions an app needs in runtime, but instead predefine those when you register your application in Azure AD
 3. Every access token will be requested againast a resource, not a scope. For example, a resource could be Microsoft Exchange Online and another would be your custom web service
-
-To find out more about using Kurve JS with app model V1, please read <b><a href="./docs/appModelV1/intro.md">this introduction document</a></b>.
 
 ### App Model V2:
 
 App model V2 is a new, more modern way which is still in Preview and has limitations at this point. It enables more flexible scenarios, including AAD B2C which leverages external identity providers such as Facebook and user signup/signin/profile edit support. This model implies that:
 
-1. You will register an application in the new application registration portal under <a href="https://apps.dev.microsoft.com/">https://apps.dev.microsoft.com/</a>, which does not require using Azure Management Portal.
+1. You will register an application in the new application registration portal under https://apps.dev.microsoft.com, which does not require using Azure Management Portal.
 2. You do not specify application permissions during the registration. The application code itself will request for specific permissions in runtime (either during login or any time during the application execution). Kuve JS will help with that process.
-
-To find out more about using Kurve JS with app model V2, please read <b><a href="./docs/appModelV2/intro.md">this introduction document</a></b>.
 
 ### App Model V2 with AAD B2C:
 
 As mentioned above, B2C enables users to sign up to your AAD tenant using external identity providers such as Facebook, Google, LinkedIn, Amazon and Microsoft Acount. You define policies and the attributes you want to collect during the sign up, for example a user might have to enter their name, e-mail and phone number so that gets recorded into your tenant and accessible to your application.
 
-To find out more about using Kurve JS with AAD B2C, please read <b><a href="./docs/B2C/intro.md">this introduction document</a></b>. You can also check the example app labeled "B2C" in this repo.
+1. Create a B2C AD tenant following these steps: https://azure.microsoft.com/en-us/documentation/articles/active-directory-b2c-get-started
+2. Register your application following these steps: https://azure.microsoft.com/en-us/documentation/articles/active-directory-b2c-app-registration
+3. Now you will need to register applications at the identity providers you intend to use. For example, let us assume you will want to authenticate users using their Facebook accounts. For that, you need to register an application at Facebook following these steps: https://azure.microsoft.com/en-us/documentation/articles/active-directory-b2c-setup-fb-app/. Note at the end of the page, you will need to go back to your B2C tenant and create policies for sign up, sign in and edit, attaching the identity provider "Facebook" and configuring it with the settings you just got from Facebook application itself (App ID and App Secret).
+
+Important notes in this step:
+
+1. Different than with the app model v2, there's no authorization flow here. You can request for access tokens to specific resources. What this model will let you do is sign up and sign in users to your app with their identities from other identity providers. That's it.
+
+2. Make sure you have enabled the implicit flow as you register the application under Azure AD B2C. You will need implicit flow for this framework to work.
+
+3. Make sure the redirect URL points to where the login page will be. Below you will see as part of the guidance that you need to copy the sample login.html to your website, so if it points to something like https://localhost:8000/login.html, this will be exactly what the reply URL will also have to be.
+
+## Using Kurve Graph
+
+You can use Kurve Graph without Kurve Identity by passing an access token directly:
+
+```typescript
+const graph = new kurve.Graph({ defaultAccessToken: token }, mode);
+```
+
+Or else link it to a Kurve.Identity object:
+
+```typescript
+const graph = new kurve.Graph({ { identity: this.identity }, mode);
+```
+
+Where _mode_ is either _kurve.Mode.Client_ or _kurve.Mode.Server_
+    
+For information on accessing the graph, see the [QueryBuilder documentation](./graph.md).
+
+## Samples
+
+To run samples, start an http server using port 8000 in the root directory of this repository and aim your browser at http://localhost:port/samples.html
 
 ## FAQ
 
 ### Is this a supported library from Microsoft?
 
-No it is not. This is an open source project built unofficially. If you are looking for a supported APIs we encourage you to directly call Microsoft's Graph REST APIs.
+No it is not. This is an experimental unofficial open source project. If you are looking for a supported APIs we encourage you to call Microsoft's Graph REST APIs directly.
 
 ### Can I use/change this library?
 
@@ -63,11 +197,14 @@ You are free to take the code, change and use it any way you want it. But please
 
 You are free to send us your feedback at this Github repo, send pull requests, etc. But please don't expect this to work as an official support channel
 
-### Which files do I need to run this?
-
-At minimum you need the KurveGraph.<nolink>js and Promises.<nolink>js, and optionally KurveIdentity.<nolink>js + login.html. You may use the TypeScript libraries and reuse some of the sample app code (index.html and app.<nolink>js) for reference.
-
 # Release Notes
+
+## 0.5.0
+ * Refactored source tree
+ * Initial node support 
+ * Build using "npm run build" instead of Gulp
+ * New Graph access via QueryBuilder
+ * NOTE: Some samples are out of date
 
 ## 0.4.2:
  * Cached tokens can now be persisted to a local store

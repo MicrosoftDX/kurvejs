@@ -3,20 +3,17 @@
     "removeComments": true,
     "preserveConstEnums": true,
     "target": "es5",
-    "sourceMap": true
+    "sourceMap": true,
+    "noLib": false,
+    "declaration": true,
+    "outFile": "dist/kurve.js"
   },
-  "exclude": [
-    "dist",
-    "node_modules",
-    "wwwroot",
-    "dist-0.1.0",
-    "dist-0.2.0",
-    "dist-0.3.0",
-    "dist-0.3.1",
-    "dist-0.3.5",
-    "dist-0.3.6",
-    "dist-0.3.7",
-    "dist-0.4.0",
-    "dist-0.4.2"
+  "files": [
+    "promises.ts",
+    "identity.ts",
+    "graph.ts",
+    "models.ts",
+    "querybuilder.ts",
+    "kurve.ts"
   ]
 }
