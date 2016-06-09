@@ -1,6 +1,6 @@
 {
   "name": "kurvejs",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Kurve JS library",
   "license": "MIT",
   "main": "./dist/kurve.js",
@@ -9,8 +9,8 @@
     "type": "git",
     "url": "https://github.com/MicrosoftDX/kurvejs"
   },
-  "scripts" : {
-      "build": "tsc && node umdify.js ./dist/kurve.js umd.js Kurve && node typify.js ./dist/kurve.d.ts Kurve"
+  "scripts": {
+    "build": "tsc && node umdify.js ./dist/kurve.js umd.js Kurve && node typify.js ./dist/kurve.d.ts Kurve"
   },
   "devDependencies": {
     "typescript": "1.8.9"
