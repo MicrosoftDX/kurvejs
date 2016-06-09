@@ -1247,9 +1247,9 @@ var Kurve;
             if (path === void 0) { path = ""; }
             _super.call(this, graph, path + "/calendarView");
             this.$ = function (eventId) { return new Event(_this.graph, _this.path, eventId); };
-            this.dateRange = function (startDate, endDate) { return ("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString()); };
             this.GetEvents = function (odataQuery) { return _this.getCollection(_this.pathWithQuery(odataQuery), _this, _this.$, _this.scopesForV2([Scopes.Calendars.Read])); };
         }
+        CalendarView.dateRange = function (startDate, endDate) { return ("startDateTime=" + startDate.toISOString() + "&endDateTime=" + endDate.toISOString()); };
         return CalendarView;
     }(CollectionNode));
     Kurve.CalendarView = CalendarView;

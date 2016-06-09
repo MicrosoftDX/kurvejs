@@ -293,7 +293,7 @@ namespace Kurve {
         
         private $ = (eventId:string) => new Event(this.graph, this.path, eventId); // need to adjust this path
         
-        dateRange = (startDate:Date, endDate:Date) => `startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`
+        static dateRange = (startDate:Date, endDate:Date) => `startDateTime=${startDate.toISOString()}&endDateTime=${endDate.toISOString()}`
 
         GetEvents = (odataQuery?:ODataQuery) => this.getCollection<EventDataModel, CalendarView, Event>(this.pathWithQuery(odataQuery), this, this.$, this.scopesForV2([Scopes.Calendars.Read]));
     }
