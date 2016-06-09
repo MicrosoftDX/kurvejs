@@ -441,7 +441,7 @@ declare namespace Kurve {
     class CalendarView extends CollectionNode {
         constructor(graph: Graph, path?: string);
         private $;
-        dateRange: (startDate: Date, endDate: Date) => string;
+        static dateRange: (startDate: Date, endDate: Date) => string;
         GetEvents: (odataQuery?: OData | string) => Promise<GraphCollection<EventDataModel, CalendarView, Event>, Error>;
     }
     class MailFolder extends Node {
