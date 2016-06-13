@@ -1,4 +1,4 @@
-/// <reference path="../../../dist/kurve.d.ts" />
+/// <reference path="../../../dist/kurve-global.d.ts" />
 var kurve = window["Kurve"];
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
 var init = function () { return new App(); };
@@ -6,18 +6,13 @@ var App = (function () {
     function App() {
         var _this = this;
         // Setup
-        var model = document.getElementById("model").value == 'v2' ? kurve.EndPointVersion.v2 : kurve.EndPointVersion.v1;
-        var clientId = document.getElementById("AppID").value || model == kurve.EndPointVersion.v2 ? "13c5e4af-5ea6-4b48-8989-ca25c96ba1c4" : "636e98ea-3024-4810-a66e-cda4bfa0a489";
+        var endpointVersion = document.getElementById("model").value == 'v2' ? kurve.EndpointVersion.v2 : kurve.EndpointVersion.v1;
+        var clientId = document.getElementById("AppID").value || endpointVersion == kurve.EndpointVersion.v2 ? "13c5e4af-5ea6-4b48-8989-ca25c96ba1c4" : "636e98ea-3024-4810-a66e-cda4bfa0a489";
         var loc = document.URL;
         var redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/VanillaJS")) + "/dist/login.html";
         // Create identity object
-        this.identity = new kurve.Identity({
-            clientId: clientId,
-            tokenProcessingUri: redirectUri,
-            version: model,
-            mode: kurve.Mode.Client
-        });
-        var scopes = model == kurve.EndPointVersion.v2 ? { scopes: [kurve.Scopes.Mail.Read, kurve.Scopes.General.OpenId] } : {};
+        this.identity = new kurve.Identity(clientId, redirectUri, { endpointVersion: endpointVersion });
+        var scopes = endpointVersion == kurve.EndpointVersion.v2 ? { scopes: [kurve.Scopes.Mail.Read, kurve.Scopes.General.OpenId] } : {};
         // Login
         this.identity.loginAsync(scopes).then(function (_) {
             ////Option 1: Manualy passing the access token
@@ -26,7 +21,7 @@ var App = (function () {
             //    this.graph = new Kurve.Graph({ defaultAccessToken: token });
             //}));
             //Option 2: Automatically linking to the Identity object
-            _this.graph = new kurve.Graph({ identity: _this.identity }, kurve.Mode.Client);
+            _this.graph = new kurve.Graph(_this.identity, {root:"https://graph.microsoft.com/beta"});
             //Update UI
             document.getElementById("initDiv").style.display = "none";
             document.getElementById("scenarios").style.display = "";

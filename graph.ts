@@ -2,28 +2,39 @@ namespace Kurve {
 
     export class Graph {
         private req: XMLHttpRequest = null;
-        private accessToken: string = null;
-        KurveIdentity: Identity = null;
+        private accessToken: string;
+        private KurveIdentity: Identity;
         private defaultResourceID: string = "https://graph.microsoft.com";
-        private baseUrl: string = "https://graph.microsoft.com/v1.0";
         private https: any;
-        private mode: Mode;
+  
+        root: string = "https://graph.microsoft.com/v1.0";
+        mode: Mode = Mode.Client;
+        endpointVersion: EndpointVersion = EndpointVersion.v1;
 
-        constructor(identityInfo: { identity: Identity }, mode: Mode, https?: any);
-        constructor(identityInfo: { defaultAccessToken: string },mode:Mode, https?: any);
-        constructor(identityInfo: any, mode: Mode, https?: any) {
-            if (https) this.https = https;
-            this.mode = mode;
-            if (identityInfo.defaultAccessToken) {
-                this.accessToken = identityInfo.defaultAccessToken;
+        constructor(id: Identity, options?: {root?: string})
+        constructor(id: string, options?: {root?: string, endpointVersion: EndpointVersion, mode?: Mode, https?: any, })
+        constructor(id: any, options:any) {
+            if (typeof(id) === "string") {
+                this.accessToken = id;
+                if (options && options.mode == Mode.Node) {
+                    this.mode = Mode.Node;
+                    if (options && options.https)
+                        this.https = options.https;
+                }
             } else {
-                this.KurveIdentity = identityInfo.identity;
+                this.KurveIdentity = id;
+                this.mode = id.mode;
+                this.endpointVersion = id.endpointVersion;
+                this.https = id.https;
             }
+            if (options && options.root)
+                this.root = options.root;
+            console.log("graph",this);
         }
 
-        get me() { return new User(this, this.baseUrl); }
-        get users() { return new Users(this, this.baseUrl); }
-        get groups() { return new Groups(this, this.baseUrl); }
+        get me() { return new User(this); }
+        get users() { return new Users(this); }
+        get groups() { return new Groups(this); }
 
         public get(url: string, callback: PromiseCallback<string>, responseType?: string, scopes?: string[]): void {
             if (this.mode === Mode.Client) {

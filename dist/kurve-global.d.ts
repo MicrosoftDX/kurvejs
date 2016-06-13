@@ -523,5 +523,3 @@ declare namespace Kurve {
         GetGroups: (odataQuery?: OData | string) => Promise<GraphCollection<GroupDataModel, Groups, Group>, Error>;
     }
 }
-
-export = Kurve;

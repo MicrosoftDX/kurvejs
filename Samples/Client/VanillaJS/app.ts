@@ -1,4 +1,4 @@
-﻿/// <reference path="../../../dist/kurve.d.ts" />
+﻿/// <reference path="../../../dist/kurve-global.d.ts" />
 const kurve = window["Kurve"] as typeof Kurve;
 
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
@@ -10,20 +10,15 @@ const kurve = window["Kurve"] as typeof Kurve;
 
         constructor() {
             // Setup
-            const model = (<HTMLSelectElement>document.getElementById("model")).value == 'v2' ? kurve.EndPointVersion.v2 : kurve.EndPointVersion.v1;
-            const clientId = (<HTMLInputElement>document.getElementById("AppID")).value || model == kurve.EndPointVersion.v2 ? "13c5e4af-5ea6-4b48-8989-ca25c96ba1c4" : "636e98ea-3024-4810-a66e-cda4bfa0a489";
+            const endpointVersion = (<HTMLSelectElement>document.getElementById("model")).value == 'v2' ? kurve.EndpointVersion.v2 : kurve.EndpointVersion.v1;
+            const clientId = (<HTMLInputElement>document.getElementById("AppID")).value || endpointVersion == kurve.EndpointVersion.v2 ? "13c5e4af-5ea6-4b48-8989-ca25c96ba1c4" : "636e98ea-3024-4810-a66e-cda4bfa0a489";
             const loc = document.URL;
             const redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/VanillaJS")) + "/dist/login.html";
 
             // Create identity object
-            this.identity = new kurve.Identity({
-                clientId: clientId,
-                tokenProcessingUri: redirectUri,
-                version: model,
-                mode: kurve.Mode.Client
-            });
+            this.identity = new kurve.Identity(clientId, redirectUri, { endpointVersion: endpointVersion}); 
             
-            const scopes = model == kurve.EndPointVersion.v2 ? { scopes: [kurve.Scopes.Mail.Read, kurve.Scopes.General.OpenId] } : {};
+            const scopes = endpointVersion == kurve.EndpointVersion.v2 ? { scopes: [kurve.Scopes.Mail.Read, kurve.Scopes.General.OpenId] } : {};
 
             // Login
             this.identity.loginAsync(scopes).then(_ => {
@@ -35,7 +30,7 @@ const kurve = window["Kurve"] as typeof Kurve;
                 //}));
 
                 //Option 2: Automatically linking to the Identity object
-                this.graph = new kurve.Graph({ identity: this.identity }, kurve.Mode.Client);
+                this.graph = new kurve.Graph(this.identity);
 
                 //Update UI
 
