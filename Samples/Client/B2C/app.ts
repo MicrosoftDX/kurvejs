@@ -1,4 +1,4 @@
-﻿/// <reference path="../../../dist/kurve.d.ts" />
+﻿/// <reference path="../../../dist/kurve-global.d.ts" />
 const kurve = window["Kurve"] as typeof Kurve;
 
 // Copyright (c) Microsoft. All rights reserved. Licensed under the MIT license. See full license at the bottom of this file.
@@ -8,7 +8,6 @@ module Sample {
     }
     export class AppB2C {
         private identity: Kurve.Identity;
-        private graph: Kurve.Graph;
        
         constructor() {
             //Setup
@@ -17,7 +16,7 @@ module Sample {
             const redirectUri = loc.substr(0, loc.indexOf("/Samples/Client/VanillaJS")) + "/dist/login.html";
 
             //Create identity object
-            this.identity = new kurve.Identity({ clientId: clientId, tokenProcessingUri: redirectUri, version: kurve.EndPointVersion.v2, mode: kurve.Mode.Client });
+            this.identity = new kurve.Identity(clientId, redirectUri, {endpointVersion: kurve.EndPointVersion.v2 });
 
             //We can request for specific scopes during logon (so user will have to consent them right away and not during the flow of the app
             //The list of available consents is available under Kuve.Scopes module

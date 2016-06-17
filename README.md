@@ -8,15 +8,10 @@ Kurve<nolink>.JS is an experimental, unofficial, open source JavaScript / TypeSc
 It looks like this:
 
 ```typescript
-const id = new kurve.Identity({
-    clientId: "your-client-id",
-    tokenProcessingUri: "http://yourdomain/login.html",
-    version: kurve.EndPointVersion.v1,
-    mode: kurve.Mode.Client 
-});
+const id = new kurve.Identity("your-client-id", "http://your/path/to/login.html");
 
 id.loginAsync().then(_ => {
-    const graph = new kurve.Graph({ identity: id }, kurve.Mode.Client);
+    const graph = new kurve.Graph(id);
 
     graph.me.messages.GetMessages().then(messages => {
         console.log("my emails:");   
@@ -99,11 +94,9 @@ Copy login.html to your source tree.
 If using TypeScript, add the following:
 
 ```typescript
-/// <reference path="kurve.d.ts"/>  
+/// <reference path="kurve-global.d.ts"/>  
 const kurve = window["Kurve"] as typeof Kurve; 
 ```
-
-### TypeScript note: _Kurve_ and _kurve_
 
 Note that _Kurve_ (capitalized) is the namespace that declares the types, where _kurve_ (lowercase) is the module. Use _Kurve_ when declaring types, and _kurve_ for everything else: 
 
@@ -158,16 +151,14 @@ Important notes in this step:
 You can use Kurve Graph without Kurve Identity by passing an access token directly:
 
 ```typescript
-const graph = new kurve.Graph({ defaultAccessToken: token }, mode);
+const graph = new kurve.Graph("access_token");
 ```
 
 Or else link it to a Kurve.Identity object:
 
 ```typescript
-const graph = new kurve.Graph({ { identity: this.identity }, mode);
+const graph = new kurve.Graph(idKurve);
 ```
-
-Where _mode_ is either _kurve.Mode.Client_ or _kurve.Mode.Server_
     
 For information on accessing the graph, see the [QueryBuilder documentation](./graph.md).
 

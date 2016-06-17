@@ -204,11 +204,11 @@ var Kurve;
 })(Kurve || (Kurve = {}));
 var Kurve;
 (function (Kurve) {
-    (function (EndPointVersion) {
-        EndPointVersion[EndPointVersion["v1"] = 1] = "v1";
-        EndPointVersion[EndPointVersion["v2"] = 2] = "v2";
-    })(Kurve.EndPointVersion || (Kurve.EndPointVersion = {}));
-    var EndPointVersion = Kurve.EndPointVersion;
+    (function (EndpointVersion) {
+        EndpointVersion[EndpointVersion["v1"] = 1] = "v1";
+        EndpointVersion[EndpointVersion["v2"] = 2] = "v2";
+    })(Kurve.EndpointVersion || (Kurve.EndpointVersion = {}));
+    var EndpointVersion = Kurve.EndpointVersion;
     (function (Mode) {
         Mode[Mode["Client"] = 1] = "Client";
         Mode[Mode["Node"] = 2] = "Node";
@@ -302,21 +302,21 @@ var Kurve;
     }());
     Kurve.IdToken = IdToken;
     var Identity = (function () {
-        function Identity(identitySettings) {
+        function Identity(clientId, tokenProcessorUrl, options) {
             var _this = this;
+            this.clientId = clientId;
+            this.tokenProcessorUrl = tokenProcessorUrl;
             this.policy = "";
+            this.endpointVersion = EndpointVersion.v1;
             this.mode = Mode.Client;
-            this.clientId = identitySettings.clientId;
-            this.tokenProcessorUrl = identitySettings.tokenProcessingUri;
-            if (identitySettings.version)
-                this.version = identitySettings.version;
-            else
-                this.version = EndPointVersion.v1;
-            if (identitySettings.appSecret)
-                this.appSecret = identitySettings.appSecret;
-            this.mode = identitySettings.mode;
+            if (options && options.endpointVersion)
+                this.endpointVersion = options.endpointVersion;
+            if (options && options.appSecret)
+                this.appSecret = options.appSecret;
+            if (options && options.mode)
+                this.mode = options.mode;
             if (this.mode === Mode.Client) {
-                this.tokenCache = new TokenCache(identitySettings.tokenStorage);
+                this.tokenCache = new TokenCache(options && options.tokenStorage);
                 window.addEventListener("message", function (event) {
                     if (event.data.type === "id_token") {
                         if (event.data.error) {
@@ -445,9 +445,6 @@ var Kurve;
             clearTimeout(this.refreshTimer);
             this.login(function () { });
         };
-        Identity.prototype.getCurrentEndPointVersion = function () {
-            return this.version;
-        };
         Identity.prototype.getAccessTokenAsync = function (resource) {
             var d = new Kurve.Deferred();
             this.getAccessToken(resource, (function (error, token) {
@@ -462,7 +459,7 @@ var Kurve;
         };
         Identity.prototype.getAccessToken = function (resource, callback) {
             var _this = this;
-            if (this.version !== EndPointVersion.v1) {
+            if (this.endpointVersion !== EndpointVersion.v1) {
                 var e = new Kurve.Error();
                 e.statusText = "Currently this identity class is using v2 OAuth mode. You need to use getAccessTokenForScopes() method";
                 callback(e);
@@ -492,7 +489,7 @@ var Kurve;
                     "&resource=" + encodeURIComponent(resource) +
                     "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                     "&state=" + encodeURIComponent(this.state) +
-                    "&version=" + encodeURIComponent(this.version.toString()) +
+                    "&version=" + encodeURIComponent(this.endpointVersion.toString()) +
                     "&nonce=" + encodeURIComponent(this.nonce) +
                     "&op=token";
                 document.body.appendChild(iframe);
@@ -552,7 +549,7 @@ var Kurve;
             var accessToken = this.token("#access_token", url);
             var cookies = this.parseNodeCookies(req);
             var d = new Kurve.Deferred();
-            if (this.version === EndPointVersion.v1) {
+            if (this.endpointVersion === EndpointVersion.v1) {
                 if (code) {
                     var codeFromRequest = params["code"][0];
                     var stateFromRequest = params["state"][0];
@@ -655,7 +652,7 @@ var Kurve;
         };
         Identity.prototype.getAccessTokenForScopes = function (scopes, promptForConsent, callback) {
             var _this = this;
-            if (this.version !== EndPointVersion.v2) {
+            if (this.endpointVersion !== EndpointVersion.v2) {
                 var e = new Kurve.Error();
                 e.statusText = "Dynamic scopes require v2 mode. Currently this identity class is using v1";
                 callback(null, e);
@@ -692,7 +689,7 @@ var Kurve;
                 iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
                     "&scopes=" + encodeURIComponent(scopes.join(" ")) +
                     "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
-                    "&version=" + encodeURIComponent(this.version.toString()) +
+                    "&version=" + encodeURIComponent(this.endpointVersion.toString()) +
                     "&state=" + encodeURIComponent(this.state) +
                     "&nonce=" + encodeURIComponent(this.nonce) +
                     "&login_hint=" + encodeURIComponent(this.idToken.PreferredUsername) +
@@ -704,7 +701,7 @@ var Kurve;
                 window.open(this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
                     "&scopes=" + encodeURIComponent(scopes.join(" ")) +
                     "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
-                    "&version=" + encodeURIComponent(this.version.toString()) +
+                    "&version=" + encodeURIComponent(this.endpointVersion.toString()) +
                     "&state=" + encodeURIComponent(this.state) +
                     "&nonce=" + encodeURIComponent(this.nonce) +
                     "&op=token", "_blank");
@@ -728,7 +725,7 @@ var Kurve;
                 loginSettings = {};
             if (loginSettings.policy)
                 this.policy = loginSettings.policy;
-            if (loginSettings.scopes && this.version === EndPointVersion.v1) {
+            if (loginSettings.scopes && this.endpointVersion === EndpointVersion.v1) {
                 var e = new Kurve.Error();
                 e.text = "Scopes can only be used with OAuth v2.";
                 callback(e);
@@ -746,13 +743,13 @@ var Kurve;
                 "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                 "&state=" + encodeURIComponent(this.state) +
                 "&nonce=" + encodeURIComponent(this.nonce) +
-                "&version=" + encodeURIComponent(this.version.toString()) +
+                "&version=" + encodeURIComponent(this.endpointVersion.toString()) +
                 "&op=login" +
                 "&p=" + encodeURIComponent(this.policy);
             if (loginSettings.tenant) {
                 loginURL += "&tenant=" + encodeURIComponent(loginSettings.tenant);
             }
-            if (this.version === EndPointVersion.v2) {
+            if (this.endpointVersion === EndpointVersion.v2) {
                 if (!loginSettings.scopes)
                     loginSettings.scopes = [];
                 if (loginSettings.scopes.indexOf("profile") < 0)
@@ -826,34 +823,42 @@ var Kurve;
 var Kurve;
 (function (Kurve) {
     var Graph = (function () {
-        function Graph(identityInfo, mode, https) {
+        function Graph(id, options) {
             this.req = null;
-            this.accessToken = null;
-            this.KurveIdentity = null;
             this.defaultResourceID = "https://graph.microsoft.com";
-            this.baseUrl = "https://graph.microsoft.com/v1.0";
-            if (https)
-                this.https = https;
-            this.mode = mode;
-            if (identityInfo.defaultAccessToken) {
-                this.accessToken = identityInfo.defaultAccessToken;
+            this.root = "https://graph.microsoft.com/v1.0";
+            this.mode = Kurve.Mode.Client;
+            this.endpointVersion = Kurve.EndpointVersion.v1;
+            if (typeof (id) === "string") {
+                this.accessToken = id;
+                if (options && options.mode == Kurve.Mode.Node) {
+                    this.mode = Kurve.Mode.Node;
+                    if (options && options.https)
+                        this.https = options.https;
+                }
             }
             else {
-                this.KurveIdentity = identityInfo.identity;
+                this.KurveIdentity = id;
+                this.mode = id.mode;
+                this.endpointVersion = id.endpointVersion;
+                this.https = id.https;
             }
+            if (options && options.root)
+                this.root = options.root;
+            console.log("graph", this);
         }
         Object.defineProperty(Graph.prototype, "me", {
-            get: function () { return new Kurve.User(this, this.baseUrl); },
+            get: function () { return new Kurve.User(this); },
             enumerable: true,
             configurable: true
         });
         Object.defineProperty(Graph.prototype, "users", {
-            get: function () { return new Kurve.Users(this, this.baseUrl); },
+            get: function () { return new Kurve.Users(this); },
             enumerable: true,
             configurable: true
         });
         Object.defineProperty(Graph.prototype, "groups", {
-            get: function () { return new Kurve.Groups(this, this.baseUrl); },
+            get: function () { return new Kurve.Groups(this); },
             enumerable: true,
             configurable: true
         });
@@ -1064,12 +1069,10 @@ var Kurve;
             var _this = this;
             this.graph = graph;
             this.path = path;
-            this.scopesForV2 = function (scopes) {
-                return _this.graph.KurveIdentity && _this.graph.KurveIdentity.getCurrentEndPointVersion() === Kurve.EndPointVersion.v2 ? scopes : null;
-            };
+            this.scopesForV2 = function (scopes) { return _this.graph.endpointVersion === Kurve.EndpointVersion.v2 ? scopes : null; };
             this.pathWithQuery = function (odataQuery, pathSuffix) {
                 if (pathSuffix === void 0) { pathSuffix = ""; }
-                return pathWithQuery(_this.path + pathSuffix, odataQuery);
+                return pathWithQuery(_this.graph.root + _this.path + pathSuffix, odataQuery);
             };
             this.graphObjectFromResponse = function (response, node, context) {
                 var object = response;
@@ -1115,10 +1118,6 @@ var Kurve;
         function CollectionNode() {
             var _this = this;
             _super.apply(this, arguments);
-            this.pathWithQuery = function (odataQuery, pathSuffix) {
-                if (pathSuffix === void 0) { pathSuffix = ""; }
-                return pathWithQuery(_this.path + pathSuffix, odataQuery);
-            };
             this.graphCollectionFromResponse = function (response, node, context, scopes) {
                 var collection = response;
                 collection._context = node;

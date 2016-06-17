@@ -96,14 +96,13 @@ namespace Kurve {
     }
 
     export abstract class Node {
-        constructor(protected graph:Graph, protected path:string) {
+        constructor(protected graph:Graph, protected path?:string) {
         }
 
         //Only adds scopes when linked to a v2 Oauth of kurve identity
-        protected scopesForV2 = (scopes: string[]) =>
-            this.graph.KurveIdentity && this.graph.KurveIdentity.getCurrentEndPointVersion() === EndPointVersion.v2 ? scopes : null;
+        protected scopesForV2 = (scopes: string[]) => this.graph.endpointVersion === EndpointVersion.v2 ? scopes : null;
         
-        pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
+        pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.graph.root + this.path + pathSuffix, odataQuery);
         
         protected graphObjectFromResponse = <Model, N extends Node>(response:any, node:N, context?:Context<N>) => {
             const object = response as GraphObject<Model, N>;
@@ -168,8 +167,6 @@ namespace Kurve {
     };
 
     export abstract class CollectionNode extends Node {    
-        pathWithQuery = (odataQuery?:ODataQuery, pathSuffix:string = "") => pathWithQuery(this.path + pathSuffix, odataQuery);
-        
         protected graphCollectionFromResponse = <Model, C extends CollectionNode, N extends Node>(response:any, node:C, context?:Context<N>, scopes?:string[]) => {
             const collection = response as GraphCollection<Model,C,N>;
             collection._context = node;

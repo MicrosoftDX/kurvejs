@@ -1,6 +1,6 @@
 namespace Kurve {
 
-    export enum EndPointVersion {
+    export enum EndpointVersion {
         v1=1,
         v2=2
     }
@@ -47,7 +47,7 @@ namespace Kurve {
     class TokenCache {
         private cachedTokens: CachedTokenDictionary;
 
-        constructor(private tokenStorage: TokenStorage) {
+        constructor(private tokenStorage?: TokenStorage) {
             this.cachedTokens = {};
             if (tokenStorage) {
                 tokenStorage.getAll().forEach(({ id, scopes, resource, token, expiry }) => {
@@ -119,50 +119,44 @@ namespace Kurve {
     }
 
     export interface IdentitySettings {
-        clientId: string;
+        endpointVersion?: EndpointVersion;
+        mode?: Mode;
         appSecret?: string;
-        tokenProcessingUri: string;
-        version: EndPointVersion;
         tokenStorage?: TokenStorage;
-        mode: Mode;
     }
 
     export class Identity {
-        public clientId: string;
         private state: string;
-        private version: EndPointVersion;
         private nonce: string;
         private idToken: IdToken;
         private loginCallback: (error: Error) => void;
         private getTokenCallback: (token: string, error: Error) => void;
-        private tokenProcessorUrl: string;
         private tokenCache: TokenCache;
         private refreshTimer: any;
         private policy: string = "";
-        private mode: Mode = Mode.Client;
         private appSecret: string;
         private NodePersistDataCallBack: (key: string, value: string, expiry: Date) => void;
         private NodeRetrieveDataCallBack: (key: string) => string;
         private req: any;
         private res: any;
-        private https: any;
 
+        // these are public so that Kurve.Graph can access them
+        endpointVersion: EndpointVersion = EndpointVersion.v1;
+        mode: Mode = Mode.Client;
+        https: any;
 
-        constructor(identitySettings: IdentitySettings) {
-            this.clientId = identitySettings.clientId;
-            this.tokenProcessorUrl = identitySettings.tokenProcessingUri;
+        constructor(public clientId:string, public tokenProcessorUrl: string, options?: IdentitySettings) {
 //          this.req = new XMLHttpRequest();
-            if (identitySettings.version)
-                this.version = identitySettings.version;
-            else
-                this.version = EndPointVersion.v1;
-            if (identitySettings.appSecret)
-                this.appSecret=identitySettings.appSecret;
-            this.mode = identitySettings.mode;
+            if (options && options.endpointVersion)
+                this.endpointVersion = options.endpointVersion;
+            if (options && options.appSecret)
+                this.appSecret=options.appSecret;
+            if (options && options.mode)
+                this.mode = options.mode;
 
             if (this.mode === Mode.Client) {
 
-                this.tokenCache = new TokenCache(identitySettings.tokenStorage);
+                this.tokenCache = new TokenCache(options && options.tokenStorage);
 
                 //Callback handler from other windows
                 window.addEventListener("message", event => {
@@ -301,10 +295,6 @@ namespace Kurve {
             this.login(() => { });
         }
 
-        public getCurrentEndPointVersion(): EndPointVersion {
-            return this.version;
-        }
-
         public getAccessTokenAsync(resource: string): Promise<string,Error> {
 
             var d = new Deferred<string,Error>();
@@ -319,7 +309,7 @@ namespace Kurve {
         }
 
         public getAccessToken(resource: string, callback: PromiseCallback<string>): void {
-            if (this.version !== EndPointVersion.v1) {
+            if (this.endpointVersion !== EndpointVersion.v1) {
                 var e = new Error();
                 e.statusText = "Currently this identity class is using v2 OAuth mode. You need to use getAccessTokenForScopes() method";
                 callback(e);
@@ -356,7 +346,7 @@ namespace Kurve {
                     "&resource=" + encodeURIComponent(resource) +
                     "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                     "&state=" + encodeURIComponent(this.state) +
-                    "&version=" + encodeURIComponent(this.version.toString()) +
+                    "&version=" + encodeURIComponent(this.endpointVersion.toString()) +
                     "&nonce=" + encodeURIComponent(this.nonce) +
                     "&op=token";
 
@@ -427,7 +417,7 @@ namespace Kurve {
 
             var d = new Deferred<boolean, Error>();
 
-            if (this.version === EndPointVersion.v1) {
+            if (this.endpointVersion === EndpointVersion.v1) {
 
                 if (code) {
                     var codeFromRequest = params["code"][0];
@@ -540,7 +530,7 @@ namespace Kurve {
         }
 
         public getAccessTokenForScopes(scopes: string[], promptForConsent, callback: (token: string, error: Error) => void): void {
-            if (this.version !== EndPointVersion.v2) {
+            if (this.endpointVersion !== EndpointVersion.v2) {
                 var e = new Error();
                 e.statusText = "Dynamic scopes require v2 mode. Currently this identity class is using v1";
                 callback(null, e);
@@ -584,7 +574,7 @@ namespace Kurve {
                 iframe.src = this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
                     "&scopes=" + encodeURIComponent(scopes.join(" ")) +
                     "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
-                    "&version=" + encodeURIComponent(this.version.toString()) +
+                    "&version=" + encodeURIComponent(this.endpointVersion.toString()) +
                     "&state=" + encodeURIComponent(this.state) +
                     "&nonce=" + encodeURIComponent(this.nonce) +
                     "&login_hint=" + encodeURIComponent(this.idToken.PreferredUsername) +
@@ -595,7 +585,7 @@ namespace Kurve {
                 window.open(this.tokenProcessorUrl + "?clientId=" + encodeURIComponent(this.clientId) +
                     "&scopes=" + encodeURIComponent(scopes.join(" ")) +
                     "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
-                    "&version=" + encodeURIComponent(this.version.toString()) +
+                    "&version=" + encodeURIComponent(this.endpointVersion.toString()) +
                     "&state=" + encodeURIComponent(this.state) +
                     "&nonce=" + encodeURIComponent(this.nonce) +
                     "&op=token"
@@ -623,7 +613,7 @@ namespace Kurve {
             if (!loginSettings) loginSettings = {};
             if (loginSettings.policy) this.policy = loginSettings.policy;
 
-            if (loginSettings.scopes && this.version === EndPointVersion.v1) {
+            if (loginSettings.scopes && this.endpointVersion === EndpointVersion.v1) {
                 var e = new Error();
                 e.text = "Scopes can only be used with OAuth v2.";
                 callback(e);
@@ -642,13 +632,13 @@ namespace Kurve {
                 "&redirectUri=" + encodeURIComponent(this.tokenProcessorUrl) +
                 "&state=" + encodeURIComponent(this.state) +
                 "&nonce=" + encodeURIComponent(this.nonce) +
-                "&version=" + encodeURIComponent(this.version.toString()) +
+                "&version=" + encodeURIComponent(this.endpointVersion.toString()) +
                 "&op=login" +
                 "&p=" + encodeURIComponent(this.policy);
             if (loginSettings.tenant) {
                 loginURL += "&tenant=" + encodeURIComponent(loginSettings.tenant);
             }
-            if (this.version === EndPointVersion.v2) {
+            if (this.endpointVersion === EndpointVersion.v2) {
                     if (!loginSettings.scopes) loginSettings.scopes = [];
                     if (loginSettings.scopes.indexOf("profile") < 0)
                         loginSettings.scopes.push("profile");
