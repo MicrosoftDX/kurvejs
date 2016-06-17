@@ -182,6 +182,10 @@ You are free to send us your feedback at this Github repo, send pull requests, e
 
 # Release Notes
 
+## 0.6.0
+ * Revised Identity & Graph constructors with better defaults
+ * Separate type definitions file for global (&lt;script>) module import  
+
 ## 0.5.0
  * Refactored source tree
  * Initial node support (highly experimental)
