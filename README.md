@@ -234,3 +234,5 @@ You are free to send us your feedback at this Github repo, send pull requests, e
  * No need for tenant ID anymore
  * Improved error handling, all error returns are now coming into the Kurve.Error class format
  * Additional graph methods, like reading groups, user profile's photos, user manager and direct reports
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
