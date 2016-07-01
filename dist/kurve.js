@@ -74,6 +74,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 	var promises_1 = __webpack_require__(2);
 	var identity_1 = __webpack_require__(3);
+	var requestbuilder_1 = __webpack_require__(4);
 	var Scopes;
 	(function (Scopes) {
 	    var Util = (function () {
@@ -431,9 +432,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return d.promise;
 	    };
 	    Graph.prototype.me = function (callback, odataQuery) {
-	        var scopes = [Scopes.User.Read];
-	        var urlString = this.buildMeUrl("", odataQuery);
-	        this.getUser(urlString, callback, this.scopesForV2(scopes));
+	        var _this = this;
+	        this.endpointGet(new requestbuilder_1.Root().me)
+	            .then(function (result) { return callback(null, new User(_this, result)); })
+	            .fail(function (error) { return callback(error); });
 	    };
 	    Graph.prototype.userAsync = function (userId, odataQuery, basicProfileOnly) {
 	        if (basicProfileOnly === void 0) { basicProfileOnly = true; }
@@ -632,6 +634,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	        else
 	            response.other = xhr.response;
 	        return response;
+	    };
+	    Graph.prototype.endpointGet = function (endpoint) {
+	        var d = new promises_1.Deferred();
+	        this.get(endpoint.pathWithQuery, function (error, result) {
+	            var jsonResult = JSON.parse(result);
+	            if (jsonResult.error) {
+	                var errorODATA = new identity_1.Error();
+	                errorODATA.other = jsonResult.error;
+	                d.reject(errorODATA);
+	                return;
+	            }
+	            d.resolve(jsonResult);
+	        });
+	        return d.promise;
 	    };
 	    Graph.prototype.getUsers = function (urlString, callback, scopes, basicProfileOnly) {
 	        var _this = this;
@@ -1652,6 +1668,274 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return Identity;
 	}());
 	exports.Identity = Identity;
+
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	"use strict";
+	var __extends = (this && this.__extends) || function (d, b) {
+	    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+	    function __() { this.constructor = d; }
+	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+	};
+	var Action = (function () {
+	    function Action(pathWithQuery, scopes) {
+	        this.pathWithQuery = pathWithQuery;
+	        this.scopes = scopes;
+	    }
+	    return Action;
+	}());
+	exports.Action = Action;
+	function queryUnion(query1, query2) {
+	    if (query1)
+	        return query1 + (query2 ? "&" + query2 : "");
+	    else
+	        return query2;
+	}
+	var pathWithQuery = function (path, query) { return path + (query ? "?" + query : ""); };
+	var Endpoint = (function () {
+	    function Endpoint(path, query) {
+	        var _this = this;
+	        this.path = path;
+	        this.query = query;
+	        this.addQuery = function (query) { return new AddQuery(_this.path, queryUnion(_this.query, query), _this.actions); };
+	        this.pathWithQuery = pathWithQuery(this.path, this.query);
+	        this.path = path;
+	        this.query = query;
+	    }
+	    return Endpoint;
+	}());
+	exports.Endpoint = Endpoint;
+	var AddQuery = (function (_super) {
+	    __extends(AddQuery, _super);
+	    function AddQuery(path, query, actions) {
+	        _super.call(this, path, query);
+	        if (actions) {
+	            for (var verb in actions)
+	                actions[verb].pathWithQuery = pathWithQuery(path, query);
+	            this.actions = actions;
+	        }
+	    }
+	    return AddQuery;
+	}(Endpoint));
+	exports.AddQuery = AddQuery;
+	var Attachment = (function (_super) {
+	    __extends(Attachment, _super);
+	    function Attachment(path, attachmentId) {
+	        _super.call(this, path + "/attachments/" + attachmentId);
+	        this.actions = {
+	            GET: new Action(this.path)
+	        };
+	    }
+	    return Attachment;
+	}(Endpoint));
+	exports.Attachment = Attachment;
+	var attachment = function (path) { return function (attachmentId) { return new Attachment(path, attachmentId); }; };
+	var Attachments = (function (_super) {
+	    __extends(Attachments, _super);
+	    function Attachments(path) {
+	        _super.call(this, path + "/attachments");
+	        this.actions = {
+	            GETCOLLECTION: new Action(this.path),
+	        };
+	    }
+	    return Attachments;
+	}(Endpoint));
+	exports.Attachments = Attachments;
+	var attachments = function (path) { return new Attachments(path); };
+	var Message = (function (_super) {
+	    __extends(Message, _super);
+	    function Message(path, messageId) {
+	        _super.call(this, path + "/messages/" + messageId);
+	        this.actions = {
+	            GET: new Action(this.path),
+	            POST: new Action(this.path)
+	        };
+	        this.attachment = attachment(this.path);
+	        this.attachments = attachments(this.path);
+	    }
+	    return Message;
+	}(Endpoint));
+	exports.Message = Message;
+	var message = function (path) { return function (messageId) { return new Message(path, messageId); }; };
+	var Messages = (function (_super) {
+	    __extends(Messages, _super);
+	    function Messages(path) {
+	        _super.call(this, path + "/messages/");
+	        this.actions = {
+	            GETCOLLECTION: new Action(this.path),
+	        };
+	    }
+	    return Messages;
+	}(Endpoint));
+	exports.Messages = Messages;
+	var messages = function (path) { return new Messages(path); };
+	var Event = (function (_super) {
+	    __extends(Event, _super);
+	    function Event(path, eventId) {
+	        _super.call(this, path + "/events/");
+	        this.actions = {
+	            GET: new Action(this.path),
+	        };
+	        this.attachment = attachment(this.path);
+	        this.attachments = attachments(this.path);
+	    }
+	    return Event;
+	}(Endpoint));
+	exports.Event = Event;
+	var event = function (path) { return function (eventId) { return new Event(path, eventId); }; };
+	var Events = (function (_super) {
+	    __extends(Events, _super);
+	    function Events(path) {
+	        _super.call(this, path + "/events/");
+	        this.actions = {
+	            GETCOLLECTION: new Action(this.path),
+	        };
+	    }
+	    return Events;
+	}(Endpoint));
+	exports.Events = Events;
+	var events = function (path) { return new Events(path); };
+	var CalendarView = (function (_super) {
+	    __extends(CalendarView, _super);
+	    function CalendarView(path, startDate, endDate) {
+	        _super.call(this, path + "/calendarView", "startDateTime=" + startDate.toString() + "&endDateTime=" + endDate.toString());
+	        this.actions = {
+	            GETCOLLECTION: new Action(pathWithQuery(this.path, this.query))
+	        };
+	    }
+	    return CalendarView;
+	}(Endpoint));
+	exports.CalendarView = CalendarView;
+	var calendarView = function (path) { return function (startDate, endDate) { return new CalendarView(path, startDate, endDate); }; };
+	var User = (function (_super) {
+	    __extends(User, _super);
+	    function User(path, userId) {
+	        if (path === void 0) { path = ""; }
+	        _super.call(this, userId ? path + "/users/" + userId : path + "/me");
+	        this.actions = {
+	            GET: new Action(this.path),
+	        };
+	        this.message = message(this.path);
+	        this.messages = messages(this.path);
+	        this.event = event(this.path);
+	        this.events = events(this.path);
+	        this.calendarView = calendarView(this.path);
+	    }
+	    return User;
+	}(Endpoint));
+	exports.User = User;
+	var me = new User("https://graph.microsoft.com/v1.0");
+	var user = function (userId) { return new User("", userId); };
+	var Users = (function (_super) {
+	    __extends(Users, _super);
+	    function Users(path) {
+	        if (path === void 0) { path = ""; }
+	        _super.call(this, path + "/users");
+	        this.actions = {
+	            GETCOLLECTION: new Action(this.path),
+	        };
+	    }
+	    return Users;
+	}(Endpoint));
+	exports.Users = Users;
+	var users = new Users();
+	var Root = (function () {
+	    function Root() {
+	        this.me = me;
+	        this.user = user;
+	        this.users = users;
+	    }
+	    return Root;
+	}());
+	exports.Root = Root;
+	var MockGraph = (function () {
+	    function MockGraph() {
+	    }
+	    MockGraph.prototype.getUntypedCollection = function (path, scopes) {
+	        return {};
+	    };
+	    MockGraph.prototype.getTypedCollection = function (path, scopes) {
+	        return this.getUntyped(path, scopes);
+	    };
+	    MockGraph.prototype.getCollection = function (endpoint) {
+	        var action = endpoint.actions && endpoint.actions.GETCOLLECTION;
+	        if (!action) {
+	            console.log("no GETCOLLECTION endpoint, sorry!");
+	        }
+	        else {
+	            console.log("GETCOLLECTION path", action.pathWithQuery);
+	            return this.getTypedCollection(action.pathWithQuery, action.scopes);
+	        }
+	    };
+	    MockGraph.prototype.getUntyped = function (path, scopes) {
+	        return {};
+	    };
+	    MockGraph.prototype.getTyped = function (path, scopes) {
+	        return;
+	    };
+	    MockGraph.prototype.get = function (endpoint) {
+	        var action = endpoint.actions && endpoint.actions.GET;
+	        if (!action) {
+	            console.log("no GET endpoint, sorry!");
+	        }
+	        else {
+	            console.log("GET path", action.pathWithQuery);
+	            return this.getTyped(action.pathWithQuery, action.scopes);
+	        }
+	    };
+	    MockGraph.prototype.postUntyped = function (path, scopes, request) {
+	        return {};
+	    };
+	    MockGraph.prototype.postTyped = function (path, scopes, request) {
+	        return this.postUntyped(path, scopes, request);
+	    };
+	    MockGraph.prototype.post = function (endpoint, request) {
+	        var action = endpoint.actions && endpoint.actions.POST;
+	        if (!action) {
+	            console.log("no POST endpoint, sorry!");
+	        }
+	        else {
+	            console.log("POST path", action.pathWithQuery);
+	            return this.postTyped(action.pathWithQuery, action.scopes, request);
+	        }
+	    };
+	    MockGraph.prototype.patchUntyped = function (path, scopes, request) {
+	        return {};
+	    };
+	    MockGraph.prototype.patchTyped = function (path, scopes, request) {
+	        return this.patchUntyped(path, scopes, request);
+	    };
+	    MockGraph.prototype.patch = function (endpoint, request) {
+	        var action = endpoint.actions && endpoint.actions.PATCH;
+	        if (!action) {
+	            console.log("no PATCH endpoint, sorry!");
+	        }
+	        else {
+	            console.log("PATCH path", action.pathWithQuery);
+	            return this.patchTyped(action.pathWithQuery, action.scopes, request);
+	        }
+	    };
+	    MockGraph.prototype.deleteUntyped = function (path, scopes) {
+	    };
+	    MockGraph.prototype.deleteTyped = function (path, scopes) {
+	    };
+	    MockGraph.prototype.delete = function (endpoint) {
+	        var action = endpoint.actions.DELETE;
+	        if (!action) {
+	            console.log("no DELETE endpoint, sorry!");
+	        }
+	        else {
+	            console.log("DELETE path", action.pathWithQuery);
+	            this.getTyped(action.pathWithQuery, action.scopes);
+	        }
+	    };
+	    return MockGraph;
+	}());
+	var rb = new Root();
+	var graph = new MockGraph();
 
 
 /***/ }

@@ -3,6 +3,7 @@
 import { Deferred, Promise, PromiseCallback } from "./promises";
 import { Identity, OAuthVersion, Error } from "./identity";
 import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel, GroupDataModel, MailFolderDataModel, AttachmentDataModel } from "./models"
+import { Endpoint, Root } from "./requestbuilder";
 
     export module Scopes {
         class Util {
@@ -268,9 +269,9 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
         }
 
         public me(callback: PromiseCallback<User>, odataQuery?: string): void {
-            var scopes = [Scopes.User.Read];
-            var urlString = this.buildMeUrl("", odataQuery);
-            this.getUser(urlString, callback, this.scopesForV2(scopes));
+            this.endpointGet(new Root().me)
+                .then((result) => callback(null, new User(this, result)))
+                .fail((error) => callback(error));
         }
 
         public userAsync(userId: string, odataQuery?: string, basicProfileOnly = true): Promise<User, Error> {
@@ -483,6 +484,7 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
             var xhr = new XMLHttpRequest();
             if (responseType)
                 xhr.responseType = responseType;
+
             xhr.onreadystatechange = () => {
                 if (xhr.readyState === 4)
                     if (xhr.status === 200)
@@ -511,6 +513,27 @@ import { UserDataModel, ProfilePhotoDataModel, MessageDataModel, EventDataModel,
 
         }
 
+        // TODO:
+        // 1) Endpoint should retrieve real scopes so can be passed as parameter to get
+
+        public endpointGet<T>(endpoint: Endpoint<T>): Promise<T, Error> {
+            var d = new Deferred<T, Error>();
+
+            this.get(endpoint.pathWithQuery, (error, result) => {
+                var jsonResult = JSON.parse(result) ;
+
+                if (jsonResult.error) {
+                    var errorODATA = new Error();
+                    errorODATA.other = jsonResult.error;
+                    d.reject(errorODATA);
+                    return;
+                }
+
+                d.resolve(jsonResult);
+            });
+
+            return d.promise;
+        }
         //Private methods
 
         private getUsers(urlString, callback: PromiseCallback<Users>, scopes?: string[], basicProfileOnly = true): void {
