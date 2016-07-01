@@ -1,0 +1,14 @@
+<h1>My Mail App</h1>
+<button (click)="login()" *ngIf="!isAuthenticated">Sign-in with Office 365</button>
+<table *ngIf="isAuthenticated">
+    <tr>
+        <th>Sender</th>
+        <th>Subject</th>
+        <th>Date</th>
+    </tr>
+    <tr *ngFor="#msg of messages">
+        <td>{{msg.sender.emailAddress.address}}</td>
+        <td>{{msg.subject}}</td>
+        <td>{{msg.receivedDateTime}}</td>
+    </tr>
+</table>
