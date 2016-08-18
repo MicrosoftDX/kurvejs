@@ -1708,27 +1708,25 @@ var Kurve;
             this.scopes = scopes;
             this.odataQuery = odataQuery;
         }
-        GraphInfo.prototype.getAsync = function (graph) {
-            var d = new Kurve.Deferred();
-            this.get(graph, function (result, error) { return error ? d.reject(error) : d.resolve(result); });
-            return d.promise;
-        };
         GraphInfo.prototype.get = function (graph, callback) {
+            var d = new Kurve.Deferred();
+            if (callback) {
+                d.then(function (r) { return callback(r, null); }, function (e) { return callback(null, e); });
+            }
             var url = "https://graph.microsoft.com/v1.0/" + this.path + (this.odataQuery ? "?" + this.odataQuery : "");
             graph.get(url, function (result, errorGet) {
                 if (errorGet) {
-                    callback(null, errorGet);
-                    return;
+                    return d.reject(errorGet);
                 }
                 var ODATA = JSON.parse(result);
                 if (ODATA.error) {
                     var ODATAError = new Kurve.Error();
                     ODATAError.other = ODATA.error;
-                    callback(null, ODATAError);
-                    return;
+                    return d.reject(ODATAError);
                 }
-                callback(ODATA, null);
+                return d.resolve(ODATA);
             }, null, graph.scopesForV2(this.scopes));
+            return d.promise;
         };
         return GraphInfo;
     })();
