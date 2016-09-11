@@ -4,4 +4,4 @@ This is a simple Angular 2 application build using the Angular 2 Quickstart temp
 1. npm install
 2. npm start
 
-The primary application logic is contained in the **app.appcomponent.ts** file. Both v1 and v2 AAD flows are implemented, although v1 is commented out.
+The primary application logic is contained in the **app.component.ts** file. Both v1 and v2 AAD flows are implemented, although v1 is commented out.
