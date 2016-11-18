@@ -20,10 +20,10 @@ id.loginAsync().then(_ => {
         )
     });
     
-    graph.me.manager.GetUser(manager => {
+    graph.me.manager.GetUser().then(manager => {
         console.log("my manager", manager.displayName);
         console.log("their directs:");
-        manager._context.directReports.GetUsers(directs =>
+        manager._context.directReports.GetUsers().then(directs =>
             directs.value.forEach(direct =>
                 console.log(direct.displayName)
             )
